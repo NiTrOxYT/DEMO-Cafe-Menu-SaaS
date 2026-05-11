@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "rM-DeKHKgNXk-tokpa5cG"
+uri = "file://artifacts/cafe-menu/public/hero.jpg"
+type = "image"
+title = "Upscale cafe interior, warm lighting, elegant espresso bar, moody aesthetic"

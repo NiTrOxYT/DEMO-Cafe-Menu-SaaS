@@ -1,15 +1,119 @@
 import { useState } from "react";
 import { useListMenuItems, useListCategories } from "@workspace/api-client-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+
+type MenuItem = {
+  id: number;
+  name: string;
+  description?: string | null;
+  price: number;
+  imageUrl?: string | null;
+  categoryId: number;
+  categoryName?: string | null;
+  available: boolean;
+  sortOrder: number;
+};
 
 function formatINR(amount: number) {
   return `₹${amount.toFixed(0)}`;
+}
+
+function ItemDetailSheet({
+  item,
+  onClose,
+}: {
+  item: MenuItem;
+  onClose: () => void;
+}) {
+  return (
+    <AnimatePresence>
+      {item && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            key="backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
+            onClick={onClose}
+          />
+
+          {/* Sheet */}
+          <motion.div
+            key="sheet"
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", damping: 30, stiffness: 280 }}
+            className="fixed bottom-0 left-0 right-0 z-50 bg-background max-h-[90dvh] overflow-y-auto"
+            style={{ maxWidth: "640px", margin: "0 auto" }}
+          >
+            {/* Close handle */}
+            <div className="flex justify-center pt-4 pb-2">
+              <div className="w-10 h-1 rounded-full bg-border" />
+            </div>
+
+            {/* Image */}
+            {item.imageUrl && (
+              <div className="aspect-[4/3] w-full overflow-hidden bg-muted">
+                <img
+                  src={item.imageUrl}
+                  alt={item.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+
+            {/* Content */}
+            <div className="px-6 md:px-10 py-8 pb-12">
+              {item.categoryName && (
+                <span className="font-manrope text-[11px] uppercase tracking-[0.18em] font-semibold text-secondary block mb-3">
+                  {item.categoryName}
+                </span>
+              )}
+
+              <div className="flex justify-between items-start gap-4 mb-4">
+                <h2 className="font-garamond text-[36px] md:text-[42px] leading-tight text-foreground">
+                  {item.name}
+                </h2>
+                <span className="font-garamond text-[32px] text-secondary shrink-0 mt-1">
+                  {formatINR(item.price)}
+                </span>
+              </div>
+
+              {item.description ? (
+                <p className="font-manrope text-[16px] leading-relaxed text-muted-foreground">
+                  {item.description}
+                </p>
+              ) : (
+                <p className="font-manrope text-[15px] text-muted-foreground/50 italic">
+                  No description available.
+                </p>
+              )}
+
+              {/* Close button */}
+              <button
+                data-testid="button-close-detail"
+                onClick={onClose}
+                className="mt-10 w-full border border-foreground/20 py-4 font-manrope text-[11px] uppercase tracking-[0.18em] font-semibold text-foreground hover:bg-foreground hover:text-background transition-colors duration-200"
+              >
+                Close
+              </button>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
 }
 
 export default function Menu() {
   const { data: items, isLoading: itemsLoading } = useListMenuItems({ available: true });
   const { data: categories, isLoading: categoriesLoading } = useListCategories();
   const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null);
+  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
 
   const isLoading = itemsLoading || categoriesLoading;
 
@@ -25,23 +129,16 @@ export default function Menu() {
 
   return (
     <div className="bg-background text-foreground" style={{ minHeight: "100dvh" }}>
-      {/* Noise overlay */}
       <div className="noise-overlay" />
 
-      {/* Top Navigation */}
-      <nav className="fixed top-0 w-full z-50 flex justify-between items-center px-5 md:px-16 h-20 border-b border-border/20 bg-background/90 backdrop-blur-md">
-        <button className="active:scale-95 transition-transform duration-200" aria-label="Menu">
-          <span className="material-symbols-outlined text-foreground">menu</span>
-        </button>
+      {/* Top Navigation — name only */}
+      <nav className="fixed top-0 w-full z-40 flex justify-center items-center px-5 h-20 border-b border-border/20 bg-background/90 backdrop-blur-md">
         <h1
-          className="font-garamond text-[20px] tracking-[0.18em] uppercase text-foreground"
+          className="font-garamond text-[20px] uppercase text-foreground"
           style={{ letterSpacing: "0.15em" }}
         >
           The Golden Brew
         </h1>
-        <button className="active:scale-95 transition-transform duration-200" aria-label="Bag">
-          <span className="material-symbols-outlined text-foreground">shopping_bag</span>
-        </button>
       </nav>
 
       {/* Main Content */}
@@ -69,7 +166,9 @@ export default function Menu() {
                 <button
                   key={cat.id}
                   data-testid={`tab-category-${cat.id}`}
-                  onClick={() => setActiveCategoryId(isActive && activeCategoryId !== null ? null : cat.id)}
+                  onClick={() =>
+                    setActiveCategoryId(isActive && activeCategoryId !== null ? null : cat.id)
+                  }
                   className={[
                     "font-manrope text-[11px] uppercase tracking-[0.15em] font-semibold pb-4 whitespace-nowrap transition-colors duration-300 border-b-2",
                     isActive
@@ -118,12 +217,9 @@ export default function Menu() {
 
             return (
               <div key={category.id}>
-                {catIndex > 0 && (
-                  <div className="w-full h-px bg-border/20 mb-24" />
-                )}
+                {catIndex > 0 && <div className="w-full h-px bg-border/20 mb-24" />}
 
                 <section className="mb-24 scroll-mt-28" id={`cat-${category.id}`}>
-                  {/* Section heading — only shown if not the first (the hero acts as heading for first) */}
                   {catIndex > 0 && (
                     <motion.h2
                       initial={{ opacity: 0, y: 16 }}
@@ -137,19 +233,18 @@ export default function Menu() {
                   )}
 
                   {useGridLayout ? (
-                    /* Grid layout: 2-column with images above text */
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-20 gap-y-16">
                       {categoryItems.map((item, index) => (
-                        <motion.div
+                        <motion.button
                           key={item.id}
                           data-testid={`card-item-${item.id}`}
-                          className="flex flex-col group"
+                          className="flex flex-col group text-left cursor-pointer"
+                          onClick={() => setSelectedItem(item)}
                           initial={{ opacity: 0, y: 24 }}
                           whileInView={{ opacity: 1, y: 0 }}
                           viewport={{ once: true, margin: "-80px" }}
                           transition={{ duration: 0.55, delay: index * 0.08 }}
                         >
-                          {/* Image */}
                           <div className="aspect-[4/3] mb-6 overflow-hidden bg-muted">
                             {item.imageUrl ? (
                               <img
@@ -166,9 +261,8 @@ export default function Menu() {
                             )}
                           </div>
 
-                          {/* Name + Price */}
                           <div className="flex justify-between items-start mb-2 gap-4">
-                            <h3 className="font-garamond text-[28px] leading-tight text-foreground">
+                            <h3 className="font-garamond text-[28px] leading-tight text-foreground group-hover:text-secondary transition-colors duration-200">
                               {item.name}
                             </h3>
                             <span className="font-manrope text-[16px] font-semibold text-foreground shrink-0 mt-1">
@@ -176,23 +270,26 @@ export default function Menu() {
                             </span>
                           </div>
 
-                          {/* Description */}
                           {item.description && (
-                            <p className="font-manrope text-[15px] text-muted-foreground mb-6 leading-relaxed">
+                            <p className="font-manrope text-[14px] text-muted-foreground leading-relaxed line-clamp-2">
                               {item.description}
                             </p>
                           )}
-                        </motion.div>
+
+                          <span className="mt-3 font-manrope text-[11px] uppercase tracking-[0.15em] font-semibold text-secondary opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            View details
+                          </span>
+                        </motion.button>
                       ))}
                     </div>
                   ) : (
-                    /* List layout: narrow centered list with add button */
                     <div className="max-w-2xl mx-auto space-y-0">
                       {categoryItems.map((item, index) => (
-                        <motion.div
+                        <motion.button
                           key={item.id}
                           data-testid={`list-item-${item.id}`}
-                          className="flex items-start gap-8 border-b border-border/15 py-10"
+                          className="w-full text-left flex items-start gap-8 border-b border-border/15 py-10 group cursor-pointer"
+                          onClick={() => setSelectedItem(item)}
                           initial={{ opacity: 0, y: 20 }}
                           whileInView={{ opacity: 1, y: 0 }}
                           viewport={{ once: true, margin: "-60px" }}
@@ -203,13 +300,13 @@ export default function Menu() {
                               <img
                                 src={item.imageUrl}
                                 alt={item.name}
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                               />
                             </div>
                           )}
                           <div className="flex-1 min-w-0">
                             <div className="flex justify-between items-baseline mb-2 gap-4">
-                              <h3 className="font-garamond text-[26px] leading-tight text-foreground">
+                              <h3 className="font-garamond text-[26px] leading-tight text-foreground group-hover:text-secondary transition-colors duration-200">
                                 {item.name}
                               </h3>
                               <span className="font-manrope text-[16px] font-semibold text-foreground shrink-0">
@@ -217,12 +314,15 @@ export default function Menu() {
                               </span>
                             </div>
                             {item.description && (
-                              <p className="font-manrope text-[15px] text-muted-foreground leading-relaxed pr-4">
+                              <p className="font-manrope text-[14px] text-muted-foreground leading-relaxed line-clamp-2">
                                 {item.description}
                               </p>
                             )}
+                            <span className="mt-2 block font-manrope text-[11px] uppercase tracking-[0.15em] font-semibold text-secondary opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                              View details
+                            </span>
                           </div>
-                        </motion.div>
+                        </motion.button>
                       ))}
                     </div>
                   )}
@@ -239,6 +339,11 @@ export default function Menu() {
           Est. 2024
         </p>
       </footer>
+
+      {/* Item Detail Sheet */}
+      {selectedItem && (
+        <ItemDetailSheet item={selectedItem} onClose={() => setSelectedItem(null)} />
+      )}
     </div>
   );
 }

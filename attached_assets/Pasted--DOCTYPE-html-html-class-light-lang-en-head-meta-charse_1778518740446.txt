@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600&amp;family=Manrope:wght@400;600;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-fixed": "#ffdea5",
+                    "on-primary-fixed": "#1c1b1b",
+                    "on-tertiary": "#ffffff",
+                    "surface-container-lowest": "#ffffff",
+                    "on-primary-container": "#858383",
+                    "tertiary": "#000000",
+                    "surface-bright": "#fbf9f8",
+                    "error": "#ba1a1a",
+                    "primary-fixed-dim": "#c8c6c5",
+                    "on-secondary": "#ffffff",
+                    "surface-tint": "#5f5e5e",
+                    "background": "#fbf9f8",
+                    "primary-fixed": "#e5e2e1",
+                    "inverse-surface": "#303030",
+                    "surface-container-low": "#f5f3f3",
+                    "outline-variant": "#c4c7c7",
+                    "surface-container-high": "#eae8e7",
+                    "secondary-container": "#fed488",
+                    "on-secondary-fixed": "#261900",
+                    "surface-container": "#efeded",
+                    "primary": "#000000",
+                    "surface": "#fbf9f8",
+                    "on-primary": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "on-tertiary-fixed-variant": "#474743",
+                    "on-tertiary-container": "#85847f",
+                    "on-error": "#ffffff",
+                    "tertiary-fixed-dim": "#c9c6c1",
+                    "on-error-container": "#93000a",
+                    "outline": "#747878",
+                    "on-background": "#1b1c1c",
+                    "on-surface-variant": "#444748",
+                    "on-secondary-container": "#785a1a",
+                    "inverse-primary": "#c8c6c5",
+                    "primary-container": "#1c1b1b",
+                    "on-surface": "#1b1c1c",
+                    "secondary-fixed-dim": "#e9c176",
+                    "on-tertiary-fixed": "#1c1c18",
+                    "tertiary-fixed": "#e5e2dc",
+                    "secondary": "#775a19",
+                    "inverse-on-surface": "#f2f0f0",
+                    "surface-container-highest": "#e4e2e2",
+                    "surface-dim": "#dbd9d9",
+                    "surface-variant": "#e4e2e2",
+                    "tertiary-container": "#1c1c18",
+                    "on-secondary-fixed-variant": "#5d4201",
+                    "on-primary-fixed-variant": "#474646"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "gutter": "32px",
+                    "container-max": "1280px",
+                    "margin-desktop": "64px",
+                    "margin-mobile": "20px",
+                    "unit": "8px"
+            },
+            "fontFamily": {
+                    "headline-md": ["EB Garamond"],
+                    "headline-lg": ["EB Garamond"],
+                    "label-sm": ["Manrope"],
+                    "body-md": ["Manrope"],
+                    "display-lg": ["EB Garamond"],
+                    "body-lg": ["Manrope"],
+                    "headline-lg-mobile": ["EB Garamond"]
+            },
+            "fontSize": {
+                    "headline-md": ["28px", {"lineHeight": "1.3", "fontWeight": "400"}],
+                    "headline-lg": ["40px", {"lineHeight": "1.2", "fontWeight": "400"}],
+                    "label-sm": ["12px", {"lineHeight": "1.4", "letterSpacing": "0.1em", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "display-lg": ["64px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "headline-lg-mobile": ["32px", {"lineHeight": "1.2", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>.noise-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    opacity: 0.03;
+    z-index: 9999;
+    background-image: url(https://lh3.googleusercontent.com/aida-public/AB6AXuC2gcfS5r4sJ8sXbr8L8_7aEcullPOMNM0z8-7c8ao0c3w4P1XG2asLh8GRk056PK4n_kRLuYwZ2lOq1q8W8VL3oabaslkm9vf8f9AKF5QZRk7YOyGxK6e7DnaLh1cQuAXgDzTY54oBkFfgiOVMDSyzcKk2aUQfFaEVEaPwkxoIqpj_rXWFaMkBm3wv0YHfGl93jrKTqmOAOh5zR5S5AAjDrR-q89T7TUevYzPHno9hEtyDivM4Fjol_2ISavyh8pwtXCcAknijvTR8)
+    }
+.material-symbols-outlined {
+    font-variation-settings: "FILL" 0, "wght" 300, "GRAD" 0, "opsz" 24
+    }
+.no-scrollbar::-webkit-scrollbar {
+    display: none
+    }
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none
+    }</style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface font-body-md selection:bg-secondary-fixed">
+<div class="noise-overlay"></div>
+<!-- Top Navigation Shell -->
+<nav class="bg-surface/90 backdrop-blur-md fixed top-0 w-full z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop h-20 w-full border-b border-outline-variant/20">
+<div class="flex items-center gap-4">
+<button class="active:scale-95 transition-transform duration-200">
+<span class="material-symbols-outlined text-primary" data-icon="menu">menu</span>
+</button>
+</div>
+<h1 class="font-headline-md text-headline-md text-primary tracking-tighter uppercase">ESTATE COFFEE</h1>
+<div class="flex items-center gap-4">
+<button class="active:scale-95 transition-transform duration-200">
+<span class="material-symbols-outlined text-primary" data-icon="shopping_bag">shopping_bag</span>
+</button>
+</div>
+</nav>
+<!-- Content Canvas -->
+<main class="pt-24 pb-32 max-w-screen-xl mx-auto px-margin-mobile md:px-margin-desktop">
+<!-- Hero Section -->
+<header class="py-12 md:py-20 text-center">
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-secondary mb-4 block">Seasonal Selection</span>
+<h2 class="font-display-lg text-display-lg text-primary mb-6">Our Menu</h2>
+<p class="max-w-xl mx-auto font-body-lg text-body-lg text-on-surface-variant">
+                Curated rituals for the modern connoisseur. Each harvest is hand-selected and roasted in small batches to preserve the tactile character of the bean.
+            </p>
+</header>
+<!-- Category Filter -->
+<div class="flex overflow-x-auto no-scrollbar gap-8 mb-16 border-b border-outline-variant/10 pb-4 justify-center md:justify-center">
+<button class="font-label-sm text-label-sm uppercase tracking-widest text-primary font-bold border-b-2 border-secondary pb-4 whitespace-nowrap">Single Origin</button>
+<button class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant hover:text-secondary transition-colors duration-300 pb-4 whitespace-nowrap">Artisan Espresso</button>
+<button class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant hover:text-secondary transition-colors duration-300 pb-4 whitespace-nowrap">Botanical Teas</button>
+<button class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant hover:text-secondary transition-colors duration-300 pb-4 whitespace-nowrap">Handcrafted Pastries</button>
+</div>
+<!-- Menu Section: Single Origin -->
+<section class="mb-24">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-x-24 gap-y-16">
+<!-- Item 1 -->
+<div class="flex flex-col group">
+<div class="aspect-[4/3] mb-6 overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" data-alt="A detailed close-up of a minimalist ceramic cup filled with black coffee, set against a warm stone-textured background. The lighting is soft and directional, highlighting the rich dark liquid and subtle steam. The aesthetic is extremely quiet and artisanal, focusing on textures and a monochromatic palette with warm cream tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAK81mQBBTDgd6X0Hd5vvIPzJUr7FLcfrjat8qxnNib9IUiqi1LMAeF6uxpGa7Byq3-lrky4KV1glkCoN9ezWXBMAx9DYaJS2X9HjY5B1hkb5poulvsvlhxQDp0Mgv58ErlUG3ptvmIbd_jnZO7L82ZNnVBZJS4Bx2rBxxNVMHnyrLWkLluW_jA8FFNbyEAc503W3B23mI08RmBV6yTP9E_g7wbOMsHMn1upB_NgZYjWOtGnHGON67fBceY2FP1j_0BBDtldPweXa1i"/>
+</div>
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-headline-md text-headline-md text-primary">Ethiopia Yirgacheffe</h3>
+<span class="font-body-md text-primary font-semibold">$7.50</span>
+</div>
+<div class="flex gap-2 mb-4">
+<span class="font-label-sm text-[10px] px-2 py-1 bg-secondary-fixed/30 text-secondary uppercase tracking-tighter">Floral</span>
+<span class="font-label-sm text-[10px] px-2 py-1 bg-secondary-fixed/30 text-secondary uppercase tracking-tighter">Bergamot</span>
+</div>
+<p class="font-body-md text-on-surface-variant mb-6 leading-relaxed">
+                        A delicate, tea-like profile featuring bright notes of jasmine and wild honey. Sourced from the Gedio region at 2,000 meters.
+                    </p>
+<button class="self-start flex items-center gap-2 group/btn">
+<div class="w-10 h-10 border border-primary flex items-center justify-center group-active/btn:scale-90 transition-transform">
+<span class="material-symbols-outlined text-primary" data-icon="add">add</span>
+</div>
+<span class="font-label-sm text-label-sm uppercase tracking-widest">Add to Order</span>
+</button>
+</div>
+<!-- Item 2 -->
+<div class="flex flex-col group">
+<div class="aspect-[4/3] mb-6 overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" data-alt="Professional barista pouring water into a glass dripper for a pour-over coffee service. The setting is a bright, high-end architectural cafe with minimalist wooden surfaces and marble accents. The lighting is natural and bright, creating a serene and luxurious morning atmosphere. High-end lifestyle photography style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBx9Nn1vGM7lje9W-rXt0ewqEwM0D4gbakcbq5FsAfEr94PfYcvGkj4GxkWlPFqwcpebrJ5Zrvo17LCb4_hiKs-rBlKfz9XhoD1ok_rV5vlVZcD4CgkBBbkp0dp9hBMBzfzGkZSi3y1cWJ2fmQBLGiLryYGTRJQsiKUO4qvw02zeXP7NZX9QA7m7JYkqRa1BgmvQmSggXacm0LsSxTYiwTv5Cwxe1_SKc3mw31_7wuJXLhv_cC9QeNTce9Bv4HlEzIoZlr1NyaBgSjG"/>
+</div>
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-headline-md text-headline-md text-primary">Panama Geisha</h3>
+<span class="font-body-md text-primary font-semibold">$12.00</span>
+</div>
+<div class="flex gap-2 mb-4">
+<span class="font-label-sm text-[10px] px-2 py-1 bg-secondary-fixed/30 text-secondary uppercase tracking-tighter">Apricot</span>
+<span class="font-label-sm text-[10px] px-2 py-1 bg-secondary-fixed/30 text-secondary uppercase tracking-tighter">Silk</span>
+</div>
+<p class="font-body-md text-on-surface-variant mb-6 leading-relaxed">
+                        Limited harvest from Hacienda La Esmeralda. A complex sweetness with a silky mouthfeel and lingering citrus finish.
+                    </p>
+<button class="self-start flex items-center gap-2 group/btn">
+<div class="w-10 h-10 border border-primary flex items-center justify-center group-active/btn:scale-90 transition-transform">
+<span class="material-symbols-outlined text-primary" data-icon="add">add</span>
+</div>
+<span class="font-label-sm text-label-sm uppercase tracking-widest">Add to Order</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Category Divider -->
+<div class="w-full h-[1px] bg-outline-variant/20 mb-24"></div>
+<!-- Menu Section: Artisan Espresso -->
+<section class="mb-24">
+<h2 class="font-headline-lg text-headline-lg text-primary mb-12 text-center">Artisan Espresso</h2>
+<div class="max-w-2xl mx-auto space-y-16">
+<!-- Item 3 -->
+<div class="flex items-start gap-8 border-b border-outline-variant/10 pb-12">
+<div class="flex-1">
+<div class="flex justify-between items-baseline mb-2">
+<h3 class="font-headline-md text-headline-md text-primary">Onyx Cortado</h3>
+<span class="font-body-md text-primary font-semibold">$5.50</span>
+</div>
+<p class="font-body-md text-on-surface-variant pr-12">
+                            Equal parts double-shot espresso and velvet-textured steamed milk, served in a signature 4oz faceted glass.
+                        </p>
+</div>
+<button class="w-12 h-12 border border-outline-variant flex items-center justify-center hover:bg-primary hover:text-on-primary transition-colors active:scale-90">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+</button>
+</div>
+<!-- Item 4 -->
+<div class="flex items-start gap-8 border-b border-outline-variant/10 pb-12">
+<div class="flex-1">
+<div class="flex justify-between items-baseline mb-2">
+<h3 class="font-headline-md text-headline-md text-primary">Kyoto Cold Brew</h3>
+<span class="font-body-md text-primary font-semibold">$6.50</span>
+</div>
+<p class="font-body-md text-on-surface-variant pr-12">
+                            12-hour slow-drip extraction using our architectural glass towers. Served over a single hand-carved ice sphere.
+                        </p>
+</div>
+<button class="w-12 h-12 border border-outline-variant flex items-center justify-center hover:bg-primary hover:text-on-primary transition-colors active:scale-90">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Featured Pastry Banner -->
+<section class="mb-24">
+<div class="relative bg-surface-container overflow-hidden p-margin-mobile md:p-16 flex flex-col md:flex-row items-center gap-12">
+<div class="md:w-1/2 z-10">
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-secondary mb-4 block">Fresh from the Oven</span>
+<h2 class="font-display-lg text-headline-lg text-primary mb-6">Handcrafted Pastries</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-8">
+                        Our patisserie uses exclusively AOP French butter and ancient grain flours, resulting in a 72-hour lamination process.
+                    </p>
+<button class="bg-primary text-on-primary px-8 py-4 font-label-sm text-label-sm uppercase tracking-widest hover:opacity-90 transition-opacity">View Bakery Collection</button>
+</div>
+<div class="md:w-1/2 w-full h-80 md:h-[400px]">
+<img class="w-full h-full object-cover" data-alt="A minimalist presentation of a perfectly laminated golden-brown croissant resting on a simple stone plate. The background is a clean cream surface with soft morning shadows. The photo has a slightly warm, film-grain texture, emphasizing the flaky layers and artisanal quality of the pastry. Minimalist food photography." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAkXE9k-09FbBW88WgeF1oCfl0jJp6nGW_OASs-AXYW_NJ1QVqfl-XS2D7x4ncOSCek0D4FEGC_a_GXFYsl3mgyHsEzmrE9v5ciZuBW3_Q3MvAXXmqJyQdMqPActB07AbmPysCduzPc0pPDgVJg3wjs_2eGMGUxPwFpW87KHSOgFKVzo-pvfWRuN9OXzdtBxKtgc5qfuUl-nkEAlv7M3Xr68yoB-FAVtGqiHXbQe5g9FxK4QRUDcAuErQ5momfUN05AvLLgpdNGc6ql"/>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation Shell -->
+<footer class="fixed bottom-0 left-0 w-full z-50">
+<div class="bg-surface/95 backdrop-blur-xl border-t border-outline-variant/20 flex justify-around items-center py-4 px-4 pb-safe">
+<div class="flex flex-col items-center text-on-surface-variant opacity-60 hover:opacity-100 transition-opacity duration-300">
+<span class="material-symbols-outlined mb-1" data-icon="auto_awesome">auto_awesome</span>
+<span class="font-label-sm text-[10px] uppercase tracking-widest">Featured</span>
+</div>
+<div class="flex flex-col items-center text-primary font-bold relative after:content-[''] after:absolute after:-bottom-1 after:w-1 after:h-1 after:bg-secondary after:rounded-full">
+<span class="material-symbols-outlined mb-1" data-icon="restaurant_menu">restaurant_menu</span>
+<span class="font-label-sm text-[10px] uppercase tracking-widest">Menu</span>
+</div>
+<div class="flex flex-col items-center text-on-surface-variant opacity-60 hover:opacity-100 transition-opacity duration-300">
+<span class="material-symbols-outlined mb-1" data-icon="receipt_long">receipt_long</span>
+<span class="font-label-sm text-[10px] uppercase tracking-widest">Orders</span>
+</div>
+<div class="flex flex-col items-center text-on-surface-variant opacity-60 hover:opacity-100 transition-opacity duration-300">
+<span class="material-symbols-outlined mb-1" data-icon="person">person</span>
+<span class="font-label-sm text-[10px] uppercase tracking-widest">Account</span>
+</div>
+</div>
+</footer>
+</body></html>

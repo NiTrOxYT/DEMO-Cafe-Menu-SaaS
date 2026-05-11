@@ -1,10 +1,8 @@
-import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useLocation } from "wouter";
 import { useLogin } from "@workspace/api-client-react";
-import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -15,7 +13,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
@@ -31,10 +28,7 @@ export default function AdminLogin() {
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
+    defaultValues: { email: "", password: "" },
   });
 
   const onSubmit = (data: LoginFormValues) => {
@@ -42,29 +36,28 @@ export default function AdminLogin() {
       { data },
       {
         onSuccess: () => {
-          toast({
-            title: "Welcome back",
-            description: "Successfully logged in to admin panel.",
-          });
+          toast({ title: "Welcome back", description: "Signed in successfully." });
           setLocation("/admin");
         },
-        onError: (error) => {
-          toast({
-            variant: "destructive",
-            title: "Login failed",
-            description: error.error || "Invalid credentials",
-          });
+        onError: () => {
+          toast({ variant: "destructive", title: "Login failed", description: "Invalid credentials." });
         },
       }
     );
   };
 
   return (
-    <div className="min-h-[100dvh] flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md space-y-8 bg-card p-8 sm:p-12 rounded-2xl border border-card-border shadow-xl">
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl font-serif tracking-tight text-foreground">The Golden Brew</h1>
-          <p className="text-muted-foreground">Admin Portal</p>
+    <div className="min-h-[100dvh] bg-background flex items-center justify-center px-5">
+      <div className="noise-overlay" />
+      <div className="w-full max-w-sm">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <p className="font-manrope text-[11px] uppercase tracking-[0.18em] font-semibold text-secondary mb-4">
+            Admin Portal
+          </p>
+          <h1 className="font-garamond text-[44px] leading-tight text-foreground">
+            The Golden Brew
+          </h1>
         </div>
 
         <Form {...form}>
@@ -74,11 +67,18 @@ export default function AdminLogin() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel className="font-manrope text-[11px] uppercase tracking-[0.15em] font-semibold text-muted-foreground">
+                    Email
+                  </FormLabel>
                   <FormControl>
-                    <Input placeholder="admin@goldenbrew.com" {...field} />
+                    <Input
+                      data-testid="input-email"
+                      placeholder="your@email.com"
+                      className="rounded-none border-0 border-b border-border bg-transparent px-0 py-3 font-manrope text-[15px] placeholder:text-muted-foreground/40 focus-visible:ring-0 focus-visible:border-foreground transition-colors"
+                      {...field}
+                    />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="font-manrope text-[12px]" />
                 </FormItem>
               )}
             />
@@ -87,28 +87,33 @@ export default function AdminLogin() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <FormLabel className="font-manrope text-[11px] uppercase tracking-[0.15em] font-semibold text-muted-foreground">
+                    Password
+                  </FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} />
+                    <Input
+                      data-testid="input-password"
+                      type="password"
+                      placeholder="••••••••"
+                      className="rounded-none border-0 border-b border-border bg-transparent px-0 py-3 font-manrope text-[15px] placeholder:text-muted-foreground/40 focus-visible:ring-0 focus-visible:border-foreground transition-colors"
+                      {...field}
+                    />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="font-manrope text-[12px]" />
                 </FormItem>
               )}
             />
-            <Button 
-              type="submit" 
-              className="w-full h-12 text-md mt-4"
-              disabled={loginMutation.isPending}
-            >
-              {loginMutation.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Authenticating
-                </>
-              ) : (
-                "Sign In"
-              )}
-            </Button>
+
+            <div className="pt-6">
+              <button
+                data-testid="button-submit"
+                type="submit"
+                disabled={loginMutation.isPending}
+                className="w-full bg-foreground text-background font-manrope text-[11px] uppercase tracking-[0.18em] font-semibold py-4 hover:opacity-80 transition-opacity disabled:opacity-50"
+              >
+                {loginMutation.isPending ? "Signing in..." : "Sign In"}
+              </button>
+            </div>
           </form>
         </Form>
       </div>

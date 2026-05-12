@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,16 +15,16 @@ import {
   useCreateCategory,
   useDeleteCategory
 } from "@workspace/api-client-react";
+import { useUpload } from "@workspace/object-storage-web";
 import { 
-  Loader2, LogOut, Plus, Edit2, Trash2, Image as ImageIcon, CheckCircle, XCircle, LayoutGrid
+  Loader2, LogOut, Plus, Edit2, Trash2, Image as ImageIcon, CheckCircle, XCircle, Upload, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
+  CardDescription,
 } from "@/components/ui/card";
 import {
   Table,
@@ -73,7 +73,7 @@ const menuItemSchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
   price: z.coerce.number().min(0, "Price must be positive"),
-  imageUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  imageUrl: z.string().optional().or(z.literal("")),
   categoryId: z.coerce.number().min(1, "Category is required"),
   available: z.boolean().default(true),
   sortOrder: z.coerce.number().default(0),
@@ -86,6 +86,110 @@ const categorySchema = z.object({
 
 type MenuItemFormValues = z.infer<typeof menuItemSchema>;
 type CategoryFormValues = z.infer<typeof categorySchema>;
+
+function getImageSrc(imageUrl: string | undefined | null): string | null {
+  if (!imageUrl) return null;
+  if (imageUrl.startsWith("/objects/")) return `/api/storage${imageUrl}`;
+  return imageUrl;
+}
+
+function ImageUploadField({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (url: string) => void;
+}) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [preview, setPreview] = useState<string | null>(getImageSrc(value));
+
+  const { uploadFile, isUploading, progress } = useUpload({
+    onSuccess: (res) => {
+      onChange(res.objectPath);
+      setPreview(`/api/storage${res.objectPath}`);
+    },
+  });
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const localPreview = URL.createObjectURL(file);
+    setPreview(localPreview);
+    await uploadFile(file);
+  };
+
+  const handleClear = () => {
+    onChange("");
+    setPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  return (
+    <div className="space-y-2">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileChange}
+        disabled={isUploading}
+      />
+
+      {preview ? (
+        <div className="relative w-full h-40 rounded-lg overflow-hidden border border-border bg-muted">
+          <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+          {isUploading && (
+            <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-2">
+              <Loader2 className="h-6 w-6 animate-spin text-white" />
+              <span className="text-white text-sm">{progress}%</span>
+            </div>
+          )}
+          {!isUploading && (
+            <button
+              type="button"
+              onClick={handleClear}
+              className="absolute top-2 right-2 rounded-full bg-black/60 p-1 text-white hover:bg-black/80"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isUploading}
+          className="w-full h-40 rounded-lg border-2 border-dashed border-border hover:border-primary/50 bg-muted/30 hover:bg-muted/60 transition-colors flex flex-col items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
+        >
+          <Upload className="h-8 w-8" />
+          <span className="text-sm font-medium">Click to upload image</span>
+          <span className="text-xs">JPG, PNG, WebP, GIF</span>
+        </button>
+      )}
+
+      {!isUploading && !preview && (
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="hidden"
+        />
+      )}
+
+      {preview && !isUploading && (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="w-full"
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <Upload className="h-4 w-4 mr-2" />
+          Change image
+        </Button>
+      )}
+    </div>
+  );
+}
 
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
@@ -308,7 +412,7 @@ export default function AdminDashboard() {
                     Add Item
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[500px]">
+                <DialogContent className="sm:max-w-[520px] max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>{editingItem ? "Edit Menu Item" : "Add Menu Item"}</DialogTitle>
                   </DialogHeader>
@@ -319,7 +423,7 @@ export default function AdminDashboard() {
                       )} />
                       <div className="grid grid-cols-2 gap-4">
                         <FormField control={itemForm.control} name="price" render={({ field }) => (
-                          <FormItem><FormLabel>Price ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
+                          <FormItem><FormLabel>Price (₹)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
                         <FormField control={itemForm.control} name="categoryId" render={({ field }) => (
                           <FormItem>
@@ -341,9 +445,24 @@ export default function AdminDashboard() {
                       <FormField control={itemForm.control} name="description" render={({ field }) => (
                         <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
                       )} />
-                      <FormField control={itemForm.control} name="imageUrl" render={({ field }) => (
-                        <FormItem><FormLabel>Image URL</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>
-                      )} />
+
+                      <FormField
+                        control={itemForm.control}
+                        name="imageUrl"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Image</FormLabel>
+                            <FormControl>
+                              <ImageUploadField
+                                value={field.value ?? ""}
+                                onChange={field.onChange}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
                       <div className="grid grid-cols-2 gap-4">
                         <FormField control={itemForm.control} name="sortOrder" render={({ field }) => (
                           <FormItem><FormLabel>Sort Order</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
@@ -385,53 +504,56 @@ export default function AdminDashboard() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    items?.sort((a, b) => a.categoryId - b.categoryId || a.sortOrder - b.sortOrder).map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell>
-                          {item.imageUrl ? (
-                            <div className="w-10 h-10 rounded-md overflow-hidden bg-muted">
-                              <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                    items?.sort((a, b) => a.categoryId - b.categoryId || a.sortOrder - b.sortOrder).map((item) => {
+                      const imgSrc = getImageSrc(item.imageUrl);
+                      return (
+                        <TableRow key={item.id}>
+                          <TableCell>
+                            {imgSrc ? (
+                              <div className="w-10 h-10 rounded-md overflow-hidden bg-muted">
+                                <img src={imgSrc} alt={item.name} className="w-full h-full object-cover" />
+                              </div>
+                            ) : (
+                              <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center text-muted-foreground">
+                                <ImageIcon className="h-4 w-4" />
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell className="font-medium">{item.name}</TableCell>
+                          <TableCell>{item.categoryName}</TableCell>
+                          <TableCell>₹{item.price.toFixed(2)}</TableCell>
+                          <TableCell>
+                            {item.available ? (
+                              <Badge variant="outline" className="bg-green-500/10 text-green-500 hover:bg-green-500/20 border-green-500/20">
+                                <CheckCircle className="w-3 h-3 mr-1" />
+                                Available
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/20">
+                                <XCircle className="w-3 h-3 mr-1" />
+                                Unavailable
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <Button variant="ghost" size="icon" onClick={() => openEditItemDialog(item)}>
+                                <Edit2 className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                onClick={() => handleDeleteItem(item.id)}
+                                disabled={deleteItemMutation.isPending && deleteItemMutation.variables?.id === item.id}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </div>
-                          ) : (
-                            <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center text-muted-foreground">
-                              <ImageIcon className="h-4 w-4" />
-                            </div>
-                          )}
-                        </TableCell>
-                        <TableCell className="font-medium">{item.name}</TableCell>
-                        <TableCell>{item.categoryName}</TableCell>
-                        <TableCell>${item.price.toFixed(2)}</TableCell>
-                        <TableCell>
-                          {item.available ? (
-                            <Badge variant="outline" className="bg-green-500/10 text-green-500 hover:bg-green-500/20 border-green-500/20">
-                              <CheckCircle className="w-3 h-3 mr-1" />
-                              Available
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/20">
-                              <XCircle className="w-3 h-3 mr-1" />
-                              Unavailable
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <Button variant="ghost" size="icon" onClick={() => openEditItemDialog(item)}>
-                              <Edit2 className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                              onClick={() => handleDeleteItem(item.id)}
-                              disabled={deleteItemMutation.isPending && deleteItemMutation.variables?.id === item.id}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>

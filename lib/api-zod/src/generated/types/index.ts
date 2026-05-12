@@ -19,3 +19,5 @@ export * from "./menuItemInput";
 export * from "./menuItemUpdate";
 export * from "./menuSummary";
 export * from "./successResponse";
+export * from "./uploadUrlRequest";
+export * from "./uploadUrlResponse";

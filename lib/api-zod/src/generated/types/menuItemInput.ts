@@ -14,4 +14,7 @@ export interface MenuItemInput {
   categoryId: number;
   available?: boolean;
   sortOrder?: number;
+  isVeg?: boolean;
+  isBestseller?: boolean;
+  isSpicy?: boolean;
 }

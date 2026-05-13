@@ -14,4 +14,7 @@ export interface MenuItemUpdate {
   categoryId?: number;
   available?: boolean;
   sortOrder?: number;
+  isVeg?: boolean;
+  isBestseller?: boolean;
+  isSpicy?: boolean;
 }

@@ -16,6 +16,10 @@ tags:
     description: Menu items
   - name: categories
     description: Menu categories
+  - name: orders
+    description: Customer orders
+  - name: settings
+    description: Restaurant settings
   - name: Storage
     description: Object storage upload and serving endpoints.
 paths:
@@ -249,6 +253,112 @@ paths:
               schema:
                 $ref: "#/components/schemas/SuccessResponse"
 
+  /orders:
+    get:
+      operationId: listOrders
+      tags: [orders]
+      summary: List all orders (admin)
+      responses:
+        "200":
+          description: List of orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+    post:
+      operationId: createOrder
+      tags: [orders]
+      summary: Create a new order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrderInput"
+      responses:
+        "201":
+          description: Created order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+
+  /orders/{id}/status:
+    patch:
+      operationId: updateOrderStatus
+      tags: [orders]
+      summary: Update order status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateOrderStatusInput"
+      responses:
+        "200":
+          description: Updated order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+
+  /orders/{id}:
+    delete:
+      operationId: deleteOrder
+      tags: [orders]
+      summary: Delete an order
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /settings:
+    get:
+      operationId: getSettings
+      tags: [settings]
+      summary: Get restaurant settings
+      responses:
+        "200":
+          description: Restaurant settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RestaurantSettings"
+    patch:
+      operationId: updateSettings
+      tags: [settings]
+      summary: Update restaurant settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSettingsInput"
+      responses:
+        "200":
+          description: Updated settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RestaurantSettings"
+
   /storage/uploads/request-url:
     post:
       tags: [Storage]
@@ -392,7 +502,7 @@ components:
 
     MenuItem:
       type: object
-      required: [id, name, price, categoryId, available, sortOrder]
+      required: [id, name, price, categoryId, available, sortOrder, isVeg, isBestseller, isSpicy]
       properties:
         id:
           type: integer
@@ -412,6 +522,12 @@ components:
           type: boolean
         sortOrder:
           type: integer
+        isVeg:
+          type: boolean
+        isBestseller:
+          type: boolean
+        isSpicy:
+          type: boolean
 
     MenuItemInput:
       type: object
@@ -431,6 +547,12 @@ components:
           type: boolean
         sortOrder:
           type: integer
+        isVeg:
+          type: boolean
+        isBestseller:
+          type: boolean
+        isSpicy:
+          type: boolean
 
     MenuItemUpdate:
       type: object
@@ -449,6 +571,122 @@ components:
           type: boolean
         sortOrder:
           type: integer
+        isVeg:
+          type: boolean
+        isBestseller:
+          type: boolean
+        isSpicy:
+          type: boolean
+
+    OrderItem:
+      type: object
+      required: [id, name, price, quantity]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        price:
+          type: number
+        quantity:
+          type: integer
+        imageUrl:
+          type: ["string", "null"]
+
+    Order:
+      type: object
+      required: [id, items, totalAmount, status, whatsappSent, createdAt]
+      properties:
+        id:
+          type: integer
+        tableNumber:
+          type: ["string", "null"]
+        customerName:
+          type: ["string", "null"]
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderItem"
+        totalAmount:
+          type: number
+        status:
+          type: string
+          enum: [pending, preparing, ready, completed, cancelled]
+        whatsappSent:
+          type: boolean
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateOrderInput:
+      type: object
+      required: [items, totalAmount]
+      properties:
+        tableNumber:
+          type: string
+        customerName:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderItem"
+        totalAmount:
+          type: number
+        notes:
+          type: string
+
+    UpdateOrderStatusInput:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [pending, preparing, ready, completed, cancelled]
+
+    RestaurantSettings:
+      type: object
+      required: [id, restaurantName, primaryColor]
+      properties:
+        id:
+          type: integer
+        restaurantName:
+          type: string
+        address:
+          type: ["string", "null"]
+        whatsappNumber:
+          type: ["string", "null"]
+        openingHours:
+          type: ["string", "null"]
+        logoUrl:
+          type: ["string", "null"]
+        bannerUrl:
+          type: ["string", "null"]
+        primaryColor:
+          type: string
+        tagline:
+          type: ["string", "null"]
+
+    UpdateSettingsInput:
+      type: object
+      properties:
+        restaurantName:
+          type: string
+        address:
+          type: string
+        whatsappNumber:
+          type: string
+        openingHours:
+          type: string
+        logoUrl:
+          type: string
+        bannerUrl:
+          type: string
+        primaryColor:
+          type: string
+        tagline:
+          type: string
 
     UploadUrlRequest:
       type: object

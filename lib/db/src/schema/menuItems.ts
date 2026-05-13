@@ -11,6 +11,9 @@ export const menuItemsTable = pgTable("menu_items", {
   categoryId: integer("category_id").notNull(),
   available: boolean("available").notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(0),
+  isVeg: boolean("is_veg").notNull().default(true),
+  isBestseller: boolean("is_bestseller").notNull().default(false),
+  isSpicy: boolean("is_spicy").notNull().default(false),
 });
 
 export const insertMenuItemSchema = createInsertSchema(menuItemsTable).omit({ id: true });

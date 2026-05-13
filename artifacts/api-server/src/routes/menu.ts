@@ -65,6 +65,9 @@ router.get("/menu", async (req, res) => {
         categoryName: categoriesTable.name,
         available: menuItemsTable.available,
         sortOrder: menuItemsTable.sortOrder,
+        isVeg: menuItemsTable.isVeg,
+        isBestseller: menuItemsTable.isBestseller,
+        isSpicy: menuItemsTable.isSpicy,
       })
       .from(menuItemsTable)
       .leftJoin(categoriesTable, eq(menuItemsTable.categoryId, categoriesTable.id))
@@ -103,6 +106,9 @@ router.post("/menu", async (req, res) => {
         categoryId: parsed.data.categoryId,
         available: parsed.data.available ?? true,
         sortOrder: parsed.data.sortOrder ?? 0,
+        isVeg: parsed.data.isVeg ?? true,
+        isBestseller: parsed.data.isBestseller ?? false,
+        isSpicy: parsed.data.isSpicy ?? false,
       })
       .returning();
 
@@ -142,6 +148,9 @@ router.get("/menu/:id", async (req, res) => {
         categoryName: categoriesTable.name,
         available: menuItemsTable.available,
         sortOrder: menuItemsTable.sortOrder,
+        isVeg: menuItemsTable.isVeg,
+        isBestseller: menuItemsTable.isBestseller,
+        isSpicy: menuItemsTable.isSpicy,
       })
       .from(menuItemsTable)
       .leftJoin(categoriesTable, eq(menuItemsTable.categoryId, categoriesTable.id))
@@ -154,7 +163,7 @@ router.get("/menu/:id", async (req, res) => {
 
     res.json({ ...item, price: Number(item.price) });
   } catch (err) {
-    req.log.error({ err }, "Failed to get menu item" );
+    req.log.error({ err }, "Failed to get menu item");
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -184,6 +193,9 @@ router.patch("/menu/:id", async (req, res) => {
     if (b.categoryId !== undefined) updateData.categoryId = b.categoryId;
     if (b.available !== undefined) updateData.available = b.available;
     if (b.sortOrder !== undefined) updateData.sortOrder = b.sortOrder;
+    if (b.isVeg !== undefined) updateData.isVeg = b.isVeg;
+    if (b.isBestseller !== undefined) updateData.isBestseller = b.isBestseller;
+    if (b.isSpicy !== undefined) updateData.isSpicy = b.isSpicy;
 
     const [item] = await db
       .update(menuItemsTable)

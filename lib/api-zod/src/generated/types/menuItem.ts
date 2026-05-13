@@ -19,4 +19,7 @@ export interface MenuItem {
   categoryName?: string | null;
   available: boolean;
   sortOrder: number;
+  isVeg: boolean;
+  isBestseller: boolean;
+  isSpicy: boolean;
 }

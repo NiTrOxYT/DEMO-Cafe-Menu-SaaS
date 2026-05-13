@@ -55,6 +55,9 @@ export interface MenuItem {
   categoryName?: string | null;
   available: boolean;
   sortOrder: number;
+  isVeg: boolean;
+  isBestseller: boolean;
+  isSpicy: boolean;
 }
 
 export interface MenuItemInput {
@@ -65,6 +68,9 @@ export interface MenuItemInput {
   categoryId: number;
   available?: boolean;
   sortOrder?: number;
+  isVeg?: boolean;
+  isBestseller?: boolean;
+  isSpicy?: boolean;
 }
 
 export interface MenuItemUpdate {
@@ -75,6 +81,95 @@ export interface MenuItemUpdate {
   categoryId?: number;
   available?: boolean;
   sortOrder?: number;
+  isVeg?: boolean;
+  isBestseller?: boolean;
+  isSpicy?: boolean;
+}
+
+export interface OrderItem {
+  id: number;
+  name: string;
+  price: number;
+  quantity: number;
+  /** @nullable */
+  imageUrl?: string | null;
+}
+
+export type OrderStatus = (typeof OrderStatus)[keyof typeof OrderStatus];
+
+export const OrderStatus = {
+  pending: "pending",
+  preparing: "preparing",
+  ready: "ready",
+  completed: "completed",
+  cancelled: "cancelled",
+} as const;
+
+export interface Order {
+  id: number;
+  /** @nullable */
+  tableNumber?: string | null;
+  /** @nullable */
+  customerName?: string | null;
+  items: OrderItem[];
+  totalAmount: number;
+  status: OrderStatus;
+  whatsappSent: boolean;
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
+}
+
+export interface CreateOrderInput {
+  tableNumber?: string;
+  customerName?: string;
+  items: OrderItem[];
+  totalAmount: number;
+  notes?: string;
+}
+
+export type UpdateOrderStatusInputStatus =
+  (typeof UpdateOrderStatusInputStatus)[keyof typeof UpdateOrderStatusInputStatus];
+
+export const UpdateOrderStatusInputStatus = {
+  pending: "pending",
+  preparing: "preparing",
+  ready: "ready",
+  completed: "completed",
+  cancelled: "cancelled",
+} as const;
+
+export interface UpdateOrderStatusInput {
+  status: UpdateOrderStatusInputStatus;
+}
+
+export interface RestaurantSettings {
+  id: number;
+  restaurantName: string;
+  /** @nullable */
+  address?: string | null;
+  /** @nullable */
+  whatsappNumber?: string | null;
+  /** @nullable */
+  openingHours?: string | null;
+  /** @nullable */
+  logoUrl?: string | null;
+  /** @nullable */
+  bannerUrl?: string | null;
+  primaryColor: string;
+  /** @nullable */
+  tagline?: string | null;
+}
+
+export interface UpdateSettingsInput {
+  restaurantName?: string;
+  address?: string;
+  whatsappNumber?: string;
+  openingHours?: string;
+  logoUrl?: string;
+  bannerUrl?: string;
+  primaryColor?: string;
+  tagline?: string;
 }
 
 export interface UploadUrlRequest {

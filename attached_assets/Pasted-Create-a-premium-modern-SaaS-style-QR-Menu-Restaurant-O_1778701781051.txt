@@ -1,0 +1,191 @@
+Create a premium modern SaaS-style QR Menu + Restaurant Ordering web app for cafés, food carts, bakeries, cloud kitchens, and small restaurants.
+
+The design must look premium enough that local businesses are willing to pay monthly for it.
+
+Target audience:
+
+* Cafés
+* Tea stalls
+* Small restaurants
+* Food trucks
+* Bakeries
+* Juice shops
+* College food courts
+
+The app must feel like a lightweight version of Zomato/Swiggy combined with a modern restaurant admin panel.
+
+STYLE REQUIREMENTS:
+
+* Modern UI/UX
+* Minimal but luxurious
+* Mobile-first responsive design
+* Smooth animations and transitions
+* Rounded corners
+* Glassmorphism or soft shadow cards
+* Premium typography
+* Fast loading
+* Clean spacing
+* No clutter
+* Use dark elegant café-style colors:
+
+  * black
+  * charcoal
+  * cream
+  * coffee brown
+  * gold accents
+* Avoid generic Bootstrap look
+* Make it feel startup-grade
+
+CUSTOMER FEATURES:
+
+1. QR Code Digital Menu
+
+* Customer scans QR code
+* Opens menu instantly
+* No app installation needed
+
+2. Beautiful Menu UI
+
+* Food cards with:
+
+  * image
+  * name
+  * price
+  * description
+  * veg/non-veg indicator
+  * bestseller badge
+  * spicy indicator
+* Categories:
+
+  * Coffee
+  * Tea
+  * Pizza
+  * Burger
+  * Desserts
+  * Snacks
+  * Drinks
+
+3. Search + Filters
+
+* Search food
+* Filter by category
+* Veg/non-veg filter
+
+4. Cart System
+
+* Add to cart
+* Increase/decrease quantity
+* Live total update
+* Floating cart button on mobile
+
+5. WhatsApp Order Integration
+
+* “Place Order” button
+* Sends formatted order to restaurant WhatsApp number
+
+6. Table-based Ordering
+
+* QR per table
+* Detect table number automatically
+
+7. Premium Landing Page
+   Include:
+
+* Hero section
+* Restaurant branding
+* Featured dishes
+* Testimonials
+* QR demo section
+* CTA buttons
+
+8. Customer Experience
+
+* Smooth loading animation
+* Skeleton loaders
+* Toast notifications
+* Mobile swipe-friendly design
+
+ADMIN PANEL FEATURES:
+
+1. Secure Admin Login
+
+2. Dashboard
+
+* Total orders
+* Popular items
+* Revenue estimate
+* Daily stats
+
+3. Menu Management
+
+* Add/edit/delete items
+* Upload food images
+* Edit price
+* Toggle availability
+* Manage categories
+
+4. QR Code Generator
+
+* Generate QR code for each table
+* Download QR PNG
+
+5. Order Management
+
+* Incoming orders
+* Pending/completed status
+* Order history
+
+6. Theme Customization
+
+* Change restaurant colors
+* Upload logo
+* Change banner image
+
+7. Restaurant Settings
+
+* Restaurant name
+* Address
+* WhatsApp number
+* Opening hours
+
+TECH REQUIREMENTS:
+
+* Build using modern frontend stack
+* Responsive on all devices
+* Optimized performance
+* Clean component structure
+* Modern reusable UI components
+* Smooth page transitions
+* Use local storage or database support
+* Add realistic sample restaurant data
+
+EXTRA PREMIUM FEATURES:
+
+* Dark/light mode toggle
+* Animated hero section
+* Sticky bottom navigation on mobile
+* Floating WhatsApp support button
+* QR preview modal
+* Trending dishes section
+* Recommended items carousel
+* Instagram-style food gallery
+
+MAKE THE APP FEEL:
+
+* Premium
+* Clean
+* Modern
+* Fast
+* Professional
+* Easy for non-technical restaurant owners
+
+DO NOT MAKE:
+
+* Generic admin dashboard
+* Basic Bootstrap styling
+* Cluttered forms
+* Old-fashioned tables
+* Cheap-looking UI
+
+FINAL GOAL:
+The final app should look polished enough that a freelancer can confidently sell it to local cafés and restaurants for ₹5,000–₹25,000 or offer it as a monthly SaaS subscription.

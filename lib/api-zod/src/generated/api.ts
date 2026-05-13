@@ -91,6 +91,9 @@ export const ListMenuItemsResponseItem = zod.object({
   categoryName: zod.string().nullish(),
   available: zod.boolean(),
   sortOrder: zod.number(),
+  isVeg: zod.boolean(),
+  isBestseller: zod.boolean(),
+  isSpicy: zod.boolean(),
 });
 export const ListMenuItemsResponse = zod.array(ListMenuItemsResponseItem);
 
@@ -105,6 +108,9 @@ export const CreateMenuItemBody = zod.object({
   categoryId: zod.number(),
   available: zod.boolean().optional(),
   sortOrder: zod.number().optional(),
+  isVeg: zod.boolean().optional(),
+  isBestseller: zod.boolean().optional(),
+  isSpicy: zod.boolean().optional(),
 });
 
 /**
@@ -124,6 +130,9 @@ export const GetMenuItemResponse = zod.object({
   categoryName: zod.string().nullish(),
   available: zod.boolean(),
   sortOrder: zod.number(),
+  isVeg: zod.boolean(),
+  isBestseller: zod.boolean(),
+  isSpicy: zod.boolean(),
 });
 
 /**
@@ -141,6 +150,9 @@ export const UpdateMenuItemBody = zod.object({
   categoryId: zod.number().optional(),
   available: zod.boolean().optional(),
   sortOrder: zod.number().optional(),
+  isVeg: zod.boolean().optional(),
+  isBestseller: zod.boolean().optional(),
+  isSpicy: zod.boolean().optional(),
 });
 
 export const UpdateMenuItemResponse = zod.object({
@@ -153,6 +165,9 @@ export const UpdateMenuItemResponse = zod.object({
   categoryName: zod.string().nullish(),
   available: zod.boolean(),
   sortOrder: zod.number(),
+  isVeg: zod.boolean(),
+  isBestseller: zod.boolean(),
+  isSpicy: zod.boolean(),
 });
 
 /**
@@ -164,6 +179,132 @@ export const DeleteMenuItemParams = zod.object({
 
 export const DeleteMenuItemResponse = zod.object({
   success: zod.boolean(),
+});
+
+/**
+ * @summary List all orders (admin)
+ */
+export const ListOrdersResponseItem = zod.object({
+  id: zod.number(),
+  tableNumber: zod.string().nullish(),
+  customerName: zod.string().nullish(),
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      name: zod.string(),
+      price: zod.number(),
+      quantity: zod.number(),
+      imageUrl: zod.string().nullish(),
+    }),
+  ),
+  totalAmount: zod.number(),
+  status: zod.enum(["pending", "preparing", "ready", "completed", "cancelled"]),
+  whatsappSent: zod.boolean(),
+  notes: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+});
+export const ListOrdersResponse = zod.array(ListOrdersResponseItem);
+
+/**
+ * @summary Create a new order
+ */
+export const CreateOrderBody = zod.object({
+  tableNumber: zod.string().optional(),
+  customerName: zod.string().optional(),
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      name: zod.string(),
+      price: zod.number(),
+      quantity: zod.number(),
+      imageUrl: zod.string().nullish(),
+    }),
+  ),
+  totalAmount: zod.number(),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Update order status
+ */
+export const UpdateOrderStatusParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateOrderStatusBody = zod.object({
+  status: zod.enum(["pending", "preparing", "ready", "completed", "cancelled"]),
+});
+
+export const UpdateOrderStatusResponse = zod.object({
+  id: zod.number(),
+  tableNumber: zod.string().nullish(),
+  customerName: zod.string().nullish(),
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      name: zod.string(),
+      price: zod.number(),
+      quantity: zod.number(),
+      imageUrl: zod.string().nullish(),
+    }),
+  ),
+  totalAmount: zod.number(),
+  status: zod.enum(["pending", "preparing", "ready", "completed", "cancelled"]),
+  whatsappSent: zod.boolean(),
+  notes: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete an order
+ */
+export const DeleteOrderParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const DeleteOrderResponse = zod.object({
+  success: zod.boolean(),
+});
+
+/**
+ * @summary Get restaurant settings
+ */
+export const GetSettingsResponse = zod.object({
+  id: zod.number(),
+  restaurantName: zod.string(),
+  address: zod.string().nullish(),
+  whatsappNumber: zod.string().nullish(),
+  openingHours: zod.string().nullish(),
+  logoUrl: zod.string().nullish(),
+  bannerUrl: zod.string().nullish(),
+  primaryColor: zod.string(),
+  tagline: zod.string().nullish(),
+});
+
+/**
+ * @summary Update restaurant settings
+ */
+export const UpdateSettingsBody = zod.object({
+  restaurantName: zod.string().optional(),
+  address: zod.string().optional(),
+  whatsappNumber: zod.string().optional(),
+  openingHours: zod.string().optional(),
+  logoUrl: zod.string().optional(),
+  bannerUrl: zod.string().optional(),
+  primaryColor: zod.string().optional(),
+  tagline: zod.string().optional(),
+});
+
+export const UpdateSettingsResponse = zod.object({
+  id: zod.number(),
+  restaurantName: zod.string(),
+  address: zod.string().nullish(),
+  whatsappNumber: zod.string().nullish(),
+  openingHours: zod.string().nullish(),
+  logoUrl: zod.string().nullish(),
+  bannerUrl: zod.string().nullish(),
+  primaryColor: zod.string(),
+  tagline: zod.string().nullish(),
 });
 
 /**

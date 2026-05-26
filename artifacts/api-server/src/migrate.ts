@@ -82,7 +82,7 @@ async function run() {
     // 2. Seed default settings (only if table empty)
     // ──────────────────────────────────────────────
     const { rows: settingsRows } = await client.query(
-      "SELECT id FROM restaurant_settings LIMIT 1"
+      "SELECT id FROM restaurant_settings LIMIT 1",
     );
     if (settingsRows.length === 0) {
       await client.query(`
@@ -100,7 +100,7 @@ async function run() {
     // 3. Seed categories + menu items (only if empty)
     // ──────────────────────────────────────────────
     const { rows: catRows } = await client.query(
-      "SELECT id FROM categories LIMIT 1"
+      "SELECT id FROM categories LIMIT 1",
     );
     if (catRows.length > 0) {
       console.log("Categories already exist — skipping seed.");
@@ -110,17 +110,17 @@ async function run() {
     console.log("Seeding categories...");
 
     const categories = [
-      { name: "Coffee",              sort_order: 0 },
-      { name: "Tea & Cold Drinks",   sort_order: 1 },
-      { name: "Food & Pastries",     sort_order: 2 },
-      { name: "Desserts",            sort_order: 3 },
+      { name: "Coffee", sort_order: 0 },
+      { name: "Tea & Cold Drinks", sort_order: 1 },
+      { name: "Food & Pastries", sort_order: 2 },
+      { name: "Desserts", sort_order: 3 },
     ];
 
     const catIds: Record<string, number> = {};
     for (const cat of categories) {
       const { rows } = await client.query(
         "INSERT INTO categories (name, sort_order) VALUES ($1, $2) RETURNING id",
-        [cat.name, cat.sort_order]
+        [cat.name, cat.sort_order],
       );
       catIds[cat.name] = rows[0].id;
     }
@@ -141,7 +141,8 @@ async function run() {
       // ── Coffee ────────────────────────────────────
       {
         name: "Espresso",
-        description: "A rich, bold shot of pure arabica — the heart of every great coffee.",
+        description:
+          "A rich, bold shot of pure arabica — the heart of every great coffee.",
         price: 120,
         category: "Coffee",
         is_veg: true,
@@ -150,7 +151,8 @@ async function run() {
       },
       {
         name: "Cappuccino",
-        description: "Velvety espresso topped with thick microfoam and a dusting of cocoa.",
+        description:
+          "Velvety espresso topped with thick microfoam and a dusting of cocoa.",
         price: 180,
         category: "Coffee",
         is_veg: true,
@@ -159,7 +161,8 @@ async function run() {
       },
       {
         name: "Café Latte",
-        description: "Smooth espresso with steamed milk and a light layer of foam.",
+        description:
+          "Smooth espresso with steamed milk and a light layer of foam.",
         price: 200,
         category: "Coffee",
         is_veg: true,
@@ -176,7 +179,8 @@ async function run() {
       },
       {
         name: "Caramel Macchiato",
-        description: "Layers of vanilla syrup, steamed milk, espresso and caramel drizzle.",
+        description:
+          "Layers of vanilla syrup, steamed milk, espresso and caramel drizzle.",
         price: 240,
         category: "Coffee",
         is_veg: true,
@@ -185,7 +189,8 @@ async function run() {
       // ── Tea & Cold Drinks ─────────────────────────
       {
         name: "Masala Chai",
-        description: "Aromatic Indian spiced tea brewed with ginger, cardamom and cinnamon.",
+        description:
+          "Aromatic Indian spiced tea brewed with ginger, cardamom and cinnamon.",
         price: 90,
         category: "Tea & Cold Drinks",
         is_veg: true,
@@ -202,7 +207,8 @@ async function run() {
       },
       {
         name: "Fresh Lime Soda",
-        description: "Freshly squeezed limes, sparkling water, rock salt — pure refreshment.",
+        description:
+          "Freshly squeezed limes, sparkling water, rock salt — pure refreshment.",
         price: 110,
         category: "Tea & Cold Drinks",
         is_veg: true,
@@ -210,7 +216,8 @@ async function run() {
       },
       {
         name: "Mango Smoothie",
-        description: "Alphonso mango blended with yoghurt and a touch of cardamom.",
+        description:
+          "Alphonso mango blended with yoghurt and a touch of cardamom.",
         price: 190,
         category: "Tea & Cold Drinks",
         is_veg: true,
@@ -220,7 +227,8 @@ async function run() {
       // ── Food & Pastries ────────────────────────────
       {
         name: "Butter Croissant",
-        description: "Flaky, golden, layered with real French butter. Baked fresh each morning.",
+        description:
+          "Flaky, golden, layered with real French butter. Baked fresh each morning.",
         price: 150,
         category: "Food & Pastries",
         is_veg: true,
@@ -229,7 +237,8 @@ async function run() {
       },
       {
         name: "Avocado Toast",
-        description: "Sourdough, smashed avocado, chilli flakes, poached egg and microgreens.",
+        description:
+          "Sourdough, smashed avocado, chilli flakes, poached egg and microgreens.",
         price: 280,
         category: "Food & Pastries",
         is_veg: true,
@@ -237,7 +246,8 @@ async function run() {
       },
       {
         name: "Spicy Chicken Sandwich",
-        description: "Grilled chicken, sriracha mayo, pickled jalapeños and crisp lettuce.",
+        description:
+          "Grilled chicken, sriracha mayo, pickled jalapeños and crisp lettuce.",
         price: 320,
         category: "Food & Pastries",
         is_veg: false,
@@ -246,7 +256,8 @@ async function run() {
       },
       {
         name: "Banana Walnut Muffin",
-        description: "Moist banana muffin studded with toasted walnuts and brown sugar.",
+        description:
+          "Moist banana muffin studded with toasted walnuts and brown sugar.",
         price: 130,
         category: "Food & Pastries",
         is_veg: true,
@@ -255,7 +266,8 @@ async function run() {
       // ── Desserts ───────────────────────────────────
       {
         name: "Chocolate Brownie",
-        description: "Dense, fudgy dark chocolate brownie with a sea-salt caramel swirl.",
+        description:
+          "Dense, fudgy dark chocolate brownie with a sea-salt caramel swirl.",
         price: 180,
         category: "Desserts",
         is_veg: true,
@@ -264,7 +276,8 @@ async function run() {
       },
       {
         name: "New York Cheesecake",
-        description: "Classic baked cheesecake on a buttery graham cracker crust.",
+        description:
+          "Classic baked cheesecake on a buttery graham cracker crust.",
         price: 240,
         category: "Desserts",
         is_veg: true,
@@ -272,7 +285,8 @@ async function run() {
       },
       {
         name: "Tiramisu",
-        description: "Espresso-soaked ladyfingers, mascarpone cream, dusted with premium cocoa.",
+        description:
+          "Espresso-soaked ladyfingers, mascarpone cream, dusted with premium cocoa.",
         price: 260,
         category: "Desserts",
         is_veg: true,
@@ -296,14 +310,14 @@ async function run() {
           item.is_bestseller ?? false,
           item.is_spicy ?? false,
           item.sort_order,
-        ]
+        ],
       );
     }
 
     console.log(`Seeded ${items.length} menu items.`);
     console.log("");
     console.log("✓ Migration complete.");
-    console.log("  Admin login: sourikaich7@gmail.com / sourik");
+    console.log("  Admin login: twister.admin@gmail.com / admin123");
   } finally {
     client.release();
     await pool.end();

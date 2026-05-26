@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { QrCode, Download, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useGetSettings } from "@workspace/api-client-react";
+import { useGetSettings } from "@/lib/api";
 
 function getMenuUrl(table?: string) {
   const base = window.location.origin + (import.meta.env.BASE_URL ?? "/");

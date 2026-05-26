@@ -15,8 +15,8 @@ import {
   useCreateCategory,
   useDeleteCategory,
   useListOrders,
-} from "@workspace/api-client-react";
-import { useUpload } from "@workspace/object-storage-web";
+} from "@/lib/api";
+import { useUpload } from "@/lib/storage";
 import {
   Loader2, LogOut, Plus, Edit2, Trash2, Image as ImageIcon,
   CheckCircle, XCircle, Upload, X, LayoutDashboard, UtensilsCrossed,
@@ -36,7 +36,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   getGetMeQueryKey, getListMenuItemsQueryKey,
   getGetMenuSummaryQueryKey, getListCategoriesQueryKey
-} from "@workspace/api-client-react";
+} from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import OrdersPage from "./orders";
 import QRPage from "./qr";

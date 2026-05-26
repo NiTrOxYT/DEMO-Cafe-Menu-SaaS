@@ -2,7 +2,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useLocation } from "wouter";
-import { useLogin } from "@workspace/api-client-react";
+import { useLogin } from "@/lib/api";
 import {
   Form,
   FormControl,

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useListMenuItems, useListCategories, useGetSettings, useCreateOrder } from "@workspace/api-client-react";
+import { useListMenuItems, useListCategories, useGetSettings, useCreateOrder } from "@/lib/api";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, ShoppingCart, X, Plus, Minus, Flame, Leaf, Star, ChevronDown, MessageCircle } from "lucide-react";
 
@@ -234,7 +234,7 @@ function ItemDetailOverlay({
           transition={{ type: "spring", damping: 28, stiffness: 220 }}
           style={{ background: DARK_CARD, maxHeight: "92dvh", border: `1px solid ${BORDER}` }}
           className="w-full md:max-w-3xl md:rounded-2xl overflow-hidden flex flex-col md:flex-row"
-          onClick={(e) => e.stopPropagation()}
+          onClick={(e: React.MouseEvent) => e.stopPropagation()}
         >
           {imgSrc && (
             <div className="w-full md:w-1/2 aspect-[4/3] md:aspect-auto md:min-h-[420px] flex-shrink-0 overflow-hidden">
@@ -356,7 +356,7 @@ function CartDrawer({
           transition={{ type: "spring", damping: 30, stiffness: 260 }}
           style={{ background: DARK_CARD, border: `1px solid ${BORDER}`, width: "min(100vw, 400px)" }}
           className="h-full flex flex-col"
-          onClick={(e) => e.stopPropagation()}
+          onClick={(e: React.MouseEvent) => e.stopPropagation()}
         >
           {/* Header */}
           <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: BORDER }}>

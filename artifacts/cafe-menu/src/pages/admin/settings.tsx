@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
-import { useGetSettings, useUpdateSettings } from "@workspace/api-client-react";
+import { useGetSettings, useUpdateSettings } from "@/lib/api";
 import { useQueryClient } from "@tanstack/react-query";
-import { getGetSettingsQueryKey } from "@workspace/api-client-react";
+import { getGetSettingsQueryKey } from "@/lib/api";
 import { Loader2, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { useUpload } from "@workspace/object-storage-web";
+import { useUpload } from "@/lib/storage";
 
 function getImageSrc(url?: string | null) {
   if (!url) return null;

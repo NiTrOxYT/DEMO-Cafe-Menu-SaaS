@@ -13,7 +13,7 @@ catalogs:
       specifier: ^0.1.1
       version: 0.1.2
     '@replit/vite-plugin-runtime-error-modal':
-      specifier: ^0.0.6
+      specifier: 0.0.6
       version: 0.0.6
     '@tailwindcss/vite':
       specifier: ^4.1.14
@@ -3807,6 +3807,7 @@ packages:
   recharts@2.15.4:
     resolution: {integrity: sha512-UT/q6fwS3c1dHbXv2uFgYJ9BMFHu3fwnd7AYZaEQhXuYQ4hgsxLvsUXzGdKeZrW5xopzDCvuA2N41WJ88I7zIw==}
     engines: {node: '>=14'}
+    deprecated: 1.x and 2.x branches are no longer active. Bump to Recharts v3 to receive latest features and bugfixes. See https://github.com/recharts/recharts/wiki/3.0-migration-guide
     peerDependencies:
       react: 19.1.0
       react-dom: 19.1.0

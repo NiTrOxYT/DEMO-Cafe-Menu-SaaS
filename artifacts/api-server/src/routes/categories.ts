@@ -1,8 +1,7 @@
 import { Router } from "express";
-import { db } from "@workspace/db";
-import { categoriesTable } from "@workspace/db";
+import { db, categoriesTable } from "../lib/db";
 import { eq } from "drizzle-orm";
-import { CreateCategoryBody, DeleteCategoryParams } from "@workspace/api-zod";
+import { CreateCategoryBody, DeleteCategoryParams } from "../lib/api-zod";
 import { sessions } from "./auth";
 
 const router = Router();

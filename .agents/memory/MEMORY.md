@@ -1,0 +1,1 @@
+- [Standalone conversion pattern](standalone-conversion.md) — both artifacts/api-server and artifacts/cafe-menu are standalone-deployable; lib copies live inside each artifact's src/lib/.

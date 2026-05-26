@@ -1,6 +1,5 @@
 import { Router } from "express";
-import { db } from "@workspace/db";
-import { settingsTable } from "@workspace/db";
+import { db, settingsTable } from "../lib/db";
 import { sessions } from "./auth";
 
 const router = Router();

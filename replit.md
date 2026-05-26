@@ -4,7 +4,7 @@ A premium café menu web app with a dark editorial public menu (QR-scannable) an
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000 / `PORT` env)
+- `pnpm --filter @workspace/api-server run dev` — run the API server (port 8080 / `PORT` env)
 - `pnpm --filter @workspace/cafe-menu run dev` — run the React frontend (port 25924 / `PORT` env)
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
@@ -29,23 +29,26 @@ artifacts/
   api-server/      Express API — routes, auth, OpenAPI spec
   cafe-menu/       React frontend (also standalone Vercel-deployable)
 lib/
-  db/              Drizzle schema + migrations
+  db/              Drizzle schema + migrations (source of truth)
   api-spec/        OpenAPI YAML + Orval codegen config
   api-client-react/ Generated React Query hooks (source of truth from codegen)
 ```
 
-- DB schema: `lib/db/src/schema.ts`
+- DB schema source of truth: `lib/db/src/schema.ts`
 - OpenAPI spec: `lib/api-spec/openapi.yaml`
 - Generated hooks: `lib/api-client-react/src/`
 - Frontend API client (standalone copy): `artifacts/cafe-menu/src/lib/api/`
+- DB lib (standalone copy for API): `artifacts/api-server/src/lib/db/`
+- Zod schemas (standalone copy for API): `artifacts/api-server/src/lib/api-zod/`
 
 ## Architecture decisions
 
 - **Contract-first API**: OpenAPI spec → Orval codegen → typed hooks. Never hand-write fetch calls on the client.
 - **Standalone Vercel frontend**: `artifacts/cafe-menu` has its own `package.json` with pinned semver versions (no `catalog:` / `workspace:*`), its own `node_modules` (installed via `npm install`), and `vercel.json` with SPA rewrites. Set `VITE_API_URL=<your-api-url>` at build time.
-- **Dual API client**: Replit uses the shared `@workspace/api-client-react` lib; the standalone build uses a local copy at `src/lib/api/` that reads `VITE_API_URL` as the base URL.
-- **Session-based auth**: Express sessions with `SESSION_SECRET`; admin credentials in DB.
-- **Object storage**: Presigned URL flow via `@workspace/object-storage` (S3-compatible).
+- **Standalone Render API**: `artifacts/api-server` has its own `package.json` with pinned semver versions, local copies of `lib/db` and `lib/api-zod` at `src/lib/db/` and `src/lib/api-zod/`, and a `render.yaml`. Set `DATABASE_URL` as an env var.
+- **Dual source of truth**: `lib/db/src/schema/` and `lib/api-zod/src/generated/` are the canonical source. After edits, copy them to `artifacts/api-server/src/lib/db/` and `artifacts/api-server/src/lib/api-zod/generated/` respectively.
+- **Session-based auth**: Express sessions with cookie-based admin token; in-memory session store (single-server safe).
+- **Object storage**: Presigned URL flow via Replit's sidecar endpoint — only works on Replit, not on Render. Image uploads will fail on Render unless replaced with a cloud storage provider.
 
 ## Product
 
@@ -58,8 +61,19 @@ lib/
 2. Install command: `npm install --ignore-scripts`
 3. Build command: `npm run build`
 4. Output directory: `dist`
-5. Environment variable: `VITE_API_URL=https://demo-cafe-menu-saa-s-api-server.vercel.app`
+5. Environment variable: `VITE_API_URL=https://<your-render-api-url>`
 6. `vercel.json` is already present with SPA rewrites and asset caching headers.
+
+## Render Deployment (API)
+
+1. Point Render at `artifacts/api-server/` as the root directory.
+2. Build command: `npm install --ignore-scripts && npm run build`
+3. Start command: `npm start`
+4. Environment variables:
+   - `DATABASE_URL` — your Postgres connection string (Render Postgres or external)
+   - `NODE_ENV=production`
+5. `render.yaml` is already present for Infrastructure-as-Code deployment.
+6. **Note**: Object storage (image uploads) uses Replit's sidecar and won't work on Render. To enable uploads on Render, replace `objectStorage.ts` with an S3/Cloudflare R2 implementation.
 
 ## User preferences
 
@@ -69,11 +83,14 @@ lib/
 
 ## Gotchas
 
-- After editing the OpenAPI spec, always run `pnpm --filter @workspace/api-spec run codegen` then copy updated files to `artifacts/cafe-menu/src/lib/api/` if the standalone copy needs updating.
-- The `artifacts/cafe-menu` workflow uses `pnpm --filter @workspace/cafe-menu run dev` — keep the `name` field in `artifacts/cafe-menu/package.json` as `@workspace/cafe-menu` so pnpm's filter can find it.
-- The vite.config.ts reads `process.env.PORT` so it works on both Replit (PORT=25924) and plain npm (defaults to 3000).
-- `src/components/ui/chart.tsx` and `input-otp.tsx` have `// @ts-nocheck` because shadcn's generated code has minor recharts/input-otp type incompatibilities. This is intentional.
-- `skipLibCheck: true` is set in `artifacts/cafe-menu/tsconfig.json` to avoid issues with third-party `.d.ts` files.
+- After editing `lib/db/src/schema/` (the canonical DB schema), copy changes to `artifacts/api-server/src/lib/db/schema/` too.
+- After running `pnpm --filter @workspace/api-spec run codegen`, copy updated files to `artifacts/cafe-menu/src/lib/api/` AND to `artifacts/api-server/src/lib/api-zod/generated/`.
+- The `artifacts/cafe-menu` workflow uses `pnpm --filter @workspace/cafe-menu run dev` — keep the `name` field in `artifacts/cafe-menu/package.json` as `@workspace/cafe-menu`.
+- The `artifacts/api-server` workflow uses `pnpm --filter @workspace/api-server run dev` — keep the `name` field in `artifacts/api-server/package.json` as `@workspace/api-server`.
+- `vite.config.ts` in cafe-menu reads `process.env.PORT` so it works on Replit (PORT=25924) and defaults to 3000 for plain npm.
+- `artifacts/api-server/src/index.ts` defaults PORT to 8080 if not set (Render always provides PORT).
+- `src/components/ui/chart.tsx` and `input-otp.tsx` in cafe-menu have `// @ts-nocheck` because shadcn's generated code has minor type incompatibilities. This is intentional.
+- `skipLibCheck: true` is set in both standalone tsconfigs.
 
 ## Pointers
 

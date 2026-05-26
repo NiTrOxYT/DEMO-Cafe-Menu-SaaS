@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { LoginBody } from "@workspace/api-zod";
+import { LoginBody } from "../lib/api-zod";
 
 const router = Router();
 

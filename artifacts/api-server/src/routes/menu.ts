@@ -1,6 +1,5 @@
 import { Router } from "express";
-import { db } from "@workspace/db";
-import { menuItemsTable, categoriesTable } from "@workspace/db";
+import { db, menuItemsTable, categoriesTable } from "../lib/db";
 import { eq, and } from "drizzle-orm";
 import {
   CreateMenuItemBody,
@@ -9,7 +8,7 @@ import {
   GetMenuItemParams,
   DeleteMenuItemParams,
   ListMenuItemsQueryParams,
-} from "@workspace/api-zod";
+} from "../lib/api-zod";
 import { sessions } from "./auth";
 
 const router = Router();

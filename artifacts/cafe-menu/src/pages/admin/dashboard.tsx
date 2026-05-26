@@ -135,11 +135,13 @@ export default function AdminDashboard() {
   const [editingItem, setEditingItem] = useState<any>(null);
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
 
-  const { data: me, isLoading: meLoading, isError: meError } = useGetMe({ query: { retry: false } });
-  const { data: summary, isLoading: summaryLoading } = useGetMenuSummary({ query: { enabled: !!me } });
-  const { data: items, isLoading: itemsLoading } = useListMenuItems(undefined, { query: { enabled: !!me } });
-  const { data: categories } = useListCategories({ query: { enabled: !!me } });
-  const { data: orders = [] } = useListOrders({ query: { enabled: !!me } });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const q = (opts: any) => opts;
+  const { data: me, isLoading: meLoading, isError: meError } = useGetMe({ query: q({ retry: false }) });
+  const { data: summary, isLoading: summaryLoading } = useGetMenuSummary({ query: q({ enabled: !!me }) });
+  const { data: items, isLoading: itemsLoading } = useListMenuItems(undefined, { query: q({ enabled: !!me }) });
+  const { data: categories } = useListCategories({ query: q({ enabled: !!me }) });
+  const { data: orders = [] } = useListOrders({ query: q({ enabled: !!me }) });
 
   const logoutMutation = useLogout();
   const deleteItemMutation = useDeleteMenuItem();

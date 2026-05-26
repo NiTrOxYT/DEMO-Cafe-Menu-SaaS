@@ -47,7 +47,9 @@ export default function OrdersPage() {
   const { toast } = useToast();
   const [filter, setFilter] = useState<string>("all");
 
-  const { data: orders = [], isLoading, refetch } = useListOrders({ query: { refetchInterval: 15000 } });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const q = (opts: any) => opts;
+  const { data: orders = [], isLoading, refetch } = useListOrders({ query: q({ refetchInterval: 15000 }) });
   const updateStatus = useUpdateOrderStatus();
   const deleteOrder = useDeleteOrder();
 

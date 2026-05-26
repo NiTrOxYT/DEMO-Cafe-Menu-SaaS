@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useListOrders, useUpdateOrderStatus, useDeleteOrder } from "@workspace/api-client-react";
+import { useListOrders, useUpdateOrderStatus, useDeleteOrder } from "@/lib/api";
 import { useQueryClient } from "@tanstack/react-query";
-import { getListOrdersQueryKey } from "@workspace/api-client-react";
+import { getListOrdersQueryKey } from "@/lib/api";
 import { Loader2, Clock, ChefHat, CheckCircle, XCircle, Trash2, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

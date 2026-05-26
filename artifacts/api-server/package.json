@@ -14,13 +14,16 @@
     "cookie-parser": "^1.4.7",
     "cors": "^2",
     "drizzle-orm": "^0.44.2",
-    "express": "^5",
-    "google-auth-library": "^10.6.2",
+    "drizzle-zod": "^0.8.3",
     "esbuild": "^0.27.3",
     "esbuild-plugin-pino": "^2.3.3",
-    "thread-stream": "3.1.0",
+    "express": "^5",
+    "google-auth-library": "^10.6.2",
+    "pg": "^8.21.0",
     "pino": "^9",
-    "pino-http": "^10"
+    "pino-http": "^10",
+    "thread-stream": "3.1.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",

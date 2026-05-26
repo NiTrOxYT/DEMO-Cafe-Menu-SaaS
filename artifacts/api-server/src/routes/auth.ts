@@ -3,8 +3,8 @@ import { LoginBody } from "../lib/api-zod";
 
 const router = Router();
 
-const ADMIN_EMAIL = "sourikaich7@gmail.com";
-const ADMIN_PASSWORD = "sourik";
+const ADMIN_EMAIL = "twister.admin@gmail.com";
+const ADMIN_PASSWORD = "admin123";
 
 router.post("/auth/login", (req, res) => {
   const parsed = LoginBody.safeParse(req.body);

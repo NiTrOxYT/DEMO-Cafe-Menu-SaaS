@@ -2,13 +2,12 @@ import { Router } from "express";
 import { db, categoriesTable } from "../lib/db";
 import { eq } from "drizzle-orm";
 import { CreateCategoryBody, DeleteCategoryParams } from "../lib/api-zod";
-import { sessions } from "./auth";
 
 const router = Router();
 
 function requireAdmin(req: any, res: any): boolean {
-  const token = req.cookies?.admin_token;
-  if (!token || !sessions.has(token)) {
+    const token = req.cookies?.admin_token;
+    if (token !== "authenticated") {
     res.status(401).json({ error: "Not authenticated" });
     return false;
   }
@@ -62,7 +61,9 @@ router.delete("/categories/:id", async (req, res) => {
   }
 
   try {
-    await db.delete(categoriesTable).where(eq(categoriesTable.id, parsed.data.id));
+    await db
+      .delete(categoriesTable)
+      .where(eq(categoriesTable.id, parsed.data.id));
     res.json({ success: true });
   } catch (err) {
     req.log.error({ err }, "Failed to delete category");

@@ -9,13 +9,12 @@ import {
   DeleteMenuItemParams,
   ListMenuItemsQueryParams,
 } from "../lib/api-zod";
-import { sessions } from "./auth";
 
 const router = Router();
 
 function requireAdmin(req: any, res: any): boolean {
   const token = req.cookies?.admin_token;
-  if (!token || !sessions.has(token)) {
+  if (token !== "authenticated") {
     res.status(401).json({ error: "Not authenticated" });
     return false;
   }
@@ -41,7 +40,10 @@ router.get("/menu/summary", async (req, res) => {
 router.get("/menu", async (req, res) => {
   const parsed = ListMenuItemsQueryParams.safeParse({
     categoryId: req.query.categoryId ? Number(req.query.categoryId) : undefined,
-    available: req.query.available !== undefined ? req.query.available === "true" : undefined,
+    available:
+      req.query.available !== undefined
+        ? req.query.available === "true"
+        : undefined,
   });
 
   try {
@@ -69,7 +71,10 @@ router.get("/menu", async (req, res) => {
         isSpicy: menuItemsTable.isSpicy,
       })
       .from(menuItemsTable)
-      .leftJoin(categoriesTable, eq(menuItemsTable.categoryId, categoriesTable.id))
+      .leftJoin(
+        categoriesTable,
+        eq(menuItemsTable.categoryId, categoriesTable.id),
+      )
       .where(conditions.length > 0 ? and(...conditions) : undefined)
       .orderBy(menuItemsTable.sortOrder);
 
@@ -77,7 +82,7 @@ router.get("/menu", async (req, res) => {
       items.map((item) => ({
         ...item,
         price: Number(item.price),
-      }))
+      })),
     );
   } catch (err) {
     req.log.error({ err }, "Failed to list menu items");
@@ -152,7 +157,10 @@ router.get("/menu/:id", async (req, res) => {
         isSpicy: menuItemsTable.isSpicy,
       })
       .from(menuItemsTable)
-      .leftJoin(categoriesTable, eq(menuItemsTable.categoryId, categoriesTable.id))
+      .leftJoin(
+        categoriesTable,
+        eq(menuItemsTable.categoryId, categoriesTable.id),
+      )
       .where(eq(menuItemsTable.id, parsed.data.id));
 
     if (!item) {
@@ -170,7 +178,9 @@ router.get("/menu/:id", async (req, res) => {
 router.patch("/menu/:id", async (req, res) => {
   if (!requireAdmin(req, res)) return;
 
-  const paramsParsed = UpdateMenuItemParams.safeParse({ id: Number(req.params.id) });
+  const paramsParsed = UpdateMenuItemParams.safeParse({
+    id: Number(req.params.id),
+  });
   if (!paramsParsed.success) {
     res.status(400).json({ error: "Invalid id" });
     return;
@@ -234,7 +244,9 @@ router.delete("/menu/:id", async (req, res) => {
   }
 
   try {
-    await db.delete(menuItemsTable).where(eq(menuItemsTable.id, parsed.data.id));
+    await db
+      .delete(menuItemsTable)
+      .where(eq(menuItemsTable.id, parsed.data.id));
     res.json({ success: true });
   } catch (err) {
     req.log.error({ err }, "Failed to delete menu item");

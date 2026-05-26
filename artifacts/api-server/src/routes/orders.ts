@@ -1,13 +1,12 @@
 import { Router } from "express";
 import { db, ordersTable } from "../lib/db";
 import { eq } from "drizzle-orm";
-import { sessions } from "./auth";
 
 const router = Router();
 
 function requireAdmin(req: any, res: any): boolean {
   const token = req.cookies?.admin_token;
-  if (!token || !sessions.has(token)) {
+  if (token !== "authenticated") {
     res.status(401).json({ error: "Not authenticated" });
     return false;
   }
@@ -22,7 +21,9 @@ router.get("/orders", async (req, res) => {
       .from(ordersTable)
       .orderBy(ordersTable.createdAt);
     res.json(
-      orders.map((o) => ({ ...o, totalAmount: Number(o.totalAmount) })).reverse()
+      orders
+        .map((o) => ({ ...o, totalAmount: Number(o.totalAmount) }))
+        .reverse(),
     );
   } catch (err) {
     req.log.error({ err }, "Failed to list orders");
@@ -60,7 +61,11 @@ router.patch("/orders/:id/status", async (req, res) => {
   if (!requireAdmin(req, res)) return;
   const id = Number(req.params.id);
   const { status } = req.body;
-  if (!["pending", "preparing", "ready", "completed", "cancelled"].includes(status)) {
+  if (
+    !["pending", "preparing", "ready", "completed", "cancelled"].includes(
+      status,
+    )
+  ) {
     res.status(400).json({ error: "Invalid status" });
     return;
   }

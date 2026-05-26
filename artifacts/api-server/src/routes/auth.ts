@@ -31,8 +31,9 @@ router.post("/auth/login", (req, res) => {
 
   res.cookie("admin_token", token, {
     httpOnly: true,
+    secure: true,
+    sameSite: "none",
     maxAge: 7 * 24 * 60 * 60 * 1000,
-    sameSite: "lax",
   });
 
   res.json({ success: true, user: { email: ADMIN_EMAIL } });

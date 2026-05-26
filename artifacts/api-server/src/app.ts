@@ -26,7 +26,12 @@ app.use(
     },
   }),
 );
-app.use(cors({ origin: true, credentials: true }));
+app.use(
+  cors({
+    origin: ["https://demo-cafe-menu-saa-s-cafe-menu.vercel.app"],
+    credentials: true,
+  }),
+);
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

@@ -36,13 +36,20 @@ export default function AdminLogin() {
       { data },
       {
         onSuccess: () => {
-          toast({ title: "Welcome back", description: "Signed in successfully." });
+          toast({
+            title: "Welcome back",
+            description: "Signed in successfully.",
+          });
           setLocation("/admin");
         },
         onError: () => {
-          toast({ variant: "destructive", title: "Login failed", description: "Invalid credentials." });
+          toast({
+            variant: "destructive",
+            title: "Login failed",
+            description: "Invalid credentials.",
+          });
         },
-      }
+      },
     );
   };
 
@@ -56,7 +63,7 @@ export default function AdminLogin() {
             Admin Portal
           </p>
           <h1 className="font-garamond text-[44px] leading-tight text-foreground">
-            The Golden Brew
+            TONGUE TWISTER
           </h1>
         </div>
 

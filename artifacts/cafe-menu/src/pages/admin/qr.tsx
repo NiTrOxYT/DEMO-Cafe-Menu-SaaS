@@ -11,14 +11,21 @@ function getMenuUrl(table?: string) {
 
 function QRCodeSvg({ value, size = 200 }: { value: string; size?: number }) {
   const src = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(value)}&format=png&bgcolor=FFFFFF&color=0f0e0c&margin=10`;
-  return <img src={src} alt="QR Code" style={{ width: size, height: size }} className="rounded-lg" />;
+  return (
+    <img
+      src={src}
+      alt="QR Code"
+      style={{ width: size, height: size }}
+      className="rounded-lg"
+    />
+  );
 }
 
 type TableEntry = { id: string; number: string };
 
 export default function QRPage() {
   const { data: settings } = useGetSettings();
-  const restaurantName = settings?.restaurantName ?? "The Golden Brew";
+  const restaurantName = settings?.restaurantName ?? "TONGUE TWISTER";
   const [tables, setTables] = useState<TableEntry[]>([
     { id: "1", number: "1" },
     { id: "2", number: "2" },
@@ -33,7 +40,8 @@ export default function QRPage() {
     setNewTable("");
   };
 
-  const removeTable = (id: string) => setTables((prev) => prev.filter((t) => t.id !== id));
+  const removeTable = (id: string) =>
+    setTables((prev) => prev.filter((t) => t.id !== id));
 
   const downloadQR = (tableNumber: string) => {
     const url = getMenuUrl(tableNumber);
@@ -58,17 +66,27 @@ export default function QRPage() {
   return (
     <div className="space-y-8 max-w-4xl">
       <div>
-        <h2 className="text-2xl font-serif font-bold text-foreground mb-1">QR Code Generator</h2>
-        <p className="text-sm text-muted-foreground">Generate QR codes for each table or a general menu link.</p>
+        <h2 className="text-2xl font-serif font-bold text-foreground mb-1">
+          QR Code Generator
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Generate QR codes for each table or a general menu link.
+        </p>
       </div>
 
       {/* General QR */}
       <div className="bg-card rounded-xl border border-border p-6 flex flex-col md:flex-row items-center gap-6">
         <QRCodeSvg value={getMenuUrl()} size={160} />
         <div className="flex-1 text-center md:text-left">
-          <h3 className="text-lg font-serif font-bold text-foreground mb-1">{restaurantName}</h3>
-          <p className="text-sm text-muted-foreground mb-1">General menu QR — place at entrance or counter</p>
-          <p className="text-xs text-muted-foreground font-mono break-all mb-4">{getMenuUrl()}</p>
+          <h3 className="text-lg font-serif font-bold text-foreground mb-1">
+            {restaurantName}
+          </h3>
+          <p className="text-sm text-muted-foreground mb-1">
+            General menu QR — place at entrance or counter
+          </p>
+          <p className="text-xs text-muted-foreground font-mono break-all mb-4">
+            {getMenuUrl()}
+          </p>
           <Button onClick={downloadGeneralQR}>
             <Download size={14} className="mr-2" /> Download QR
           </Button>
@@ -78,7 +96,9 @@ export default function QRPage() {
       {/* Table QRs */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-serif font-bold text-foreground">Table QR Codes</h3>
+          <h3 className="text-lg font-serif font-bold text-foreground">
+            Table QR Codes
+          </h3>
         </div>
 
         {/* Add table */}
@@ -97,16 +117,31 @@ export default function QRPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {tables.map((table) => (
-            <div key={table.id} className="bg-card rounded-xl border border-border p-5 flex flex-col items-center gap-4">
+            <div
+              key={table.id}
+              className="bg-card rounded-xl border border-border p-5 flex flex-col items-center gap-4"
+            >
               <div className="flex items-center justify-between w-full">
-                <span className="font-semibold text-foreground">Table {table.number}</span>
-                <button onClick={() => removeTable(table.id)} className="text-muted-foreground hover:text-destructive transition-colors">
+                <span className="font-semibold text-foreground">
+                  Table {table.number}
+                </span>
+                <button
+                  onClick={() => removeTable(table.id)}
+                  className="text-muted-foreground hover:text-destructive transition-colors"
+                >
                   <Trash2 size={14} />
                 </button>
               </div>
               <QRCodeSvg value={getMenuUrl(table.number)} size={140} />
-              <p className="text-xs text-muted-foreground font-mono text-center break-all">{getMenuUrl(table.number)}</p>
-              <Button variant="outline" size="sm" className="w-full" onClick={() => downloadQR(table.number)}>
+              <p className="text-xs text-muted-foreground font-mono text-center break-all">
+                {getMenuUrl(table.number)}
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => downloadQR(table.number)}
+              >
                 <Download size={12} className="mr-1" /> Download
               </Button>
             </div>

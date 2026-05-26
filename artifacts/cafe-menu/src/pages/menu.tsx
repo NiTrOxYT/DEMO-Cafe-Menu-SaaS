@@ -1,7 +1,23 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useListMenuItems, useListCategories, useGetSettings, useCreateOrder } from "@/lib/api";
+import {
+  useListMenuItems,
+  useListCategories,
+  useGetSettings,
+  useCreateOrder,
+} from "@/lib/api";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, ShoppingCart, X, Plus, Minus, Flame, Leaf, Star, ChevronDown, MessageCircle } from "lucide-react";
+import {
+  Search,
+  ShoppingCart,
+  X,
+  Plus,
+  Minus,
+  Flame,
+  Leaf,
+  Star,
+  ChevronDown,
+  MessageCircle,
+} from "lucide-react";
 
 const DARK = "#0f0e0c";
 const DARK_CARD = "#1c1a17";
@@ -52,10 +68,21 @@ function VegBadge({ isVeg }: { isVeg: boolean }) {
     <span
       className="inline-flex items-center justify-center"
       style={{
-        width: 18, height: 18, border: `2px solid ${isVeg ? GREEN : RED}`, borderRadius: 3,
+        width: 18,
+        height: 18,
+        border: `2px solid ${isVeg ? GREEN : RED}`,
+        borderRadius: 3,
       }}
     >
-      <span style={{ width: 8, height: 8, borderRadius: "50%", background: isVeg ? GREEN : RED, display: "block" }} />
+      <span
+        style={{
+          width: 8,
+          height: 8,
+          borderRadius: "50%",
+          background: isVeg ? GREEN : RED,
+          display: "block",
+        }}
+      />
     </span>
   );
 }
@@ -67,8 +94,20 @@ function useCart() {
   const add = useCallback((item: MenuItem) => {
     setItems((prev) => {
       const existing = prev.find((i) => i.id === item.id);
-      if (existing) return prev.map((i) => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i);
-      return [...prev, { id: item.id, name: item.name, price: item.price, quantity: 1, imageUrl: item.imageUrl }];
+      if (existing)
+        return prev.map((i) =>
+          i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i,
+        );
+      return [
+        ...prev,
+        {
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: 1,
+          imageUrl: item.imageUrl,
+        },
+      ];
     });
   }, []);
 
@@ -77,7 +116,9 @@ function useCart() {
       const existing = prev.find((i) => i.id === id);
       if (!existing) return prev;
       if (existing.quantity === 1) return prev.filter((i) => i.id !== id);
-      return prev.map((i) => i.id === id ? { ...i, quantity: i.quantity - 1 } : i);
+      return prev.map((i) =>
+        i.id === id ? { ...i, quantity: i.quantity - 1 } : i,
+      );
     });
   }, []);
 
@@ -110,12 +151,20 @@ function ItemCard({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      style={{ background: DARK_CARD, border: `1px solid ${BORDER}`, borderRadius: 16, overflow: "hidden" }}
+      style={{
+        background: DARK_CARD,
+        border: `1px solid ${BORDER}`,
+        borderRadius: 16,
+        overflow: "hidden",
+      }}
       className="flex flex-col cursor-pointer group"
       onClick={onClick}
     >
       {/* Image */}
-      <div className="relative overflow-hidden" style={{ aspectRatio: "4/3", background: "#1a1714" }}>
+      <div
+        className="relative overflow-hidden"
+        style={{ aspectRatio: "4/3", background: "#1a1714" }}
+      >
         {imgSrc ? (
           <img
             src={imgSrc}
@@ -123,7 +172,10 @@ function ItemCard({
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center" style={{ color: MUTED }}>
+          <div
+            className="w-full h-full flex items-center justify-center"
+            style={{ color: MUTED }}
+          >
             <span style={{ fontSize: 40 }}>☕</span>
           </div>
         )}
@@ -141,9 +193,15 @@ function ItemCard({
         {!item.available && (
           <div
             className="absolute inset-0 flex items-center justify-center"
-            style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(2px)" }}
+            style={{
+              background: "rgba(0,0,0,0.65)",
+              backdropFilter: "blur(2px)",
+            }}
           >
-            <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: MUTED }}>
+            <span
+              className="text-xs font-semibold uppercase tracking-widest"
+              style={{ color: MUTED }}
+            >
               Not Available
             </span>
           </div>
@@ -154,20 +212,35 @@ function ItemCard({
       <div className="flex-1 p-3 flex flex-col justify-between gap-2">
         <div>
           <div className="flex items-start justify-between gap-2 mb-1">
-            <h3 className="font-semibold text-sm leading-snug" style={{ color: CREAM }}>{item.name}</h3>
+            <h3
+              className="font-semibold text-sm leading-snug"
+              style={{ color: CREAM }}
+            >
+              {item.name}
+            </h3>
             <VegBadge isVeg={item.isVeg} />
           </div>
           {item.isSpicy && (
-            <span className="flex items-center gap-1 text-[10px] font-medium mb-1" style={{ color: "#ff7043" }}>
+            <span
+              className="flex items-center gap-1 text-[10px] font-medium mb-1"
+              style={{ color: "#ff7043" }}
+            >
               <Flame size={10} /> Spicy
             </span>
           )}
           {item.description && (
-            <p className="text-xs leading-relaxed line-clamp-2" style={{ color: MUTED }}>{item.description}</p>
+            <p
+              className="text-xs leading-relaxed line-clamp-2"
+              style={{ color: MUTED }}
+            >
+              {item.description}
+            </p>
           )}
         </div>
         <div className="flex items-center justify-between">
-          <span className="font-bold text-sm" style={{ color: AMBER }}>{formatINR(item.price)}</span>
+          <span className="font-bold text-sm" style={{ color: AMBER }}>
+            {formatINR(item.price)}
+          </span>
           {item.available && (
             <div onClick={(e) => e.stopPropagation()}>
               {cartQty === 0 ? (
@@ -179,10 +252,25 @@ function ItemCard({
                   <Plus size={12} /> Add
                 </button>
               ) : (
-                <div className="flex items-center gap-2 rounded-lg px-2 py-1" style={{ background: AMBER }}>
-                  <button onClick={onRemove} className="text-black hover:opacity-70"><Minus size={12} /></button>
-                  <span className="text-xs font-bold text-black w-4 text-center">{cartQty}</span>
-                  <button onClick={onAdd} className="text-black hover:opacity-70"><Plus size={12} /></button>
+                <div
+                  className="flex items-center gap-2 rounded-lg px-2 py-1"
+                  style={{ background: AMBER }}
+                >
+                  <button
+                    onClick={onRemove}
+                    className="text-black hover:opacity-70"
+                  >
+                    <Minus size={12} />
+                  </button>
+                  <span className="text-xs font-bold text-black w-4 text-center">
+                    {cartQty}
+                  </span>
+                  <button
+                    onClick={onAdd}
+                    className="text-black hover:opacity-70"
+                  >
+                    <Plus size={12} />
+                  </button>
                 </div>
               )}
             </div>
@@ -208,7 +296,9 @@ function ItemDetailOverlay({
   onClose: () => void;
 }) {
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   }, [onClose]);
@@ -232,47 +322,83 @@ function ItemDetailOverlay({
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 60, opacity: 0 }}
           transition={{ type: "spring", damping: 28, stiffness: 220 }}
-          style={{ background: DARK_CARD, maxHeight: "92dvh", border: `1px solid ${BORDER}` }}
+          style={{
+            background: DARK_CARD,
+            maxHeight: "92dvh",
+            border: `1px solid ${BORDER}`,
+          }}
           className="w-full md:max-w-3xl md:rounded-2xl overflow-hidden flex flex-col md:flex-row"
           onClick={(e: React.MouseEvent) => e.stopPropagation()}
         >
           {imgSrc && (
             <div className="w-full md:w-1/2 aspect-[4/3] md:aspect-auto md:min-h-[420px] flex-shrink-0 overflow-hidden">
-              <img src={imgSrc} alt={item.name} className="w-full h-full object-cover" />
+              <img
+                src={imgSrc}
+                alt={item.name}
+                className="w-full h-full object-cover"
+              />
             </div>
           )}
           <div className="flex-1 flex flex-col p-7 md:p-10 overflow-y-auto">
             <div className="flex justify-between items-start mb-6">
               <div>
                 {item.categoryName && (
-                  <span className="text-[10px] uppercase tracking-[0.22em] font-semibold mb-2 block" style={{ color: AMBER }}>
+                  <span
+                    className="text-[10px] uppercase tracking-[0.22em] font-semibold mb-2 block"
+                    style={{ color: AMBER }}
+                  >
                     {item.categoryName}
                   </span>
                 )}
-                <h2 className="text-2xl md:text-3xl font-serif font-bold" style={{ color: CREAM }}>{item.name}</h2>
+                <h2
+                  className="text-2xl md:text-3xl font-serif font-bold"
+                  style={{ color: CREAM }}
+                >
+                  {item.name}
+                </h2>
               </div>
-              <button onClick={onClose} style={{ color: MUTED }} className="hover:opacity-70 mt-1">
+              <button
+                onClick={onClose}
+                style={{ color: MUTED }}
+                className="hover:opacity-70 mt-1"
+              >
                 <X size={22} />
               </button>
             </div>
             <div className="flex items-center gap-3 mb-4">
               <VegBadge isVeg={item.isVeg} />
               {item.isBestseller && (
-                <span className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: AMBER, color: DARK }}>
+                <span
+                  className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full"
+                  style={{ background: AMBER, color: DARK }}
+                >
                   <Star size={10} fill={DARK} /> Bestseller
                 </span>
               )}
               {item.isSpicy && (
-                <span className="flex items-center gap-1 text-xs font-medium" style={{ color: "#ff7043" }}>
+                <span
+                  className="flex items-center gap-1 text-xs font-medium"
+                  style={{ color: "#ff7043" }}
+                >
                   <Flame size={12} /> Spicy
                 </span>
               )}
             </div>
             {item.description && (
-              <p className="text-sm leading-relaxed mb-6" style={{ color: MUTED }}>{item.description}</p>
+              <p
+                className="text-sm leading-relaxed mb-6"
+                style={{ color: MUTED }}
+              >
+                {item.description}
+              </p>
             )}
-            <div className="mt-auto pt-6 border-t flex items-center justify-between" style={{ borderColor: BORDER }}>
-              <span className="text-3xl font-bold" style={{ color: AMBER }}>{formatINR(item.price)}</span>
+            <div
+              className="mt-auto pt-6 border-t flex items-center justify-between"
+              style={{ borderColor: BORDER }}
+            >
+              <span className="text-3xl font-bold" style={{ color: AMBER }}>
+                {formatINR(item.price)}
+              </span>
               {item.available ? (
                 cartQty === 0 ? (
                   <button
@@ -283,14 +409,32 @@ function ItemDetailOverlay({
                     <Plus size={16} /> Add to Cart
                   </button>
                 ) : (
-                  <div className="flex items-center gap-3 rounded-xl px-3 py-2" style={{ background: AMBER }}>
-                    <button onClick={onRemove} className="text-black hover:opacity-70"><Minus size={16} /></button>
-                    <span className="font-bold text-black w-5 text-center">{cartQty}</span>
-                    <button onClick={onAdd} className="text-black hover:opacity-70"><Plus size={16} /></button>
+                  <div
+                    className="flex items-center gap-3 rounded-xl px-3 py-2"
+                    style={{ background: AMBER }}
+                  >
+                    <button
+                      onClick={onRemove}
+                      className="text-black hover:opacity-70"
+                    >
+                      <Minus size={16} />
+                    </button>
+                    <span className="font-bold text-black w-5 text-center">
+                      {cartQty}
+                    </span>
+                    <button
+                      onClick={onAdd}
+                      className="text-black hover:opacity-70"
+                    >
+                      <Plus size={16} />
+                    </button>
                   </div>
                 )
               ) : (
-                <span className="text-sm font-medium px-4 py-2 rounded-xl" style={{ background: "rgba(255,255,255,0.06)", color: MUTED }}>
+                <span
+                  className="text-sm font-medium px-4 py-2 rounded-xl"
+                  style={{ background: "rgba(255,255,255,0.06)", color: MUTED }}
+                >
                   Not Available
                 </span>
               )}
@@ -330,7 +474,9 @@ function CartDrawer({
     if (tableNumber) lines.push(`Table: ${tableNumber}`);
     lines.push("", "*Items:*");
     items.forEach((i) => {
-      lines.push(`• ${i.name} x${i.quantity} — ${formatINR(i.price * i.quantity)}`);
+      lines.push(
+        `• ${i.name} x${i.quantity} — ${formatINR(i.price * i.quantity)}`,
+      );
     });
     lines.push("", `*Total: ${formatINR(total)}*`);
     const text = encodeURIComponent(lines.join("\n"));
@@ -354,17 +500,39 @@ function CartDrawer({
           animate={{ x: 0 }}
           exit={{ x: "100%" }}
           transition={{ type: "spring", damping: 30, stiffness: 260 }}
-          style={{ background: DARK_CARD, border: `1px solid ${BORDER}`, width: "min(100vw, 400px)" }}
+          style={{
+            background: DARK_CARD,
+            border: `1px solid ${BORDER}`,
+            width: "min(100vw, 400px)",
+          }}
           className="h-full flex flex-col"
           onClick={(e: React.MouseEvent) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: BORDER }}>
+          <div
+            className="flex items-center justify-between p-5 border-b"
+            style={{ borderColor: BORDER }}
+          >
             <div>
-              <h2 className="text-lg font-serif font-bold" style={{ color: CREAM }}>Your Order</h2>
-              {tableNumber && <p className="text-xs mt-0.5" style={{ color: MUTED }}>Table {tableNumber}</p>}
+              <h2
+                className="text-lg font-serif font-bold"
+                style={{ color: CREAM }}
+              >
+                Your Order
+              </h2>
+              {tableNumber && (
+                <p className="text-xs mt-0.5" style={{ color: MUTED }}>
+                  Table {tableNumber}
+                </p>
+              )}
             </div>
-            <button onClick={onClose} style={{ color: MUTED }} className="hover:opacity-70"><X size={20} /></button>
+            <button
+              onClick={onClose}
+              style={{ color: MUTED }}
+              className="hover:opacity-70"
+            >
+              <X size={20} />
+            </button>
           </div>
 
           {/* Items */}
@@ -374,20 +542,62 @@ function CartDrawer({
               return (
                 <div key={item.id} className="flex items-center gap-3">
                   {imgSrc ? (
-                    <img src={imgSrc} alt={item.name} className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
+                    <img
+                      src={imgSrc}
+                      alt={item.name}
+                      className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
+                    />
                   ) : (
-                    <div className="w-12 h-12 rounded-lg flex-shrink-0 flex items-center justify-center text-xl" style={{ background: "#252219" }}>☕</div>
+                    <div
+                      className="w-12 h-12 rounded-lg flex-shrink-0 flex items-center justify-center text-xl"
+                      style={{ background: "#252219" }}
+                    >
+                      ☕
+                    </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate" style={{ color: CREAM }}>{item.name}</p>
-                    <p className="text-xs" style={{ color: AMBER }}>{formatINR(item.price)}</p>
+                    <p
+                      className="text-sm font-medium truncate"
+                      style={{ color: CREAM }}
+                    >
+                      {item.name}
+                    </p>
+                    <p className="text-xs" style={{ color: AMBER }}>
+                      {formatINR(item.price)}
+                    </p>
                   </div>
-                  <div className="flex items-center gap-2 rounded-lg px-2 py-1 flex-shrink-0" style={{ background: "rgba(201,169,110,0.15)", border: `1px solid ${AMBER}33` }}>
-                    <button onClick={() => onRemove(item.id)} className="hover:opacity-70" style={{ color: AMBER }}><Minus size={12} /></button>
-                    <span className="text-sm font-bold w-4 text-center" style={{ color: CREAM }}>{item.quantity}</span>
-                    <button onClick={() => onAdd(item.id)} className="hover:opacity-70" style={{ color: AMBER }}><Plus size={12} /></button>
+                  <div
+                    className="flex items-center gap-2 rounded-lg px-2 py-1 flex-shrink-0"
+                    style={{
+                      background: "rgba(201,169,110,0.15)",
+                      border: `1px solid ${AMBER}33`,
+                    }}
+                  >
+                    <button
+                      onClick={() => onRemove(item.id)}
+                      className="hover:opacity-70"
+                      style={{ color: AMBER }}
+                    >
+                      <Minus size={12} />
+                    </button>
+                    <span
+                      className="text-sm font-bold w-4 text-center"
+                      style={{ color: CREAM }}
+                    >
+                      {item.quantity}
+                    </span>
+                    <button
+                      onClick={() => onAdd(item.id)}
+                      className="hover:opacity-70"
+                      style={{ color: AMBER }}
+                    >
+                      <Plus size={12} />
+                    </button>
                   </div>
-                  <span className="text-sm font-semibold w-14 text-right flex-shrink-0" style={{ color: CREAM }}>
+                  <span
+                    className="text-sm font-semibold w-14 text-right flex-shrink-0"
+                    style={{ color: CREAM }}
+                  >
                     {formatINR(item.price * item.quantity)}
                   </span>
                 </div>
@@ -396,10 +606,17 @@ function CartDrawer({
           </div>
 
           {/* Footer */}
-          <div className="p-5 border-t space-y-3" style={{ borderColor: BORDER }}>
+          <div
+            className="p-5 border-t space-y-3"
+            style={{ borderColor: BORDER }}
+          >
             <div className="flex justify-between items-center mb-1">
-              <span className="font-semibold" style={{ color: CREAM }}>Total</span>
-              <span className="text-xl font-bold" style={{ color: AMBER }}>{formatINR(total)}</span>
+              <span className="font-semibold" style={{ color: CREAM }}>
+                Total
+              </span>
+              <span className="text-xl font-bold" style={{ color: AMBER }}>
+                {formatINR(total)}
+              </span>
             </div>
             {whatsappNumber ? (
               <button
@@ -443,10 +660,12 @@ export default function MenuPage() {
   // Table number from URL
   const tableNumber = new URLSearchParams(window.location.search).get("table");
 
-  const restaurantName = settings?.restaurantName ?? "The Golden Brew";
+  const restaurantName = settings?.restaurantName ?? "TONGUE TWISTER";
   const tagline = settings?.tagline ?? "Crafted with passion, served with love";
   const whatsappNumber = settings?.whatsappNumber ?? null;
-  const bannerUrl = getImageSrc(settings?.bannerUrl) ?? "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=1600&q=80";
+  const bannerUrl =
+    getImageSrc(settings?.bannerUrl) ??
+    "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=1600&q=80";
 
   const cart = useCart();
 
@@ -462,50 +681,77 @@ export default function MenuPage() {
 
   const handlePlaceOrder = () => {
     if (cart.items.length === 0) return;
-    createOrderMutation.mutate({
-      data: {
-        tableNumber: tableNumber ?? undefined,
-        items: cart.items,
-        totalAmount: cart.total,
-      }
-    }, {
-      onSuccess: () => {
-        cart.clear();
-        setCartOpen(false);
-        setOrderPlaced(true);
-        setTimeout(() => setOrderPlaced(false), 5000);
-      }
-    });
+    createOrderMutation.mutate(
+      {
+        data: {
+          tableNumber: tableNumber ?? undefined,
+          items: cart.items,
+          totalAmount: cart.total,
+        },
+      },
+      {
+        onSuccess: () => {
+          cart.clear();
+          setCartOpen(false);
+          setOrderPlaced(true);
+          setTimeout(() => setOrderPlaced(false), 5000);
+        },
+      },
+    );
   };
 
   // Filter items
   const filtered = (menuItems as MenuItem[]).filter((item) => {
     if (!item.available) return false;
-    if (selectedCategory !== null && item.categoryId !== selectedCategory) return false;
+    if (selectedCategory !== null && item.categoryId !== selectedCategory)
+      return false;
     if (vegFilter === "veg" && !item.isVeg) return false;
     if (vegFilter === "nonveg" && item.isVeg) return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      return item.name.toLowerCase().includes(q) || (item.description ?? "").toLowerCase().includes(q);
+      return (
+        item.name.toLowerCase().includes(q) ||
+        (item.description ?? "").toLowerCase().includes(q)
+      );
     }
     return true;
   });
 
-  const sortedCategories = [...categories].sort((a, b) => a.sortOrder - b.sortOrder);
+  const sortedCategories = [...categories].sort(
+    (a, b) => a.sortOrder - b.sortOrder,
+  );
 
   return (
     <div style={{ background: DARK, minHeight: "100dvh" }}>
       {/* Hero */}
-      <div className="relative overflow-hidden" style={{ height: "56dvh", minHeight: 300 }}>
-        <img src={bannerUrl} alt="banner" className="absolute inset-0 w-full h-full object-cover" style={{ filter: "brightness(0.38)" }} />
-        <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(15,14,12,0.3) 0%, rgba(15,14,12,0.85) 100%)" }} />
+      <div
+        className="relative overflow-hidden"
+        style={{ height: "56dvh", minHeight: 300 }}
+      >
+        <img
+          src={bannerUrl}
+          alt="banner"
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ filter: "brightness(0.38)" }}
+        />
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(to bottom, rgba(15,14,12,0.3) 0%, rgba(15,14,12,0.85) 100%)",
+          }}
+        />
         <div className="relative h-full flex flex-col items-center justify-center text-center px-6">
           {tableNumber && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               className="mb-4 px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest border"
-              style={{ color: AMBER, borderColor: `${AMBER}44`, background: `${AMBER}11` }}
+              style={{
+                color: AMBER,
+                borderColor: `${AMBER}44`,
+                background: `${AMBER}11`,
+              }}
             >
               Table {tableNumber}
             </motion.div>
@@ -517,7 +763,7 @@ export default function MenuPage() {
             className="text-[11px] uppercase tracking-[0.28em] font-semibold mb-3"
             style={{ color: AMBER }}
           >
-            Seasonal Menu · 2025
+            Seasonal Menu · 2026
           </motion.p>
           <motion.h1
             initial={{ opacity: 0, y: 16 }}
@@ -543,7 +789,11 @@ export default function MenuPage() {
             transition={{ delay: 1.2, duration: 0.8 }}
             className="absolute bottom-6 left-1/2 -translate-x-1/2"
           >
-            <ChevronDown size={22} style={{ color: AMBER }} className="animate-bounce" />
+            <ChevronDown
+              size={22}
+              style={{ color: AMBER }}
+              className="animate-bounce"
+            />
           </motion.div>
         </div>
       </div>
@@ -551,12 +801,20 @@ export default function MenuPage() {
       {/* Sticky filter bar */}
       <div
         className="sticky top-0 z-30 border-b"
-        style={{ background: "rgba(15,14,12,0.9)", backdropFilter: "blur(16px)", borderColor: BORDER }}
+        style={{
+          background: "rgba(15,14,12,0.9)",
+          backdropFilter: "blur(16px)",
+          borderColor: BORDER,
+        }}
       >
         {/* Search */}
         <div className="max-w-5xl mx-auto px-4 pt-3 pb-2">
           <div className="relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: MUTED }} />
+            <Search
+              size={14}
+              className="absolute left-3 top-1/2 -translate-y-1/2"
+              style={{ color: MUTED }}
+            />
             <input
               type="text"
               value={searchQuery}
@@ -570,7 +828,10 @@ export default function MenuPage() {
               }}
             />
             {searchQuery && (
-              <button className="absolute right-3 top-1/2 -translate-y-1/2" onClick={() => setSearchQuery("")}>
+              <button
+                className="absolute right-3 top-1/2 -translate-y-1/2"
+                onClick={() => setSearchQuery("")}
+              >
                 <X size={14} style={{ color: MUTED }} />
               </button>
             )}
@@ -578,7 +839,10 @@ export default function MenuPage() {
         </div>
 
         {/* Category tabs */}
-        <div ref={categoryBarRef} className="flex gap-2 overflow-x-auto px-4 pb-3 scrollbar-none">
+        <div
+          ref={categoryBarRef}
+          className="flex gap-2 overflow-x-auto px-4 pb-3 scrollbar-none"
+        >
           <button
             onClick={() => setSelectedCategory(null)}
             className="flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold transition-all"
@@ -614,8 +878,22 @@ export default function MenuPage() {
               onClick={() => setVegFilter(f)}
               className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all"
               style={{
-                background: vegFilter === f ? (f === "veg" ? `${GREEN}22` : f === "nonveg" ? `${RED}22` : `${AMBER}22`) : "transparent",
-                color: vegFilter === f ? (f === "veg" ? GREEN : f === "nonveg" ? RED : AMBER) : MUTED,
+                background:
+                  vegFilter === f
+                    ? f === "veg"
+                      ? `${GREEN}22`
+                      : f === "nonveg"
+                        ? `${RED}22`
+                        : `${AMBER}22`
+                    : "transparent",
+                color:
+                  vegFilter === f
+                    ? f === "veg"
+                      ? GREEN
+                      : f === "nonveg"
+                        ? RED
+                        : AMBER
+                    : MUTED,
                 border: `1px solid ${vegFilter === f ? (f === "veg" ? GREEN : f === "nonveg" ? RED : AMBER) : BORDER}`,
               }}
             >
@@ -637,13 +915,18 @@ export default function MenuPage() {
         ) : (
           <>
             {/* Bestsellers section (when no filters active) */}
-            {selectedCategory === null && !searchQuery && vegFilter === "all" && (
+            {selectedCategory === null &&
+              !searchQuery &&
+              vegFilter === "all" &&
               (() => {
                 const bestsellers = filtered.filter((i) => i.isBestseller);
                 if (bestsellers.length === 0) return null;
                 return (
                   <div className="mb-10">
-                    <h2 className="font-serif text-2xl font-bold mb-5" style={{ color: CREAM }}>
+                    <h2
+                      className="font-serif text-2xl font-bold mb-5"
+                      style={{ color: CREAM }}
+                    >
                       ⭐ Bestsellers
                     </h2>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -660,8 +943,7 @@ export default function MenuPage() {
                     </div>
                   </div>
                 );
-              })()
-            )}
+              })()}
 
             {/* By category */}
             {selectedCategory !== null || searchQuery || vegFilter !== "all" ? (
@@ -679,11 +961,18 @@ export default function MenuPage() {
               </div>
             ) : (
               sortedCategories.map((cat) => {
-                const catItems = filtered.filter((i) => i.categoryId === cat.id);
+                const catItems = filtered.filter(
+                  (i) => i.categoryId === cat.id,
+                );
                 if (catItems.length === 0) return null;
                 return (
                   <div key={cat.id} className="mb-10">
-                    <h2 className="font-serif text-2xl font-bold mb-5" style={{ color: CREAM }}>{cat.name}</h2>
+                    <h2
+                      className="font-serif text-2xl font-bold mb-5"
+                      style={{ color: CREAM }}
+                    >
+                      {cat.name}
+                    </h2>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                       {catItems.map((item) => (
                         <ItemCard
@@ -740,7 +1029,11 @@ export default function MenuPage() {
             transition={{ type: "spring", damping: 24, stiffness: 260 }}
             onClick={() => setCartOpen(true)}
             className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl font-bold text-sm"
-            style={{ background: AMBER, color: DARK, boxShadow: "0 8px 32px rgba(201,169,110,0.4)" }}
+            style={{
+              background: AMBER,
+              color: DARK,
+              boxShadow: "0 8px 32px rgba(201,169,110,0.4)",
+            }}
           >
             <span
               className="flex items-center justify-center w-5 h-5 rounded-full text-[11px] font-black"

@@ -685,7 +685,9 @@ export default function MenuPage() {
     if (cart.items.length === 0) return;
 
     try {
-      const existingOrderId = localStorage.getItem("activeOrderId");
+      const existingOrderId = localStorage.getItem(
+        `activeOrderId_${tableNumber}`,
+      );
 
       // EXISTING ACTIVE ORDER
       if (existingOrderId) {
@@ -753,7 +755,7 @@ export default function MenuPage() {
         return;
       }
 
-      localStorage.setItem("activeOrderId", order.id.toString());
+      localStorage.setItem(`activeOrderId_${tableNumber}`, order.id.toString());
 
       setActiveOrderId(order.id.toString());
 
@@ -785,7 +787,7 @@ export default function MenuPage() {
 
   useEffect(() => {
     const checkActiveOrder = async () => {
-      const orderId = localStorage.getItem("activeOrderId");
+      const orderId = localStorage.getItem(`activeOrderId_${tableNumber}`);
 
       if (!orderId) return;
 
@@ -797,7 +799,7 @@ export default function MenuPage() {
 
       // if order completed OR paid
       if (!data || data.status === "completed" || data.is_paid === true) {
-        localStorage.removeItem("activeOrderId");
+        localStorage.removeItem(`activeOrderId_${tableNumber}`);
 
         setActiveOrderId(null);
 

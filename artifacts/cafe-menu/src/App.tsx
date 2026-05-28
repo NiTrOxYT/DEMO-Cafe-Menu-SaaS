@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Menu from "@/pages/menu";
+import AnalyticsPage from "./pages/admin/analytics";
 import AdminLogin from "@/pages/admin/login";
 import AdminDashboard from "@/pages/admin/dashboard";
 import { supabase } from "./lib/supabase";
@@ -18,6 +19,7 @@ function Router() {
       <Route path="/" component={Menu} />
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin" component={AdminDashboard} />
+      <Route path="/admin/analytics" element={<AnalyticsPage />} />
       <Route path="/test" component={TestRealtime} />
       <Route path="/current-order" component={CurrentOrder} />
     </Switch>

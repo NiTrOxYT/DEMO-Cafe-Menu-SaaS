@@ -33,6 +33,7 @@ import {
   ClipboardList,
   QrCode,
   Settings,
+  BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -85,6 +86,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import OrdersPage from "./orders";
 import QRPage from "./qr";
+import AnalyticsPage from "./analytics";
 import SettingsPage from "./settings";
 
 const menuItemSchema = z.object({
@@ -203,7 +205,7 @@ function ImageUploadField({
   );
 }
 
-type NavTab = "overview" | "menu" | "orders" | "qr" | "settings";
+type NavTab = "overview" | "menu" | "orders" | "analytics" | "qr" | "settings";
 
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
@@ -433,6 +435,11 @@ export default function AdminDashboard() {
     { tab: "overview", label: "Overview", icon: <LayoutDashboard size={16} /> },
     { tab: "menu", label: "Menu", icon: <UtensilsCrossed size={16} /> },
     { tab: "orders", label: "Orders", icon: <ClipboardList size={16} /> },
+    {
+      tab: "analytics",
+      label: "Analytics",
+      icon: <BarChart3 size={16} />,
+    },
     { tab: "qr", label: "QR Codes", icon: <QrCode size={16} /> },
     { tab: "settings", label: "Settings", icon: <Settings size={16} /> },
   ];
@@ -1091,6 +1098,7 @@ export default function AdminDashboard() {
         )}
 
         {activeTab === "orders" && <OrdersPage />}
+        {activeTab === "analytics" && <AnalyticsPage />}
         {activeTab === "qr" && <QRPage />}
         {activeTab === "settings" && <SettingsPage />}
       </main>

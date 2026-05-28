@@ -36,7 +36,11 @@ export default function CurrentOrder() {
   }, []);
 
   async function fetchLatestOrder() {
-    const orderId = localStorage.getItem("activeOrderId");
+    const tableNumber = new URLSearchParams(window.location.search).get(
+      "table",
+    );
+
+    const orderId = localStorage.getItem(`activeOrderId_${tableNumber}`);
 
     if (!orderId) {
       setOrder(null);
@@ -60,7 +64,7 @@ export default function CurrentOrder() {
     }
 
     if (data.is_paid || data.is_active === false) {
-      localStorage.removeItem("activeOrderId");
+      localStorage.removeItem(`activeOrderId_${tableNumber}`);
 
       setOrder(null);
 

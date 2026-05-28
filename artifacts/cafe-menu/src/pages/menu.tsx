@@ -873,7 +873,7 @@ export default function MenuPage() {
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               onClick={() => {
-                window.location.href = "/current-order";
+                window.location.href = `/current-order?table=${tableNumber}`;
               }}
               className="mb-4 px-4 py-2 rounded-full text-sm font-semibold"
               style={{
@@ -1199,7 +1199,7 @@ export default function MenuPage() {
 
               <button
                 onClick={() => {
-                  window.location.href = "/current-order";
+                  window.location.href = `/current-order?table=${tableNumber}`;
                 }}
                 className="px-4 py-2 rounded-xl font-semibold text-sm"
                 style={{

@@ -216,6 +216,36 @@ order_items (
         </Button>
       </div>
 
+      {/* Dashboard Stats */}
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="bg-card border border-border rounded-xl p-4">
+          <p className="text-xs text-muted-foreground">Total Orders</p>
+          <p className="text-2xl font-bold">{orders.length}</p>
+        </div>
+
+        <div className="bg-card border border-border rounded-xl p-4">
+          <p className="text-xs text-muted-foreground">Revenue</p>
+          <p className="text-2xl font-bold">
+            ₹{orders.reduce((sum, o) => sum + Number(o.total || 0), 0)}
+          </p>
+        </div>
+
+        <div className="bg-card border border-border rounded-xl p-4">
+          <p className="text-xs text-muted-foreground">Pending</p>
+          <p className="text-2xl font-bold text-yellow-500">
+            {orders.filter((o) => o.status === "pending").length}
+          </p>
+        </div>
+
+        <div className="bg-card border border-border rounded-xl p-4">
+          <p className="text-xs text-muted-foreground">Completed</p>
+          <p className="text-2xl font-bold text-green-500">
+            {orders.filter((o) => o.status === "completed").length}
+          </p>
+        </div>
+      </div>
+
       {/* Status filter tabs */}
       <div className="flex gap-2 flex-wrap">
         {["all", "pending", "preparing", "ready", "completed", "cancelled"].map(
@@ -292,7 +322,9 @@ order_items (
                           {item.quantity}x
                         </span>{" "}
                         <span className="text-muted-foreground">
-                          {item.item_name}
+                          {item.item_name ||
+                            item.menu_items?.name ||
+                            "Unknown Item"}
                         </span>
                       </div>
 

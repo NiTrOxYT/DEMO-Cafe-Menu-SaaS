@@ -82,6 +82,22 @@ export default function CurrentOrder() {
           border: "1px solid rgba(255,255,255,0.08)",
         }}
       >
+        <button
+          onClick={() => {
+            window.history.back();
+          }}
+          style={{
+            marginBottom: 20,
+            background: "transparent",
+            border: "none",
+            color: "#c9a96e",
+            cursor: "pointer",
+            fontWeight: 600,
+          }}
+        >
+          ← Back to Menu
+        </button>
+
         <p
           style={{
             color: AMBER,

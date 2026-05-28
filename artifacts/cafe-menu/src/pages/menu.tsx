@@ -1077,10 +1077,32 @@ export default function MenuPage() {
             initial={{ y: 80, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 80, opacity: 0 }}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-xl font-semibold text-sm text-white shadow-xl"
-            style={{ background: "#25D366" }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50"
           >
-            ✓ Order sent via WhatsApp!
+            <div
+              className="px-5 py-4 rounded-2xl shadow-xl flex flex-col gap-3 items-center"
+              style={{
+                background: "#1c1a17",
+                border: "1px solid rgba(255,255,255,0.08)",
+              }}
+            >
+              <p className="font-semibold text-sm" style={{ color: "#f0ebe2" }}>
+                ✅ Order Placed Successfully
+              </p>
+
+              <button
+                onClick={() => {
+                  window.location.href = "/current-order";
+                }}
+                className="px-4 py-2 rounded-xl font-semibold text-sm"
+                style={{
+                  background: "#c9a96e",
+                  color: "#0f0e0c",
+                }}
+              >
+                Track Current Order
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

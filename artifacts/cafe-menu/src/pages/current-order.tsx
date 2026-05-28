@@ -36,12 +36,36 @@ export default function CurrentOrder() {
   }, []);
 
   async function fetchLatestOrder() {
+    const orderId = localStorage.getItem("activeOrderId");
+
+    if (!orderId) {
+      setOrder(null);
+      return;
+    }
+
     const { data } = await supabase
       .from("orders")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(1)
+      .select(
+        `
+        *,
+        order_items (*)
+      `,
+      )
+      .eq("id", orderId)
       .single();
+
+    if (!data) {
+      setOrder(null);
+      return;
+    }
+
+    if (data.is_paid || data.is_active === false) {
+      localStorage.removeItem("activeOrderId");
+
+      setOrder(null);
+
+      return;
+    }
 
     setOrder(data);
   }
@@ -84,7 +108,7 @@ export default function CurrentOrder() {
       >
         <button
           onClick={() => {
-            window.history.back();
+            window.location.href = "/";
           }}
           style={{
             marginBottom: 20,
@@ -136,6 +160,56 @@ export default function CurrentOrder() {
           >
             {order.status}
           </div>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 12,
+            marginBottom: 24,
+          }}
+        >
+          {order.order_items?.map((item: any) => (
+            <div
+              key={item.id}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <div>
+                <p
+                  style={{
+                    color: "#f0ebe2",
+                    fontWeight: 600,
+                    marginBottom: 2,
+                  }}
+                >
+                  {item.item_name}
+                </p>
+
+                <p
+                  style={{
+                    color: "#7a7265",
+                    fontSize: 13,
+                  }}
+                >
+                  Qty: {item.quantity}
+                </p>
+              </div>
+
+              <p
+                style={{
+                  color: "#f0ebe2",
+                  fontWeight: 700,
+                }}
+              >
+                ₹{item.price * item.quantity}
+              </p>
+            </div>
+          ))}
         </div>
 
         <div

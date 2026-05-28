@@ -167,3 +167,9 @@
 /* Garamond headline utility */
 .font-garamond { font-family: 'EB Garamond', Georgia, serif; }
 .font-manrope { font-family: 'Manrope', sans-serif; }
+
+html,
+body,
+#root {
+  background: #0f0e0c;
+}

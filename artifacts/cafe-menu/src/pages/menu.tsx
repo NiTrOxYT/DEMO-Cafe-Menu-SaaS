@@ -652,7 +652,7 @@ export default function MenuPage() {
   const [cartOpen, setCartOpen] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
   const categoryBarRef = useRef<HTMLDivElement>(null);
-  const [hasActiveOrder, setHasActiveOrder] = useState(false);
+  const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
 
   const { data: menuItems = [] } = useListMenuItems(undefined);
   const { data: categories = [] } = useListCategories();
@@ -684,55 +684,110 @@ export default function MenuPage() {
   const handlePlaceOrder = async () => {
     if (cart.items.length === 0) return;
 
-    const { data: order, error } = await supabase
-      .from("orders")
-      .insert([
-        {
-          cafe_id: 1,
-          table_id: 1,
-          status: "pending",
-          subtotal: cart.total,
-          tax: 40,
-          total: cart.total + 40,
-        },
-      ])
-      .select()
-      .single();
+    try {
+      const existingOrderId = localStorage.getItem("activeOrderId");
 
-    if (error) {
-      console.error(error);
-      return;
+      // EXISTING ACTIVE ORDER
+      if (existingOrderId) {
+        const { data: existingOrder } = await supabase
+          .from("orders")
+          .select("*")
+          .eq("id", existingOrderId)
+          .single();
+
+        if (existingOrder) {
+          const orderItems = cart.items.map((item) => ({
+            order_id: Number(existingOrderId),
+
+            item_name: item.name,
+
+            quantity: item.quantity,
+
+            price: item.price,
+          }));
+
+          await supabase.from("order_items").insert(orderItems);
+
+          await supabase
+            .from("orders")
+            .update({
+              subtotal: existingOrder.subtotal + cart.total,
+              total: existingOrder.total + cart.total,
+            })
+            .eq("id", existingOrderId);
+
+          cart.clear();
+
+          setCartOpen(false);
+
+          setOrderPlaced(true);
+
+          setTimeout(() => {
+            setOrderPlaced(false);
+          }, 4000);
+
+          return;
+        }
+      }
+
+      // CREATE NEW ORDER
+      const { data: order, error } = await supabase
+        .from("orders")
+        .insert([
+          {
+            cafe_id: 1,
+            table_id: Number(tableNumber || 1),
+            status: "pending",
+            subtotal: cart.total,
+            tax: 0,
+            total: cart.total,
+            is_active: true,
+            is_paid: false,
+          },
+        ])
+        .select()
+        .single();
+
+      if (error || !order) {
+        console.error(error);
+        return;
+      }
+
+      localStorage.setItem("activeOrderId", order.id.toString());
+
+      setActiveOrderId(order.id.toString());
+
+      const orderItems = cart.items.map((item) => ({
+        order_id: order.id,
+
+        item_name: item.name,
+
+        quantity: item.quantity,
+
+        price: item.price,
+      }));
+
+      await supabase.from("order_items").insert(orderItems);
+
+      cart.clear();
+
+      setCartOpen(false);
+
+      setOrderPlaced(true);
+
+      setTimeout(() => {
+        setOrderPlaced(false);
+      }, 4000);
+    } catch (err) {
+      console.error(err);
     }
-
-    localStorage.setItem("hasActiveOrder", "true");
-    localStorage.setItem("currentOrderId", order.id);
-    setHasActiveOrder(true);
-
-    const orderItems = cart.items.map((item) => ({
-      order_id: order.id,
-      menu_item_id: item.id,
-      quantity: item.quantity,
-      price: item.price,
-    }));
-
-    await supabase.from("order_items").insert(orderItems);
-
-    cart.clear();
-
-    setCartOpen(false);
-
-    setOrderPlaced(true);
-
-    setTimeout(() => {
-      setOrderPlaced(false);
-    }, 4000);
   };
 
   useEffect(() => {
-    const active = localStorage.getItem("hasActiveOrder");
+    const orderId = localStorage.getItem("activeOrderId");
 
-    if (active === "true") {
-      setHasActiveOrder(true);
+    if (orderId) {
+      setActiveOrderId(orderId);
     }
   }, []);
 
@@ -792,7 +847,7 @@ export default function MenuPage() {
               Table {tableNumber}
             </motion.div>
           )}
-          {hasActiveOrder && (
+          {activeOrderId && (
             <motion.button
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}

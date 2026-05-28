@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { supabase } from "@/lib/supabase";
 import {
   useListMenuItems,
   useListCategories,
@@ -679,25 +680,47 @@ export default function MenuPage() {
   };
   const handleRemoveById = (id: number) => cart.remove(id);
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     if (cart.items.length === 0) return;
-    createOrderMutation.mutate(
-      {
-        data: {
-          tableNumber: tableNumber ?? undefined,
-          items: cart.items,
-          totalAmount: cart.total,
+
+    const { data: order, error } = await supabase
+      .from("orders")
+      .insert([
+        {
+          cafe_id: 1,
+          table_id: 1,
+          status: "pending",
+          subtotal: cart.total,
+          tax: 40,
+          total: cart.total + 40,
         },
-      },
-      {
-        onSuccess: () => {
-          cart.clear();
-          setCartOpen(false);
-          setOrderPlaced(true);
-          setTimeout(() => setOrderPlaced(false), 5000);
-        },
-      },
-    );
+      ])
+      .select()
+      .single();
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    const orderItems = cart.items.map((item) => ({
+      order_id: order.id,
+      menu_item_id: item.id,
+      quantity: item.quantity,
+      price: item.price,
+    }));
+
+    await supabase.from("order_items").insert(orderItems);
+
+    cart.clear();
+
+    setCartOpen(false);
+
+    setOrderPlaced(true);
+
+    setTimeout(() => {
+      setOrderPlaced(false);
+    }, 4000);
   };
 
   // Filter items

@@ -784,11 +784,30 @@ export default function MenuPage() {
   };
 
   useEffect(() => {
-    const orderId = localStorage.getItem("activeOrderId");
+    const checkActiveOrder = async () => {
+      const orderId = localStorage.getItem("activeOrderId");
 
-    if (orderId) {
+      if (!orderId) return;
+
+      const { data } = await supabase
+        .from("orders")
+        .select("*")
+        .eq("id", orderId)
+        .single();
+
+      // if order completed OR paid
+      if (!data || data.status === "completed" || data.is_paid === true) {
+        localStorage.removeItem("activeOrderId");
+
+        setActiveOrderId(null);
+
+        return;
+      }
+
       setActiveOrderId(orderId);
-    }
+    };
+
+    checkActiveOrder();
   }, []);
 
   // Filter items

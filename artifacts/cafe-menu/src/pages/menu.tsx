@@ -652,6 +652,7 @@ export default function MenuPage() {
   const [cartOpen, setCartOpen] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
   const categoryBarRef = useRef<HTMLDivElement>(null);
+  const [hasActiveOrder, setHasActiveOrder] = useState(false);
 
   const { data: menuItems = [] } = useListMenuItems(undefined);
   const { data: categories = [] } = useListCategories();
@@ -703,6 +704,10 @@ export default function MenuPage() {
       return;
     }
 
+    localStorage.setItem("hasActiveOrder", "true");
+    localStorage.setItem("currentOrderId", order.id);
+    setHasActiveOrder(true);
+
     const orderItems = cart.items.map((item) => ({
       order_id: order.id,
       menu_item_id: item.id,
@@ -722,6 +727,14 @@ export default function MenuPage() {
       setOrderPlaced(false);
     }, 4000);
   };
+
+  useEffect(() => {
+    const active = localStorage.getItem("hasActiveOrder");
+
+    if (active === "true") {
+      setHasActiveOrder(true);
+    }
+  }, []);
 
   // Filter items
   const filtered = (menuItems as MenuItem[]).filter((item) => {
@@ -778,6 +791,24 @@ export default function MenuPage() {
             >
               Table {tableNumber}
             </motion.div>
+          )}
+          {hasActiveOrder && (
+            <motion.button
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              onClick={() => {
+                window.location.href = "/current-order";
+              }}
+              className="mb-4 px-4 py-2 rounded-full text-sm font-semibold"
+              style={{
+                background: "rgba(201,169,110,0.18)",
+                color: "#f0ebe2",
+                border: "1px solid rgba(201,169,110,0.35)",
+                backdropFilter: "blur(12px)",
+              }}
+            >
+              🧾 Current Order
+            </motion.button>
           )}
           <motion.p
             initial={{ opacity: 0, y: 10 }}

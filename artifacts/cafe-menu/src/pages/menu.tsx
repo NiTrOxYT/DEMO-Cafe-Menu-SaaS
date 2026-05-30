@@ -722,13 +722,23 @@ export default function MenuPage() {
               .single();
 
             if (rewardUser) {
-              await supabase
-                .from("rewards_users")
-                .update({
-                  stars: rewardUser.stars + 1,
-                  total_visits: rewardUser.total_visits + 1,
-                })
-                .eq("id", rewardUser.id);
+              const today = new Date().toISOString().split("T")[0];
+
+              const alreadyEarnedToday = rewardUser.last_star_date === today;
+
+              if (cart.total >= 500 && !alreadyEarnedToday) {
+                const newStars = rewardUser.stars + 1;
+
+                await supabase
+                  .from("rewards_users")
+                  .update({
+                    stars: newStars,
+                    total_visits: rewardUser.total_visits + 1,
+                    reward_available: newStars >= 5,
+                    last_star_date: today,
+                  })
+                  .eq("id", rewardUser.id);
+              }
             }
           }
 
@@ -803,13 +813,23 @@ export default function MenuPage() {
           .single();
 
         if (rewardUser) {
-          await supabase
-            .from("rewards_users")
-            .update({
-              stars: rewardUser.stars + 1,
-              total_visits: rewardUser.total_visits + 1,
-            })
-            .eq("id", rewardUser.id);
+          const today = new Date().toISOString().split("T")[0];
+
+          const alreadyEarnedToday = rewardUser.last_star_date === today;
+
+          if (cart.total >= 500 && !alreadyEarnedToday) {
+            const newStars = rewardUser.stars + 1;
+
+            await supabase
+              .from("rewards_users")
+              .update({
+                stars: newStars,
+                total_visits: rewardUser.total_visits + 1,
+                reward_available: newStars >= 5,
+                last_star_date: today,
+              })
+              .eq("id", rewardUser.id);
+          }
         }
       }
 
@@ -1238,33 +1258,6 @@ export default function MenuPage() {
               <p className="font-semibold text-sm" style={{ color: "#f0ebe2" }}>
                 ✅ Order Placed Successfully
               </p>
-
-              {REWARDS_CONFIG.enabled && (
-                <div
-                  className="mt-3 p-3 rounded-xl text-center"
-                  style={{
-                    background: "rgba(201,169,110,0.15)",
-                    border: "1px solid rgba(201,169,110,0.25)",
-                  }}
-                >
-                  <p
-                    className="text-sm font-medium"
-                    style={{ color: "#f0ebe2" }}
-                  >
-                    ⭐ {REWARDS_CONFIG.rewardMessage}
-                  </p>
-
-                  <button
-                    className="mt-2 px-4 py-2 rounded-lg text-sm font-semibold"
-                    style={{
-                      background: REWARDS_CONFIG.primaryColor,
-                      color: "#0f0e0c",
-                    }}
-                  >
-                    Join Rewards Program
-                  </button>
-                </div>
-              )}
 
               <button
                 onClick={() => {

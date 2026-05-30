@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { Gift } from "lucide-react";
+import { REWARDS_CONFIG } from "@/config/rewards";
 import { supabase } from "@/lib/supabase";
 import {
   useListMenuItems,
@@ -710,6 +712,26 @@ export default function MenuPage() {
 
           await supabase.from("order_items").insert(orderItems);
 
+          const rewardEmail = localStorage.getItem("rewardEmail");
+
+          if (rewardEmail) {
+            const { data: rewardUser } = await supabase
+              .from("rewards_users")
+              .select("*")
+              .eq("email", rewardEmail)
+              .single();
+
+            if (rewardUser) {
+              await supabase
+                .from("rewards_users")
+                .update({
+                  stars: rewardUser.stars + 1,
+                  total_visits: rewardUser.total_visits + 1,
+                })
+                .eq("id", rewardUser.id);
+            }
+          }
+
           await supabase
             .from("orders")
             .update({
@@ -770,6 +792,26 @@ export default function MenuPage() {
       }));
 
       await supabase.from("order_items").insert(orderItems);
+
+      const rewardEmail = localStorage.getItem("rewardEmail");
+
+      if (rewardEmail) {
+        const { data: rewardUser } = await supabase
+          .from("rewards_users")
+          .select("*")
+          .eq("email", rewardEmail)
+          .single();
+
+        if (rewardUser) {
+          await supabase
+            .from("rewards_users")
+            .update({
+              stars: rewardUser.stars + 1,
+              total_visits: rewardUser.total_visits + 1,
+            })
+            .eq("id", rewardUser.id);
+        }
+      }
 
       cart.clear();
 
@@ -1197,6 +1239,33 @@ export default function MenuPage() {
                 ✅ Order Placed Successfully
               </p>
 
+              {REWARDS_CONFIG.enabled && (
+                <div
+                  className="mt-3 p-3 rounded-xl text-center"
+                  style={{
+                    background: "rgba(201,169,110,0.15)",
+                    border: "1px solid rgba(201,169,110,0.25)",
+                  }}
+                >
+                  <p
+                    className="text-sm font-medium"
+                    style={{ color: "#f0ebe2" }}
+                  >
+                    ⭐ {REWARDS_CONFIG.rewardMessage}
+                  </p>
+
+                  <button
+                    className="mt-2 px-4 py-2 rounded-lg text-sm font-semibold"
+                    style={{
+                      background: REWARDS_CONFIG.primaryColor,
+                      color: "#0f0e0c",
+                    }}
+                  >
+                    Join Rewards Program
+                  </button>
+                </div>
+              )}
+
               <button
                 onClick={() => {
                   window.location.href = `/current-order?table=${tableNumber}`;
@@ -1213,6 +1282,35 @@ export default function MenuPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Rewards Float Button */}
+      {REWARDS_CONFIG.enabled && (
+        <button
+          onClick={() => {
+            window.location.href = localStorage.getItem("rewardEmail")
+              ? "/rewards-dashboard"
+              : "/rewards";
+          }}
+          className="fixed bottom-20 right-4 z-40 px-4 py-3 rounded-2xl shadow-xl transition-all hover:scale-105"
+          style={{
+            background: "rgba(201,169,110,0.95)",
+            color: "#0f0e0c",
+            backdropFilter: "blur(12px)",
+          }}
+        >
+          <div className="flex items-center gap-2">
+            <span>⭐</span>
+            <div className="text-left">
+              <div className="text-xs font-bold">
+                {localStorage.getItem("rewardEmail")
+                  ? "My Rewards"
+                  : "Join Rewards"}
+              </div>
+              <div className="text-[10px]">Earn Stars & Discounts</div>
+            </div>
+          </div>
+        </button>
+      )}
 
       {/* WhatsApp float button */}
       {whatsappNumber && (

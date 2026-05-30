@@ -9,7 +9,9 @@ import AdminLogin from "@/pages/admin/login";
 import AdminDashboard from "@/pages/admin/dashboard";
 import { supabase } from "./lib/supabase";
 import TestRealtime from "@/pages/test-realtime";
+import RewardsPage from "@/pages/rewards";
 import CurrentOrder from "@/pages/current-order";
+import RewardsDashboard from "@/pages/rewards-dashboard";
 
 const queryClient = new QueryClient();
 
@@ -19,9 +21,11 @@ function Router() {
       <Route path="/" component={Menu} />
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin" component={AdminDashboard} />
-      <Route path="/admin/analytics" element={<AnalyticsPage />} />
+      <Route path="/admin/analytics" component={AnalyticsPage} />
       <Route path="/test" component={TestRealtime} />
       <Route path="/current-order" component={CurrentOrder} />
+      <Route path="/rewards" component={RewardsPage} />
+      <Route path="/rewards-dashboard" component={RewardsDashboard} />
     </Switch>
   );
 }

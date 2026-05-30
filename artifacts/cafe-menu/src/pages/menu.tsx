@@ -724,16 +724,31 @@ export default function MenuPage() {
             if (rewardUser) {
               const today = new Date().toISOString().split("T")[0];
 
-              const alreadyEarnedToday = rewardUser.last_star_date === today;
+              // VISIT LOGIC
+              if (rewardUser.last_visit_date !== today) {
+                await supabase
+                  .from("rewards_users")
+                  .update({
+                    total_visits: rewardUser.total_visits + 1,
+                    last_visit_date: today,
+                  })
+                  .eq("id", rewardUser.id);
 
-              if (cart.total >= 500 && !alreadyEarnedToday) {
+                rewardUser.total_visits += 1;
+                rewardUser.last_visit_date = today;
+              }
+
+              // STAR LOGIC
+              const alreadyEarnedStarToday =
+                rewardUser.last_star_date === today;
+
+              if (cart.total >= 500 && !alreadyEarnedStarToday) {
                 const newStars = rewardUser.stars + 1;
 
                 await supabase
                   .from("rewards_users")
                   .update({
                     stars: newStars,
-                    total_visits: rewardUser.total_visits + 1,
                     reward_available: newStars >= 5,
                     last_star_date: today,
                   })
@@ -815,16 +830,30 @@ export default function MenuPage() {
         if (rewardUser) {
           const today = new Date().toISOString().split("T")[0];
 
-          const alreadyEarnedToday = rewardUser.last_star_date === today;
+          // VISIT LOGIC
+          if (rewardUser.last_visit_date !== today) {
+            await supabase
+              .from("rewards_users")
+              .update({
+                total_visits: rewardUser.total_visits + 1,
+                last_visit_date: today,
+              })
+              .eq("id", rewardUser.id);
 
-          if (cart.total >= 500 && !alreadyEarnedToday) {
+            rewardUser.total_visits += 1;
+            rewardUser.last_visit_date = today;
+          }
+
+          // STAR LOGIC
+          const alreadyEarnedStarToday = rewardUser.last_star_date === today;
+
+          if (cart.total >= 500 && !alreadyEarnedStarToday) {
             const newStars = rewardUser.stars + 1;
 
             await supabase
               .from("rewards_users")
               .update({
                 stars: newStars,
-                total_visits: rewardUser.total_visits + 1,
                 reward_available: newStars >= 5,
                 last_star_date: today,
               })

@@ -690,8 +690,6 @@ export default function MenuPage() {
       const existingOrderId = localStorage.getItem(
         `activeOrderId_${tableNumber}`,
       );
-
-      // EXISTING ACTIVE ORDER
       if (existingOrderId) {
         const { data: existingOrder } = await supabase
           .from("orders")
@@ -700,17 +698,35 @@ export default function MenuPage() {
           .single();
 
         if (existingOrder) {
+          // EXISTING ACTIVE ORDER
           const orderItems = cart.items.map((item) => ({
             order_id: Number(existingOrderId),
-
             item_name: item.name,
-
             quantity: item.quantity,
-
             price: item.price,
           }));
 
           await supabase.from("order_items").insert(orderItems);
+
+          await supabase
+            .from("orders")
+            .update({
+              subtotal: existingOrder.subtotal + cart.total,
+              total: existingOrder.total + cart.total,
+
+              status: ["preparing", "ready", "completed"].includes(
+                existingOrder.status,
+              )
+                ? "pending"
+                : existingOrder.status,
+
+              is_updated: true,
+
+              latest_added_items: cart.items.map(
+                (item) => `${item.quantity}x ${item.name}`,
+              ),
+            })
+            .eq("id", existingOrderId);
 
           const rewardEmail = localStorage.getItem("rewardEmail");
 
@@ -757,14 +773,6 @@ export default function MenuPage() {
             }
           }
 
-          await supabase
-            .from("orders")
-            .update({
-              subtotal: existingOrder.subtotal + cart.total,
-              total: existingOrder.total + cart.total,
-            })
-            .eq("id", existingOrderId);
-
           cart.clear();
 
           setCartOpen(false);
@@ -792,6 +800,8 @@ export default function MenuPage() {
             total: cart.total,
             is_active: true,
             is_paid: false,
+
+            is_updated: false,
           },
         ])
         .select()

@@ -17,7 +17,10 @@ import { useToast } from "@/hooks/use-toast";
 
 type OrderItem = { id: number; name: string; price: number; quantity: number };
 type Order = {
+  recentlyUpdated?: boolean;
   id: number;
+  is_updated?: boolean;
+  latest_added_items?: string[];
   tableNumber?: string | null;
   customerName?: string | null;
   order_items?: any[];
@@ -84,6 +87,7 @@ export default function OrdersPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const q = (opts: any) => opts;
   const [orders, setOrders] = useState<Order[]>([]);
+  const [newItems, setNewItems] = useState<Record<number, string[]>>({});
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -91,6 +95,28 @@ export default function OrdersPage() {
 
     const channel = supabase
       .channel("admin-orders")
+
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "orders",
+        },
+        (payload: any) => {
+          fetchOrders();
+
+          if (payload.eventType === "UPDATE") {
+            fetchOrders();
+
+            // setTimeout(() => {
+            //   setUpdatedOrders((prev) =>
+            //     prev.filter((id) => id !== payload.new.id),
+            //   );
+            // }, 10000);
+          }
+        },
+      )
 
       .on(
         "postgres_changes",
@@ -148,6 +174,13 @@ export default function OrdersPage() {
         is_active: status === "completed" ? false : true,
 
         is_paid: status === "completed" ? true : false,
+
+        ...(status === "preparing"
+          ? {
+              is_updated: false,
+              latest_added_items: [],
+            }
+          : {}),
       })
       .eq("id", id);
 
@@ -304,6 +337,13 @@ export default function OrdersPage() {
               >
                 {/* Order header */}
                 <div className="flex items-center justify-between">
+                  {order.is_updated && (
+                    <div className="mb-2">
+                      <span className="bg-yellow-500 text-black px-2 py-1 rounded-md text-xs font-bold animate-pulse">
+                        UPDATED
+                      </span>
+                    </div>
+                  )}
                   <div>
                     <span className="text-sm font-bold text-foreground">
                       Table {order.table_id || 1}
@@ -328,6 +368,25 @@ export default function OrdersPage() {
                     </button>
                   </div>
                 </div>
+
+                {order.latest_added_items?.length > 0 && (
+                  <div className="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-3 mb-3">
+                    <div className="font-bold text-yellow-700 mb-2 text-sm">
+                      ⚡ NEW ITEMS ADDED
+                    </div>
+
+                    {order.latest_added_items.map(
+                      (item: string, index: number) => (
+                        <div
+                          key={index}
+                          className="text-sm font-medium text-black"
+                        >
+                          + {item}
+                        </div>
+                      ),
+                    )}
+                  </div>
+                )}
 
                 {/* Items */}
                 <div className="space-y-2 border-t border-border pt-3">

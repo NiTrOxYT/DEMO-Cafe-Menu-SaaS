@@ -2,7 +2,7 @@ import React from "react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import jsPDF from "jspdf";
-import { Download, ArrowLeft, MoreVertical } from "lucide-react";
+import { Download, ArrowLeft } from "lucide-react";
 import autoTable from "jspdf-autotable";
 
 const BillPage: React.FC = () => {
@@ -188,16 +188,21 @@ const BillPage: React.FC = () => {
     return (
         <div className="min-h-screen bg-[#131313] text-white font-sans pb-24">
             {/* Top App Bar */}
-            <header className="sticky top-0 z-50 flex items-center justify-between w-full h-16 px-4 border-b bg-[#131313] border-white/10">
-                <button className="p-2 transition-colors hover:bg-white/5 rounded-full">
+            <header className="sticky top-0 z-50 flex items-center w-full h-16 px-4 border-b bg-[#131313] border-white/10">
+                <button
+                    onClick={() => window.history.back()}
+                    className="p-2 transition-colors hover:bg-white/5 rounded-full"
+                >
                     <ArrowLeft className="w-6 h-6 text-[#c9a96e]" />
                 </button>
-                <h1 className="text-xl font-medium font-serif text-[#c9a96e]">
-                    Invoice Details
-                </h1>
-                <button className="p-2 transition-colors hover:bg-white/5 rounded-full">
-                    <MoreVertical className="w-6 h-6 text-gray-400" />
-                </button>
+
+                <div className="flex-1 text-center">
+                    <h1 className="text-xl font-medium font-serif text-[#c9a96e]">
+                        Invoice Details
+                    </h1>
+                </div>
+
+                <div className="w-10" />
             </header>
 
             <main className="p-4 space-y-6">

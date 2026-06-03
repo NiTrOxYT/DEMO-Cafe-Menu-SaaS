@@ -63,7 +63,7 @@ export default function AdminLogin() {
             Admin Portal
           </p>
           <h1 className="font-garamond text-[44px] leading-tight text-foreground">
-            TONGUE TWISTER
+            The Golden Brew
           </h1>
         </div>
 

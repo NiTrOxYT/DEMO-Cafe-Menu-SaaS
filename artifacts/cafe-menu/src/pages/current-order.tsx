@@ -230,6 +230,26 @@ export default function CurrentOrder() {
           <Row label="Tax" value={`₹${order.tax}`} />
 
           <Row label="Total" value={`₹${order.total}`} big />
+         
+          <button
+            onClick={() => {
+              window.location.href = `/bill?id=${order.id}`;
+            }}
+            style={{
+              marginTop: 20,
+              width: "100%",
+              height: 52,
+              border: "none",
+              borderRadius: 14,
+              background: "#c9a96e",
+              color: "#111",
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            View Bill
+          </button>
+          
         </div>
       </div>
     </div>

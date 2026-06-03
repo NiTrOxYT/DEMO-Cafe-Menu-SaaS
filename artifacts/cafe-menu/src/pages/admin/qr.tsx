@@ -25,7 +25,7 @@ type TableEntry = { id: string; number: string };
 
 export default function QRPage() {
   const { data: settings } = useGetSettings();
-  const restaurantName = settings?.restaurantName ?? "TONGUE TWISTER";
+  const restaurantName = settings?.restaurantName ?? "The Golden Brew";
   const [tables, setTables] = useState<TableEntry[]>([
     { id: "1", number: "1" },
     { id: "2", number: "2" },

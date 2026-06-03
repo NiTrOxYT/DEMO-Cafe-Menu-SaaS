@@ -664,7 +664,7 @@ export default function MenuPage() {
   // Table number from URL
   const tableNumber = new URLSearchParams(window.location.search).get("table");
 
-  const restaurantName = settings?.restaurantName ?? "TONGUE TWISTER";
+  const restaurantName = settings?.restaurantName ?? "The Golden Brew";
   const tagline = settings?.tagline ?? "Crafted with passion, served with love";
   const whatsappNumber = settings?.whatsappNumber ?? null;
   const bannerUrl =

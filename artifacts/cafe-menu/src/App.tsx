@@ -12,6 +12,7 @@ import TestRealtime from "@/pages/test-realtime";
 import RewardsPage from "@/pages/rewards";
 import CurrentOrder from "@/pages/current-order";
 import RewardsDashboard from "@/pages/rewards-dashboard";
+import BillPage from "@/pages/bill";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ function Router() {
       <Route path="/current-order" component={CurrentOrder} />
       <Route path="/rewards" component={RewardsPage} />
       <Route path="/rewards-dashboard" component={RewardsDashboard} />
+      <Route path="/bill" component={BillPage} />
     </Switch>
   );
 }

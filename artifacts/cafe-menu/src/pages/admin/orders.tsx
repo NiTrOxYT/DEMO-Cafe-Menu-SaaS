@@ -112,20 +112,25 @@ export default function OrdersPage() {
   }, []);
 
   async function fetchOrders() {
+    console.log("Refresh clicked");
+
     const { data, error } = await supabase
       .from("orders")
       .select(
         `
         *,
-order_items (
-  *,
-  menu_items (
-    name
-  )
-)
+        order_items (
+          *,
+          menu_items (
+            name
+          )
+        )
       `,
       )
       .order("created_at", { ascending: false });
+
+    console.log("Data:", data);
+    console.log("Error:", error);
 
     if (!error && data) {
       setOrders(data as Order[]);
@@ -133,6 +138,7 @@ order_items (
 
     setIsLoading(false);
   }
+
   async function updateOrderStatus(id: number, status: string) {
     await supabase
       .from("orders")
@@ -211,8 +217,21 @@ order_items (
         <h2 className="text-2xl font-serif font-bold text-foreground">
           Orders
         </h2>
-        <Button variant="outline" size="sm" onClick={() => fetchOrders()}>
-          <RefreshCw size={14} className="mr-2" /> Refresh
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={fetchOrders}
+          className="
+            active:scale-95
+            transition-all
+            duration-150
+            hover:shadow-md
+            hover:border-primary/50
+            hover:bg-primary/5
+          "
+        >
+          <RefreshCw size={14} className="mr-2" />
+          Refresh
         </Button>
       </div>
 

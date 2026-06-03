@@ -2,6 +2,7 @@ import React, { useState, useRef } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { supabase } from "@/lib/supabase";
 import * as z from "zod";
 import {
   useGetMe,
@@ -215,6 +216,22 @@ export default function AdminDashboard() {
   const [itemDialogOpen, setItemDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
+  const [newOrderPopup, setNewOrderPopup] = useState(false);
+  const [latestOrder, setLatestOrder] = useState<any>(null);
+  // const [audioEnabled, setAudioEnabled] = useState(false);
+  const [notificationTitle, setNotificationTitle] = useState("");
+  const audioRef = React.useRef<HTMLAudioElement | null>(null);
+  const [orders, setOrders] = useState<any[]>([]);
+  async function fetchOrders() {
+    const { data, error } = await supabase
+      .from("orders")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (!error && data) {
+      setOrders(data);
+    }
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const q = (opts: any) => opts;
@@ -232,7 +249,7 @@ export default function AdminDashboard() {
   const { data: categories } = useListCategories({
     query: q({ enabled: !!me }),
   });
-  const { data: orders = [] } = useListOrders({ query: q({ enabled: !!me }) });
+  // const [orders, setOrders] = useState<any[]>([]);
 
   const logoutMutation = useLogout();
   const deleteItemMutation = useDeleteMenuItem();
@@ -263,8 +280,96 @@ export default function AdminDashboard() {
   });
 
   React.useEffect(() => {
-    if (meError) setLocation("/admin/login");
-  }, [meError, setLocation]);
+    fetchOrders();
+  }, []);
+
+  React.useEffect(() => {
+    audioRef.current = new Audio("/sounds/order.mp3");
+    audioRef.current.preload = "auto";
+
+    const unlock = () => {
+      const audio = audioRef.current;
+
+      if (!audio) return;
+
+      audio.muted = true;
+
+      audio
+        .play()
+        .then(() => {
+          audio.pause();
+          audio.currentTime = 0;
+          audio.muted = false;
+        })
+        .catch(console.error);
+
+      window.removeEventListener("click", unlock);
+    };
+
+    window.addEventListener("click", unlock);
+
+    return () => {
+      window.removeEventListener("click", unlock);
+    };
+  }, []);
+
+  React.useEffect(() => {
+    const channel = supabase
+      .channel("admin-order-notifications")
+
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "orders",
+        },
+        (payload) => {
+          console.log(payload);
+
+          if (payload.eventType === "INSERT") {
+            setLatestOrder(payload.new);
+
+            fetchOrders();
+
+            setNewOrderPopup(true);
+
+            toast({
+              title: "🔔 New Order",
+              description: `Order #${payload.new.id}`,
+            });
+          }
+
+          if (payload.eventType === "UPDATE") {
+            setLatestOrder(payload.new);
+
+            fetchOrders();
+
+            setNewOrderPopup(true);
+
+            toast({
+              title: "➕ Order Updated",
+              description: `Items added to Order #${payload.new.id}`,
+            });
+          }
+
+          if (audioRef.current) {
+            audioRef.current.currentTime = 0;
+            audioRef.current.play().catch(console.error);
+          }
+
+          setTimeout(() => {
+            setNewOrderPopup(false);
+          }, 8000);
+        },
+      )
+
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   if (
     meLoading ||
@@ -425,11 +530,11 @@ export default function AdminDashboard() {
   ).length;
   const todayRevenue = (orders as any[])
     .filter((o) => {
-      const d = new Date(o.createdAt);
+      const d = new Date(o.created_at);
       const now = new Date();
       return d.getDate() === now.getDate() && d.getMonth() === now.getMonth();
     })
-    .reduce((s: number, o: any) => s + Number(o.totalAmount), 0);
+    .reduce((s: number, o: any) => s + Number(o.total), 0);
 
   const NAV_ITEMS: { tab: NavTab; label: string; icon: React.ReactNode }[] = [
     { tab: "overview", label: "Overview", icon: <LayoutDashboard size={16} /> },
@@ -513,23 +618,23 @@ export default function AdminDashboard() {
             <h2 className="text-2xl font-serif font-bold text-foreground">
               Dashboard
             </h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Card>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* <Card>
                 <CardHeader className="pb-2">
                   <CardDescription>Total Items</CardDescription>
                   <CardTitle className="text-3xl">
                     {summary?.totalItems ?? 0}
                   </CardTitle>
                 </CardHeader>
-              </Card>
-              <Card>
+              </Card> */}
+              {/* <Card>
                 <CardHeader className="pb-2">
                   <CardDescription>Categories</CardDescription>
                   <CardTitle className="text-3xl">
                     {summary?.totalCategories ?? 0}
                   </CardTitle>
                 </CardHeader>
-              </Card>
+              </Card> */}
               <Card>
                 <CardHeader className="pb-2">
                   <CardDescription>Pending Orders</CardDescription>
@@ -606,7 +711,7 @@ export default function AdminDashboard() {
                         </span>
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-foreground">
-                            ₹{Math.round(o.totalAmount)}
+                            ₹{Math.round(o.total)}
                           </span>
                           <span
                             className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${
@@ -1102,6 +1207,25 @@ export default function AdminDashboard() {
         {activeTab === "qr" && <QRPage />}
         {activeTab === "settings" && <SettingsPage />}
       </main>
+      {newOrderPopup && (
+        <div className="fixed top-5 right-5 z-[9999]">
+          {/* <div className="bg-card border border-primary/20 rounded-2xl p-5 shadow-2xl w-80"> */}
+          {/* <div className="text-lg font-bold mb-2">{notificationTitle}</div> */}
+
+          {/* <div className="text-sm text-muted-foreground mb-1">
+              Order #{latestOrder?.id ?? "-"}
+            </div>
+
+            <div className="text-sm text-muted-foreground mb-4">
+              ₹{latestOrder?.total ?? 0}
+            </div> */}
+
+          {/* <Button className="w-full" onClick={() => setNewOrderPopup(false)}>
+              View Order
+            </Button> */}
+          {/* </div> */}
+        </div>
+      )}
     </div>
   );
 }

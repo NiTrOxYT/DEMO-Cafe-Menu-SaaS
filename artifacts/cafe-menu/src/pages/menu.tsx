@@ -1068,9 +1068,23 @@ export default function MenuPage() {
             onClick={() => setSelectedCategory(null)}
             className="flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold transition-all"
             style={{
-              background: selectedCategory === null ? AMBER : "transparent",
-              color: selectedCategory === null ? DARK : MUTED,
-              border: `1px solid ${selectedCategory === null ? AMBER : BORDER}`,
+              background:
+                selectedCategory === null
+                  ? "linear-gradient(135deg,#c9a96e,#e8c98a)"
+                  : "rgba(255,255,255,0.04)",
+
+              color: selectedCategory === null ? DARK : CREAM,
+
+              border: `1px solid ${
+                selectedCategory === null ? "rgba(201,169,110,0.5)" : BORDER
+              }`,
+
+              boxShadow:
+                selectedCategory === null
+                  ? "0 8px 24px rgba(201,169,110,0.35)"
+                  : "none",
+
+              backdropFilter: "blur(12px)",
             }}
           >
             All
@@ -1079,11 +1093,21 @@ export default function MenuPage() {
             <button
               key={cat.id}
               onClick={() => setSelectedCategory(cat.id)}
-              className="flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold transition-all"
+              className="flex-shrink-0 px-5 py-2 rounded-2xl text-xs font-bold transition-all duration-300"
               style={{
-                background: selectedCategory === cat.id ? AMBER : "transparent",
-                color: selectedCategory === cat.id ? DARK : MUTED,
-                border: `1px solid ${selectedCategory === cat.id ? AMBER : BORDER}`,
+                background:
+                  selectedCategory === cat.id
+                    ? "linear-gradient(135deg,#c9a96e,#e8c98a)"
+                    : "rgba(255,255,255,0.04)",
+
+                color: selectedCategory === cat.id ? DARK : CREAM,
+
+                border:
+                  selectedCategory === cat.id
+                    ? "1px solid rgba(255,215,140,0.6)"
+                    : `1px solid ${BORDER}`,
+
+                boxShadow: "none",
               }}
             >
               {cat.name}
@@ -1102,11 +1126,12 @@ export default function MenuPage() {
                 background:
                   vegFilter === f
                     ? f === "veg"
-                      ? `${GREEN}22`
+                      ? "rgba(76,175,80,0.18)"
                       : f === "nonveg"
-                        ? `${RED}22`
-                        : `${AMBER}22`
-                    : "transparent",
+                        ? "rgba(229,57,53,0.18)"
+                        : "rgba(201,169,110,0.18)"
+                    : "rgba(255,255,255,0.04)",
+
                 color:
                   vegFilter === f
                     ? f === "veg"
@@ -1114,8 +1139,17 @@ export default function MenuPage() {
                       : f === "nonveg"
                         ? RED
                         : AMBER
-                    : MUTED,
-                border: `1px solid ${vegFilter === f ? (f === "veg" ? GREEN : f === "nonveg" ? RED : AMBER) : BORDER}`,
+                    : CREAM,
+
+                border:
+                  vegFilter === f
+                    ? `1px solid ${
+                        f === "veg" ? GREEN : f === "nonveg" ? RED : AMBER
+                      }`
+                    : `1px solid ${BORDER}`,
+
+                boxShadow:
+                  vegFilter === f ? "0 4px 16px rgba(0,0,0,0.25)" : "none",
               }}
             >
               {f === "veg" && <Leaf size={10} />}

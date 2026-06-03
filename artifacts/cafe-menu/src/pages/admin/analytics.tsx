@@ -101,7 +101,7 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      <h2 className="text-xl font-bold mb-4">Top Selling Items</h2>
+      <h2 className="text-xl font-bold mb-4">Highly Re-Ordered Items</h2>
 
       <div className="space-y-2">
         {topItems.map(([name, qty]) => (

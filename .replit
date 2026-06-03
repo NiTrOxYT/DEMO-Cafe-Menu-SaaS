@@ -43,6 +43,10 @@ externalPort = 80
 localPort = 25924
 externalPort = 3000
 
+[[ports]]
+localPort = 25925
+externalPort = 4200
+
 [nix]
 channel = "stable-25_05"
 packages = ["vim-full"]

@@ -338,8 +338,7 @@ const BillPage: React.FC = () => {
                         {/* Footer Message */}
                         <div className="pt-8 text-center">
                             <p className="text-xs italic text-gray-500">
-                                "Thank you for dining with us at The Gilded
-                                Bean."
+                                "Thank you for dining with us"
                             </p>
                         </div>
                     </div>

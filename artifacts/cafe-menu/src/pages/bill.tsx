@@ -171,7 +171,7 @@ const BillPage: React.FC = () => {
             align: "center",
         });
 
-        pdf.text("Thank you for choosing Tongue Twister", 105, footerY + 10, {
+        pdf.text("Thank you for choosing The Golden Brew", 105, footerY + 10, {
             align: "center",
         });
 

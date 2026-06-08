@@ -21,10 +21,12 @@ router.post("/auth/login", (req, res) => {
     return;
   }
 
+  const isProduction = process.env.NODE_ENV === "production";
+
   res.cookie("admin_token", "authenticated", {
     httpOnly: true,
-    secure: true,
-    sameSite: "none",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
     path: "/",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
@@ -36,10 +38,12 @@ router.post("/auth/login", (req, res) => {
 });
 
 router.post("/auth/logout", (_req, res) => {
+  const isProduction = process.env.NODE_ENV === "production";
+
   res.clearCookie("admin_token", {
     httpOnly: true,
-    secure: true,
-    sameSite: "none",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
     path: "/",
   });
 

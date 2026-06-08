@@ -11,7 +11,6 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
-  ShoppingCart,
   X,
   Plus,
   Minus,
@@ -20,17 +19,23 @@ import {
   Star,
   ChevronDown,
   MessageCircle,
+  Sparkles,
+  ArrowRight,
 } from "lucide-react";
 
-const DARK = "#0f0e0c";
-const DARK_CARD = "#1c1a17";
-const CREAM = "#f0ebe2";
-const MUTED = "#7a7265";
+const DARK = "#080706";
+const DARK_CARD = "#141210";
+const DARK_ELEVATED = "#1c1916";
+const CREAM = "#f5f0e8";
+const MUTED = "#8a8278";
 const AMBER = "#c9a96e";
-const AMBER_LIGHT = "#e8c98a";
-const GREEN = "#4caf50";
-const RED = "#e53935";
-const BORDER = "rgba(255,255,255,0.07)";
+const AMBER_LIGHT = "#e8d4a8";
+const GREEN = "#5cb85c";
+const RED = "#e05252";
+const BORDER = "rgba(255,255,255,0.08)";
+const GOLD_GRADIENT =
+  "linear-gradient(135deg, #b8924f 0%, #e8d4a8 45%, #c9a96e 100%)";
+const CARD_SHADOW = "0 4px 24px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.04)";
 
 function formatINR(amount: number) {
   return `₹${Math.round(amount)}`;
@@ -64,6 +69,39 @@ type MenuItem = {
   isBestseller: boolean;
   isSpicy: boolean;
 };
+
+function SectionHeader({
+  label,
+  title,
+}: {
+  label: string;
+  title: string;
+}) {
+  return (
+    <div className="mb-6">
+      <p
+        className="text-[10px] font-semibold uppercase tracking-[0.22em] mb-1.5"
+        style={{ color: AMBER }}
+      >
+        {label}
+      </p>
+      <div className="flex items-center gap-4">
+        <h2
+          className="font-serif text-2xl md:text-3xl font-bold"
+          style={{ color: CREAM }}
+        >
+          {title}
+        </h2>
+        <div
+          className="flex-1 h-px"
+          style={{
+            background: `linear-gradient(to right, ${AMBER}66, transparent)`,
+          }}
+        />
+      </div>
+    </div>
+  );
+}
 
 // ---------- Badges ----------
 function VegBadge({ isVeg }: { isVeg: boolean }) {
@@ -153,41 +191,53 @@ function ItemCard({
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
       style={{
         background: DARK_CARD,
         border: `1px solid ${BORDER}`,
-        borderRadius: 16,
-        overflow: "hidden",
+        borderRadius: 20,
+        boxShadow: CARD_SHADOW,
       }}
-      className="flex flex-col cursor-pointer group"
+      className="flex flex-col cursor-pointer group overflow-hidden"
       onClick={onClick}
     >
-      {/* Image */}
       <div
         className="relative overflow-hidden"
-        style={{ aspectRatio: "4/3", background: "#1a1714" }}
+        style={{ aspectRatio: "4/3", background: DARK_ELEVATED }}
       >
         {imgSrc ? (
           <img
             src={imgSrc}
             alt={item.name}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06]"
           />
         ) : (
           <div
             className="w-full h-full flex items-center justify-center"
-            style={{ color: MUTED }}
+            style={{
+              background: `radial-gradient(circle at 50% 40%, ${DARK_ELEVATED}, ${DARK_CARD})`,
+              color: MUTED,
+            }}
           >
             <span style={{ fontSize: 40 }}>☕</span>
           </div>
         )}
-        {/* Badges overlay */}
-        <div className="absolute top-2.5 left-2.5 flex flex-col gap-1">
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              "linear-gradient(to top, rgba(8,7,6,0.75) 0%, transparent 55%)",
+          }}
+        />
+        <div className="absolute top-3 left-3 flex flex-col gap-1.5">
           {item.isBestseller && (
             <span
-              className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide"
-              style={{ background: AMBER, color: DARK }}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.12em]"
+              style={{
+                background: GOLD_GRADIENT,
+                color: DARK,
+                boxShadow: "0 4px 16px rgba(201,169,110,0.35)",
+              }}
             >
               <Star size={9} fill={DARK} /> Bestseller
             </span>
@@ -197,26 +247,29 @@ function ItemCard({
           <div
             className="absolute inset-0 flex items-center justify-center"
             style={{
-              background: "rgba(0,0,0,0.65)",
-              backdropFilter: "blur(2px)",
+              background: "rgba(8,7,6,0.72)",
+              backdropFilter: "blur(4px)",
             }}
           >
             <span
-              className="text-xs font-semibold uppercase tracking-widest"
-              style={{ color: MUTED }}
+              className="text-[10px] font-semibold uppercase tracking-[0.2em] px-3 py-1.5 rounded-full"
+              style={{
+                color: MUTED,
+                border: `1px solid ${BORDER}`,
+                background: "rgba(255,255,255,0.04)",
+              }}
             >
-              Not Available
+              Unavailable
             </span>
           </div>
         )}
       </div>
 
-      {/* Info */}
-      <div className="flex-1 p-3 flex flex-col justify-between gap-2">
+      <div className="flex-1 p-4 flex flex-col justify-between gap-3">
         <div>
-          <div className="flex items-start justify-between gap-2 mb-1">
+          <div className="flex items-start justify-between gap-2 mb-1.5">
             <h3
-              className="font-semibold text-sm leading-snug"
+              className="font-serif font-semibold text-[15px] leading-snug"
               style={{ color: CREAM }}
             >
               {item.name}
@@ -225,8 +278,11 @@ function ItemCard({
           </div>
           {item.isSpicy && (
             <span
-              className="flex items-center gap-1 text-[10px] font-medium mb-1"
-              style={{ color: "#ff7043" }}
+              className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide mb-1.5 px-2 py-0.5 rounded-full"
+              style={{
+                color: "#ff8a65",
+                background: "rgba(255,138,101,0.12)",
+              }}
             >
               <Flame size={10} /> Spicy
             </span>
@@ -240,8 +296,11 @@ function ItemCard({
             </p>
           )}
         </div>
-        <div className="flex items-center justify-between">
-          <span className="font-bold text-sm" style={{ color: AMBER }}>
+        <div className="flex items-center justify-between pt-1">
+          <span
+            className="font-serif font-bold text-base"
+            style={{ color: AMBER_LIGHT }}
+          >
             {formatINR(item.price)}
           </span>
           {item.available && (
@@ -249,19 +308,26 @@ function ItemCard({
               {cartQty === 0 ? (
                 <button
                   onClick={onAdd}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90 active:scale-95"
-                  style={{ background: AMBER, color: DARK }}
+                  className="flex items-center gap-1 px-3.5 py-2 rounded-xl text-xs font-bold transition-all hover:brightness-110 active:scale-95"
+                  style={{
+                    background: GOLD_GRADIENT,
+                    color: DARK,
+                    boxShadow: "0 4px 14px rgba(201,169,110,0.3)",
+                  }}
                 >
                   <Plus size={12} /> Add
                 </button>
               ) : (
                 <div
-                  className="flex items-center gap-2 rounded-lg px-2 py-1"
-                  style={{ background: AMBER }}
+                  className="flex items-center gap-2.5 rounded-xl px-2.5 py-1.5"
+                  style={{
+                    background: GOLD_GRADIENT,
+                    boxShadow: "0 4px 14px rgba(201,169,110,0.3)",
+                  }}
                 >
                   <button
                     onClick={onRemove}
-                    className="text-black hover:opacity-70"
+                    className="text-black hover:opacity-70 transition-opacity"
                   >
                     <Minus size={12} />
                   </button>
@@ -270,7 +336,7 @@ function ItemCard({
                   </span>
                   <button
                     onClick={onAdd}
-                    className="text-black hover:opacity-70"
+                    className="text-black hover:opacity-70 transition-opacity"
                   >
                     <Plus size={12} />
                   </button>
@@ -315,7 +381,7 @@ function ItemDetailOverlay({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        style={{ background: "rgba(0,0,0,0.85)", backdropFilter: "blur(12px)" }}
+        style={{ background: "rgba(8,7,6,0.88)", backdropFilter: "blur(20px)" }}
         className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-8"
         onClick={onClose}
       >
@@ -329,10 +395,15 @@ function ItemDetailOverlay({
             background: DARK_CARD,
             maxHeight: "92dvh",
             border: `1px solid ${BORDER}`,
+            boxShadow: "0 32px 80px rgba(0,0,0,0.6)",
           }}
-          className="w-full md:max-w-3xl md:rounded-2xl overflow-hidden flex flex-col md:flex-row"
+          className="w-full md:max-w-3xl md:rounded-3xl overflow-hidden flex flex-col md:flex-row relative"
           onClick={(e: React.MouseEvent) => e.stopPropagation()}
         >
+          <div
+            className="absolute top-0 left-0 right-0 h-0.5 z-10"
+            style={{ background: GOLD_GRADIENT }}
+          />
           {imgSrc && (
             <div className="w-full md:w-1/2 aspect-[4/3] md:aspect-auto md:min-h-[420px] flex-shrink-0 overflow-hidden">
               <img
@@ -354,7 +425,7 @@ function ItemDetailOverlay({
                   </span>
                 )}
                 <h2
-                  className="text-2xl md:text-3xl font-serif font-bold"
+                  className="text-2xl md:text-4xl font-serif font-bold leading-tight"
                   style={{ color: CREAM }}
                 >
                   {item.name}
@@ -362,10 +433,14 @@ function ItemDetailOverlay({
               </div>
               <button
                 onClick={onClose}
-                style={{ color: MUTED }}
-                className="hover:opacity-70 mt-1"
+                style={{
+                  color: MUTED,
+                  background: "rgba(255,255,255,0.05)",
+                  border: `1px solid ${BORDER}`,
+                }}
+                className="hover:opacity-70 mt-1 p-2 rounded-full transition-opacity"
               >
-                <X size={22} />
+                <X size={20} />
               </button>
             </div>
             <div className="flex items-center gap-3 mb-4">
@@ -399,15 +474,22 @@ function ItemDetailOverlay({
               className="mt-auto pt-6 border-t flex items-center justify-between"
               style={{ borderColor: BORDER }}
             >
-              <span className="text-3xl font-bold" style={{ color: AMBER }}>
+              <span
+                className="text-3xl font-serif font-bold"
+                style={{ color: AMBER_LIGHT }}
+              >
                 {formatINR(item.price)}
               </span>
               {item.available ? (
                 cartQty === 0 ? (
                   <button
                     onClick={onAdd}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold transition-all hover:opacity-90"
-                    style={{ background: AMBER, color: DARK }}
+                    className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all hover:brightness-110 active:scale-[0.98]"
+                    style={{
+                      background: GOLD_GRADIENT,
+                      color: DARK,
+                      boxShadow: "0 8px 24px rgba(201,169,110,0.35)",
+                    }}
                   >
                     <Plus size={16} /> Add to Cart
                   </button>
@@ -495,7 +577,7 @@ function CartDrawer({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="fixed inset-0 z-50 flex justify-end"
-        style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)" }}
+        style={{ background: "rgba(8,7,6,0.75)", backdropFilter: "blur(12px)" }}
         onClick={onClose}
       >
         <motion.div
@@ -506,25 +588,35 @@ function CartDrawer({
           style={{
             background: DARK_CARD,
             border: `1px solid ${BORDER}`,
-            width: "min(100vw, 400px)",
+            width: "min(100vw, 420px)",
+            boxShadow: "-16px 0 48px rgba(0,0,0,0.45)",
           }}
-          className="h-full flex flex-col"
+          className="h-full flex flex-col relative"
           onClick={(e: React.MouseEvent) => e.stopPropagation()}
         >
-          {/* Header */}
           <div
-            className="flex items-center justify-between p-5 border-b"
+            className="absolute top-0 left-0 right-0 h-0.5"
+            style={{ background: GOLD_GRADIENT }}
+          />
+          <div
+            className="flex items-center justify-between p-6 border-b"
             style={{ borderColor: BORDER }}
           >
             <div>
+              <p
+                className="text-[10px] font-semibold uppercase tracking-[0.2em] mb-1"
+                style={{ color: AMBER }}
+              >
+                Your selection
+              </p>
               <h2
-                className="text-lg font-serif font-bold"
+                className="text-xl font-serif font-bold"
                 style={{ color: CREAM }}
               >
                 Your Order
               </h2>
               {tableNumber && (
-                <p className="text-xs mt-0.5" style={{ color: MUTED }}>
+                <p className="text-xs mt-1" style={{ color: MUTED }}>
                   Table {tableNumber}
                 </p>
               )}
@@ -539,11 +631,18 @@ function CartDrawer({
           </div>
 
           {/* Items */}
-          <div className="flex-1 overflow-y-auto p-5 space-y-3">
+          <div className="flex-1 overflow-y-auto p-5 space-y-2">
             {items.map((item) => {
               const imgSrc = getImageSrc(item.imageUrl);
               return (
-                <div key={item.id} className="flex items-center gap-3">
+                <div
+                  key={item.id}
+                  className="flex items-center gap-3 p-3 rounded-xl"
+                  style={{
+                    background: DARK_ELEVATED,
+                    border: `1px solid ${BORDER}`,
+                  }}
+                >
                   {imgSrc ? (
                     <img
                       src={imgSrc}
@@ -613,27 +712,44 @@ function CartDrawer({
             className="p-5 border-t space-y-3"
             style={{ borderColor: BORDER }}
           >
-            <div className="flex justify-between items-center mb-1">
-              <span className="font-semibold" style={{ color: CREAM }}>
+            <div
+              className="flex justify-between items-center mb-2 p-3 rounded-xl"
+              style={{ background: DARK_ELEVATED, border: `1px solid ${BORDER}` }}
+            >
+              <span
+                className="text-xs font-semibold uppercase tracking-[0.14em]"
+                style={{ color: MUTED }}
+              >
                 Total
               </span>
-              <span className="text-xl font-bold" style={{ color: AMBER }}>
+              <span
+                className="text-2xl font-serif font-bold"
+                style={{ color: AMBER_LIGHT }}
+              >
                 {formatINR(total)}
               </span>
             </div>
             {whatsappNumber ? (
               <button
                 onClick={handleWhatsApp}
-                className="w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all hover:opacity-90 active:scale-95"
-                style={{ background: "#25D366", color: "#fff" }}
+                className="w-full py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all hover:brightness-110 active:scale-[0.98]"
+                style={{
+                  background: "#25D366",
+                  color: "#fff",
+                  boxShadow: "0 8px 24px rgba(37,211,102,0.3)",
+                }}
               >
                 <MessageCircle size={18} /> Place Order via WhatsApp
               </button>
             ) : (
               <button
                 onClick={onPlaceOrder}
-                className="w-full py-3 rounded-xl font-bold transition-all hover:opacity-90 active:scale-95"
-                style={{ background: AMBER, color: DARK }}
+                className="w-full py-3.5 rounded-xl font-bold transition-all hover:brightness-110 active:scale-[0.98]"
+                style={{
+                  background: GOLD_GRADIENT,
+                  color: DARK,
+                  boxShadow: "0 8px 24px rgba(201,169,110,0.35)",
+                }}
               >
                 Place Order
               </button>
@@ -935,63 +1051,82 @@ export default function MenuPage() {
   );
 
   return (
-    <div style={{ background: DARK, minHeight: "100dvh" }}>
-      {/* Hero */}
+    <div
+      className="relative"
+      style={{ background: DARK, minHeight: "100dvh" }}
+    >
+      <div
+        className="pointer-events-none fixed inset-0 z-0 opacity-[0.03]"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+        }}
+      />
+
       <div
         className="relative overflow-hidden"
-        style={{ height: "56dvh", minHeight: 300 }}
+        style={{ height: "62dvh", minHeight: 340 }}
       >
         <img
           src={bannerUrl}
           alt="banner"
-          className="absolute inset-0 w-full h-full object-cover"
-          style={{ filter: "brightness(0.38)" }}
+          className="absolute inset-0 w-full h-full object-cover scale-105"
+          style={{ filter: "brightness(0.32) saturate(0.9)" }}
         />
         <div
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(to bottom, rgba(15,14,12,0.3) 0%, rgba(15,14,12,0.85) 100%)",
+              "linear-gradient(to bottom, rgba(8,7,6,0.15) 0%, rgba(8,7,6,0.55) 45%, rgba(8,7,6,0.95) 100%)",
           }}
         />
-        <div className="relative h-full flex flex-col items-center justify-center text-center px-6">
-          {tableNumber && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-4 px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest border"
-              style={{
-                color: AMBER,
-                borderColor: `${AMBER}44`,
-                background: `${AMBER}11`,
-              }}
-            >
-              Table {tableNumber}
-            </motion.div>
-          )}
-          {activeOrderId && (
-            <motion.button
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              onClick={() => {
-                window.location.href = `/current-order?table=${tableNumber}`;
-              }}
-              className="mb-4 px-4 py-2 rounded-full text-sm font-semibold"
-              style={{
-                background: "rgba(201,169,110,0.18)",
-                color: "#f0ebe2",
-                border: "1px solid rgba(201,169,110,0.35)",
-                backdropFilter: "blur(12px)",
-              }}
-            >
-              🧾 Current Order
-            </motion.button>
-          )}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(201,169,110,0.12), transparent 70%)",
+          }}
+        />
+        <div className="relative h-full flex flex-col items-center justify-center text-center px-6 z-10">
+          <div className="flex flex-wrap items-center justify-center gap-2 mb-5">
+            {tableNumber && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] border"
+                style={{
+                  color: AMBER_LIGHT,
+                  borderColor: "rgba(201,169,110,0.35)",
+                  background: "rgba(201,169,110,0.1)",
+                  backdropFilter: "blur(12px)",
+                }}
+              >
+                Table {tableNumber}
+              </motion.div>
+            )}
+            {activeOrderId && (
+              <motion.button
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                onClick={() => {
+                  window.location.href = `/current-order?table=${tableNumber}`;
+                }}
+                className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition-all hover:brightness-110"
+                style={{
+                  background: "rgba(255,255,255,0.08)",
+                  color: CREAM,
+                  border: `1px solid ${BORDER}`,
+                  backdropFilter: "blur(12px)",
+                }}
+              >
+                Current Order <ArrowRight size={12} />
+              </motion.button>
+            )}
+          </div>
           <motion.p
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-[11px] uppercase tracking-[0.28em] font-semibold mb-3"
+            className="text-[10px] uppercase tracking-[0.32em] font-semibold mb-4"
             style={{ color: AMBER }}
           >
             Seasonal Menu · 2026
@@ -1000,17 +1135,24 @@ export default function MenuPage() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="font-serif text-5xl md:text-7xl font-bold mb-4"
-            style={{ color: CREAM, textShadow: "0 2px 24px rgba(0,0,0,0.5)" }}
+            className="font-serif text-5xl md:text-7xl lg:text-8xl font-bold mb-5 leading-[1.05]"
+            style={{
+              color: CREAM,
+              textShadow: "0 4px 32px rgba(0,0,0,0.6)",
+            }}
           >
             {restaurantName}
           </motion.h1>
+          <div
+            className="w-16 h-px mb-5"
+            style={{ background: GOLD_GRADIENT }}
+          />
           <motion.p
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="text-sm md:text-base max-w-md"
-            style={{ color: "rgba(240,235,226,0.65)" }}
+            className="text-sm md:text-base max-w-lg leading-relaxed"
+            style={{ color: "rgba(245,240,232,0.7)" }}
           >
             {tagline}
           </motion.p>
@@ -1018,10 +1160,16 @@ export default function MenuPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1.2, duration: 0.8 }}
-            className="absolute bottom-6 left-1/2 -translate-x-1/2"
+            className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1"
           >
+            <span
+              className="text-[9px] uppercase tracking-[0.2em] font-medium"
+              style={{ color: MUTED }}
+            >
+              Explore
+            </span>
             <ChevronDown
-              size={22}
+              size={20}
               style={{ color: AMBER }}
               className="animate-bounce"
             />
@@ -1029,21 +1177,19 @@ export default function MenuPage() {
         </div>
       </div>
 
-      {/* Sticky filter bar */}
       <div
         className="sticky top-0 z-30 border-b"
         style={{
-          background: "rgba(15,14,12,0.9)",
-          backdropFilter: "blur(16px)",
+          background: "rgba(8,7,6,0.82)",
+          backdropFilter: "blur(20px) saturate(1.2)",
           borderColor: BORDER,
         }}
       >
-        {/* Search */}
-        <div className="max-w-5xl mx-auto px-4 pt-3 pb-2">
+        <div className="max-w-5xl mx-auto px-4 pt-4 pb-2">
           <div className="relative">
             <Search
-              size={14}
-              className="absolute left-3 top-1/2 -translate-y-1/2"
+              size={15}
+              className="absolute left-4 top-1/2 -translate-y-1/2"
               style={{ color: MUTED }}
             />
             <input
@@ -1051,11 +1197,12 @@ export default function MenuPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search food & drinks..."
-              className="w-full pl-8 pr-4 py-2 rounded-xl text-sm outline-none"
+              className="w-full pl-10 pr-10 py-3 rounded-2xl text-sm outline-none transition-all focus:ring-2"
               style={{
-                background: "rgba(255,255,255,0.05)",
+                background: "rgba(255,255,255,0.04)",
                 border: `1px solid ${BORDER}`,
                 color: CREAM,
+                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
               }}
             />
             {searchQuery && (
@@ -1076,25 +1223,18 @@ export default function MenuPage() {
         >
           <button
             onClick={() => setSelectedCategory(null)}
-            className="flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold transition-all"
+            className="flex-shrink-0 px-5 py-2 rounded-full text-xs font-bold transition-all duration-300"
             style={{
               background:
-                selectedCategory === null
-                  ? "linear-gradient(135deg,#c9a96e,#e8c98a)"
-                  : "rgba(255,255,255,0.04)",
-
+                selectedCategory === null ? GOLD_GRADIENT : "rgba(255,255,255,0.04)",
               color: selectedCategory === null ? DARK : CREAM,
-
               border: `1px solid ${
-                selectedCategory === null ? "rgba(201,169,110,0.5)" : BORDER
+                selectedCategory === null ? "rgba(232,212,168,0.5)" : BORDER
               }`,
-
               boxShadow:
                 selectedCategory === null
-                  ? "0 8px 24px rgba(201,169,110,0.35)"
+                  ? "0 6px 20px rgba(201,169,110,0.3)"
                   : "none",
-
-              backdropFilter: "blur(12px)",
             }}
           >
             All
@@ -1103,21 +1243,22 @@ export default function MenuPage() {
             <button
               key={cat.id}
               onClick={() => setSelectedCategory(cat.id)}
-              className="flex-shrink-0 px-5 py-2 rounded-2xl text-xs font-bold transition-all duration-300"
+              className="flex-shrink-0 px-5 py-2 rounded-full text-xs font-bold transition-all duration-300"
               style={{
                 background:
                   selectedCategory === cat.id
-                    ? "linear-gradient(135deg,#c9a96e,#e8c98a)"
+                    ? GOLD_GRADIENT
                     : "rgba(255,255,255,0.04)",
-
                 color: selectedCategory === cat.id ? DARK : CREAM,
-
-                border:
+                border: `1px solid ${
                   selectedCategory === cat.id
-                    ? "1px solid rgba(255,215,140,0.6)"
-                    : `1px solid ${BORDER}`,
-
-                boxShadow: "none",
+                    ? "rgba(232,212,168,0.5)"
+                    : BORDER
+                }`,
+                boxShadow:
+                  selectedCategory === cat.id
+                    ? "0 6px 20px rgba(201,169,110,0.3)"
+                    : "none",
               }}
             >
               {cat.name}
@@ -1170,16 +1311,32 @@ export default function MenuPage() {
         </div>
       </div>
 
-      {/* Menu grid */}
-      <div className="max-w-5xl mx-auto px-4 py-8">
+      <div className="relative z-10 max-w-5xl mx-auto px-4 py-10">
         {filtered.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="text-4xl mb-4">🔍</p>
-            <p style={{ color: MUTED }}>No items found</p>
+          <div
+            className="text-center py-20 px-6 rounded-2xl border border-dashed"
+            style={{
+              borderColor: BORDER,
+              background: "rgba(255,255,255,0.02)",
+            }}
+          >
+            <Sparkles
+              className="mx-auto mb-4"
+              size={32}
+              style={{ color: AMBER }}
+            />
+            <h3
+              className="font-serif text-xl font-semibold mb-2"
+              style={{ color: CREAM }}
+            >
+              No items found
+            </h3>
+            <p className="text-sm" style={{ color: MUTED }}>
+              Try adjusting your search or filters.
+            </p>
           </div>
         ) : (
           <>
-            {/* Bestsellers section (when no filters active) */}
             {selectedCategory === null &&
               !searchQuery &&
               vegFilter === "all" &&
@@ -1187,14 +1344,9 @@ export default function MenuPage() {
                 const bestsellers = filtered.filter((i) => i.isBestseller);
                 if (bestsellers.length === 0) return null;
                 return (
-                  <div className="mb-10">
-                    <h2
-                      className="font-serif text-2xl font-bold mb-5"
-                      style={{ color: CREAM }}
-                    >
-                      ⭐ Bestsellers
-                    </h2>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  <div className="mb-12">
+                    <SectionHeader label="Chef's picks" title="Bestsellers" />
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
                       {bestsellers.map((item) => (
                         <ItemCard
                           key={item.id}
@@ -1212,7 +1364,7 @@ export default function MenuPage() {
 
             {/* By category */}
             {selectedCategory !== null || searchQuery || vegFilter !== "all" ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
                 {filtered.map((item) => (
                   <ItemCard
                     key={item.id}
@@ -1231,14 +1383,12 @@ export default function MenuPage() {
                 );
                 if (catItems.length === 0) return null;
                 return (
-                  <div key={cat.id} className="mb-10">
-                    <h2
-                      className="font-serif text-2xl font-bold mb-5"
-                      style={{ color: CREAM }}
-                    >
-                      {cat.name}
-                    </h2>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  <div key={cat.id} className="mb-12">
+                    <SectionHeader
+                      label="Category"
+                      title={cat.name}
+                    />
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
                       {catItems.map((item) => (
                         <ItemCard
                           key={item.id}
@@ -1293,21 +1443,23 @@ export default function MenuPage() {
             exit={{ y: 80, opacity: 0 }}
             transition={{ type: "spring", damping: 24, stiffness: 260 }}
             onClick={() => setCartOpen(true)}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl font-bold text-sm"
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-6 py-4 rounded-2xl font-bold text-sm transition-all hover:brightness-110 active:scale-[0.98]"
             style={{
-              background: AMBER,
+              background: GOLD_GRADIENT,
               color: DARK,
-              boxShadow: "0 8px 32px rgba(201,169,110,0.4)",
+              boxShadow:
+                "0 12px 40px rgba(201,169,110,0.45), 0 0 0 1px rgba(255,255,255,0.1)",
+              backdropFilter: "blur(12px)",
             }}
           >
             <span
-              className="flex items-center justify-center w-5 h-5 rounded-full text-[11px] font-black"
-              style={{ background: DARK, color: AMBER }}
+              className="flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-black"
+              style={{ background: DARK, color: AMBER_LIGHT }}
             >
               {cart.count}
             </span>
             View Cart
-            <span className="ml-1 font-black">{formatINR(cart.total)}</span>
+            <span className="font-black">{formatINR(cart.total)}</span>
           </motion.button>
         )}
       </AnimatePresence>
@@ -1322,24 +1474,30 @@ export default function MenuPage() {
             className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50"
           >
             <div
-              className="px-5 py-4 rounded-2xl shadow-xl flex flex-col gap-3 items-center"
+              className="px-6 py-5 rounded-2xl flex flex-col gap-3 items-center"
               style={{
-                background: "#1c1a17",
-                border: "1px solid rgba(255,255,255,0.08)",
+                background: DARK_CARD,
+                border: `1px solid ${BORDER}`,
+                boxShadow: "0 16px 48px rgba(0,0,0,0.5)",
               }}
             >
-              <p className="font-semibold text-sm" style={{ color: "#f0ebe2" }}>
-                ✅ Order Placed Successfully
+              <p
+                className="font-serif font-semibold text-base"
+                style={{ color: CREAM }}
+              >
+                Order placed successfully
               </p>
-
+              <p className="text-xs" style={{ color: MUTED }}>
+                Your kitchen has been notified.
+              </p>
               <button
                 onClick={() => {
                   window.location.href = `/current-order?table=${tableNumber}`;
                 }}
-                className="px-4 py-2 rounded-xl font-semibold text-sm"
+                className="px-5 py-2.5 rounded-xl font-bold text-sm transition-all hover:brightness-110"
                 style={{
-                  background: "#c9a96e",
-                  color: "#0f0e0c",
+                  background: GOLD_GRADIENT,
+                  color: DARK,
                 }}
               >
                 Track Current Order
@@ -1357,22 +1515,31 @@ export default function MenuPage() {
               ? "/rewards-dashboard"
               : "/rewards";
           }}
-          className="fixed bottom-20 right-4 z-40 px-4 py-3 rounded-2xl shadow-xl transition-all hover:scale-105"
+          className="fixed bottom-24 right-4 z-40 px-4 py-3 rounded-2xl transition-all hover:scale-[1.03] active:scale-[0.98]"
           style={{
-            background: "rgba(201,169,110,0.95)",
-            color: "#0f0e0c",
-            backdropFilter: "blur(12px)",
+            background: DARK_CARD,
+            color: CREAM,
+            border: `1px solid rgba(201,169,110,0.35)`,
+            boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+            backdropFilter: "blur(16px)",
           }}
         >
-          <div className="flex items-center gap-2">
-            <span>⭐</span>
+          <div className="flex items-center gap-2.5">
+            <div
+              className="flex items-center justify-center w-8 h-8 rounded-full"
+              style={{ background: GOLD_GRADIENT }}
+            >
+              <Gift size={14} style={{ color: DARK }} />
+            </div>
             <div className="text-left">
               <div className="text-xs font-bold">
                 {localStorage.getItem("rewardEmail")
                   ? "My Rewards"
                   : "Join Rewards"}
               </div>
-              <div className="text-[10px]">Earn Stars & Discounts</div>
+              <div className="text-[10px]" style={{ color: MUTED }}>
+                Earn stars & discounts
+              </div>
             </div>
           </div>
         </button>
@@ -1384,8 +1551,13 @@ export default function MenuPage() {
           href={`https://wa.me/${whatsappNumber.replace(/\D/g, "")}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="fixed bottom-6 right-4 z-40 flex items-center justify-center w-12 h-12 rounded-full shadow-lg transition-transform hover:scale-110"
-          style={{ background: "#25D366" }}
+          className="fixed bottom-6 right-4 z-40 flex items-center justify-center rounded-full transition-transform hover:scale-110 active:scale-95"
+          style={{
+            background: "#25D366",
+            boxShadow: "0 8px 24px rgba(37,211,102,0.4)",
+            width: 52,
+            height: 52,
+          }}
         >
           <MessageCircle size={22} color="white" fill="white" />
         </a>

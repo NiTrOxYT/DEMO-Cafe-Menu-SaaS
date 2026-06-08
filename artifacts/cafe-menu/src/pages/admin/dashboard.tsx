@@ -35,14 +35,16 @@ import {
   QrCode,
   Settings,
   BarChart3,
+  Activity,
+  ArrowUpRight,
+  BadgeIndianRupee,
+  Clock3,
+  Layers,
+  RefreshCw,
+  ShoppingBag,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -116,6 +118,30 @@ function getImageSrc(imageUrl?: string | null) {
   if (imageUrl.startsWith("/objects/")) return `/api/storage${imageUrl}`;
   return imageUrl;
 }
+
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function isSameDay(a: Date, b: Date) {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
+const OVERVIEW_STATUS_COLORS: Record<string, string> = {
+  pending: "#d97706",
+  preparing: "#2563eb",
+  ready: "#059669",
+  completed: "#18181b",
+  cancelled: "#dc2626",
+};
 
 function ImageUploadField({
   value,
@@ -525,16 +551,35 @@ export default function AdminDashboard() {
     );
   };
 
+  const now = new Date();
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+
   const pendingOrders = (orders as any[]).filter(
     (o) => o.status === "pending",
   ).length;
-  const todayRevenue = (orders as any[])
-    .filter((o) => {
-      const d = new Date(o.created_at);
-      const now = new Date();
-      return d.getDate() === now.getDate() && d.getMonth() === now.getMonth();
-    })
-    .reduce((s: number, o: any) => s + Number(o.total), 0);
+  const activeOrders = (orders as any[]).filter(
+    (o) => !["completed", "cancelled"].includes(o.status || ""),
+  ).length;
+  const todayOrders = (orders as any[]).filter((o) =>
+    isSameDay(new Date(o.created_at), now),
+  );
+  const todayRevenue = todayOrders.reduce(
+    (s: number, o: any) => s + Number(o.total ?? 0),
+    0,
+  );
+  const yesterdayRevenue = (orders as any[])
+    .filter((o) => isSameDay(new Date(o.created_at), yesterday))
+    .reduce((s: number, o: any) => s + Number(o.total ?? 0), 0);
+  const revenueDelta =
+    yesterdayRevenue > 0
+      ? ((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100
+      : todayRevenue > 0
+        ? 100
+        : 0;
+  const avgOrderToday = todayOrders.length
+    ? todayRevenue / todayOrders.length
+    : 0;
 
   const NAV_ITEMS: { tab: NavTab; label: string; icon: React.ReactNode }[] = [
     { tab: "overview", label: "Overview", icon: <LayoutDashboard size={16} /> },
@@ -615,122 +660,218 @@ export default function AdminDashboard() {
         {/* OVERVIEW */}
         {activeTab === "overview" && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-serif font-bold text-foreground">
-              Dashboard
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* <Card>
-                <CardHeader className="pb-2">
-                  <CardDescription>Total Items</CardDescription>
-                  <CardTitle className="text-3xl">
-                    {summary?.totalItems ?? 0}
-                  </CardTitle>
-                </CardHeader>
-              </Card> */}
-              {/* <Card>
-                <CardHeader className="pb-2">
-                  <CardDescription>Categories</CardDescription>
-                  <CardTitle className="text-3xl">
-                    {summary?.totalCategories ?? 0}
-                  </CardTitle>
-                </CardHeader>
-              </Card> */}
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardDescription>Pending Orders</CardDescription>
-                  <CardTitle className="text-3xl text-yellow-500">
-                    {pendingOrders}
-                  </CardTitle>
-                </CardHeader>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardDescription>Today's Revenue</CardDescription>
-                  <CardTitle className="text-3xl text-primary">
-                    ₹{Math.round(todayRevenue)}
-                  </CardTitle>
-                </CardHeader>
-              </Card>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-card rounded-xl border border-border p-5">
-                <h3 className="font-semibold text-foreground mb-3">
-                  Quick Links
-                </h3>
-                <div className="space-y-2">
-                  <button
-                    onClick={() => setActiveTab("menu")}
-                    className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-muted transition-colors text-sm text-muted-foreground hover:text-foreground flex items-center gap-2"
-                  >
-                    <UtensilsCrossed size={14} /> Manage menu items
-                  </button>
-                  <button
-                    onClick={() => setActiveTab("orders")}
-                    className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-muted transition-colors text-sm text-muted-foreground hover:text-foreground flex items-center gap-2"
-                  >
-                    <ClipboardList size={14} /> View orders{" "}
-                    {pendingOrders > 0 && (
-                      <Badge
-                        variant="destructive"
-                        className="text-[10px] px-1.5 py-0"
-                      >
-                        {pendingOrders} pending
-                      </Badge>
-                    )}
-                  </button>
-                  <button
-                    onClick={() => setActiveTab("qr")}
-                    className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-muted transition-colors text-sm text-muted-foreground hover:text-foreground flex items-center gap-2"
-                  >
-                    <QrCode size={14} /> Generate QR codes
-                  </button>
-                  <button
-                    onClick={() => setActiveTab("settings")}
-                    className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-muted transition-colors text-sm text-muted-foreground hover:text-foreground flex items-center gap-2"
-                  >
-                    <Settings size={14} /> Restaurant settings
-                  </button>
-                </div>
+            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-secondary">
+                  Command center
+                </p>
+                <h2 className="mt-1 text-3xl font-serif font-bold text-foreground">
+                  Overview
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Live snapshot of orders, revenue, and restaurant operations.
+                </p>
               </div>
-              <div className="bg-card rounded-xl border border-border p-5">
-                <h3 className="font-semibold text-foreground mb-3">
-                  Recent Orders
-                </h3>
-                {(orders as any[]).slice(0, 4).length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No orders yet</p>
+              <div className="flex items-center gap-2">
+                <span
+                  className={`rounded-full px-2.5 py-1 text-xs font-bold ${
+                    revenueDelta >= 0
+                      ? "bg-emerald-500/15 text-emerald-700"
+                      : "bg-red-500/15 text-red-700"
+                  }`}
+                >
+                  {revenueDelta >= 0 ? "+" : ""}
+                  {Math.round(revenueDelta)}% vs yesterday
+                </span>
+                <Button variant="outline" size="sm" onClick={fetchOrders}>
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Refresh
+                </Button>
+              </div>
+            </div>
+
+            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <OverviewMetricTile
+                icon={<BadgeIndianRupee className="h-5 w-5" />}
+                label="Today's revenue"
+                value={formatCurrency(todayRevenue)}
+                detail={`${todayOrders.length} orders today`}
+              />
+              <OverviewMetricTile
+                icon={<Clock3 className="h-5 w-5" />}
+                label="Pending orders"
+                value={pendingOrders.toString()}
+                detail={`${activeOrders} active in pipeline`}
+              />
+              <OverviewMetricTile
+                icon={<UtensilsCrossed className="h-5 w-5" />}
+                label="Menu items"
+                value={(summary?.totalItems ?? 0).toString()}
+                detail={`${summary?.totalCategories ?? 0} categories live`}
+              />
+              <OverviewMetricTile
+                icon={<ArrowUpRight className="h-5 w-5" />}
+                label="Average ticket"
+                value={formatCurrency(avgOrderToday)}
+                detail="Per order today"
+              />
+            </section>
+
+            <section className="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
+              <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+                <div className="mb-4 flex items-center justify-between">
+                  <div>
+                    <h3 className="font-serif text-xl font-semibold">
+                      Recent orders
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      Latest tickets flowing through the kitchen.
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs"
+                    onClick={() => setActiveTab("orders")}
+                  >
+                    View all
+                    <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
+                  </Button>
+                </div>
+                {(orders as any[]).length === 0 ? (
+                  <div className="border border-dashed border-border bg-card/70 rounded-lg px-6 py-10 text-center">
+                    <Sparkles className="mx-auto h-7 w-7 text-secondary" />
+                    <h4 className="mt-3 font-serif font-semibold">
+                      No orders yet
+                    </h4>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Orders will appear here as customers start scanning.
+                    </p>
+                  </div>
                 ) : (
-                  <div className="space-y-2">
-                    {(orders as any[]).slice(0, 4).map((o: any) => (
-                      <div
-                        key={o.id}
-                        className="flex items-center justify-between text-sm"
-                      >
-                        <span className="text-muted-foreground">
-                          Order #{o.id}
-                          {o.tableNumber ? ` · T${o.tableNumber}` : ""}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-foreground">
-                            ₹{Math.round(o.total)}
-                          </span>
-                          <span
-                            className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${
-                              o.status === "pending"
-                                ? "bg-yellow-500/15 text-yellow-400"
-                                : o.status === "completed"
-                                  ? "bg-zinc-500/15 text-zinc-400"
-                                  : "bg-green-500/15 text-green-400"
-                            }`}
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[520px] text-sm">
+                      <thead>
+                        <tr className="border-b border-border text-left text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                          <th className="py-3 font-semibold">Order</th>
+                          <th className="py-3 font-semibold">Table</th>
+                          <th className="py-3 font-semibold">Time</th>
+                          <th className="py-3 font-semibold">Status</th>
+                          <th className="py-3 text-right font-semibold">
+                            Value
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(orders as any[]).slice(0, 6).map((o: any) => (
+                          <tr
+                            key={o.id}
+                            className="border-b border-border/60"
                           >
-                            {o.status}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
+                            <td className="py-3 font-bold">#{o.id}</td>
+                            <td className="py-3 text-muted-foreground">
+                              {o.table_id || o.tableNumber
+                                ? `Table ${o.table_id ?? o.tableNumber}`
+                                : "Walk-in"}
+                            </td>
+                            <td className="py-3 text-muted-foreground">
+                              {new Date(o.created_at).toLocaleString("en-IN", {
+                                day: "numeric",
+                                month: "short",
+                                hour: "numeric",
+                                minute: "2-digit",
+                              })}
+                            </td>
+                            <td className="py-3">
+                              <span
+                                className="inline-flex items-center gap-1.5 rounded-full bg-background px-2.5 py-1 text-xs font-bold capitalize"
+                                style={{
+                                  color:
+                                    OVERVIEW_STATUS_COLORS[o.status] ||
+                                    "#78716c",
+                                }}
+                              >
+                                <span
+                                  className="h-1.5 w-1.5 rounded-full"
+                                  style={{
+                                    backgroundColor:
+                                      OVERVIEW_STATUS_COLORS[o.status] ||
+                                      "#78716c",
+                                  }}
+                                />
+                                {o.status || "unknown"}
+                              </span>
+                            </td>
+                            <td className="py-3 text-right font-bold">
+                              {formatCurrency(Number(o.total ?? 0))}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 )}
               </div>
-            </div>
+
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+                <OverviewInsightTile
+                  icon={<ShoppingBag className="h-5 w-5" />}
+                  label="Active pipeline"
+                  value={`${activeOrders} orders`}
+                  detail={
+                    pendingOrders > 0
+                      ? `${pendingOrders} waiting for kitchen confirmation`
+                      : "No pending tickets right now"
+                  }
+                />
+                <OverviewInsightTile
+                  icon={<Activity className="h-5 w-5" />}
+                  label="Menu coverage"
+                  value={`${summary?.totalItems ?? 0} dishes`}
+                  detail={`Organized across ${summary?.totalCategories ?? 0} categories`}
+                />
+                <OverviewInsightTile
+                  icon={<Layers className="h-5 w-5" />}
+                  label="Operations"
+                  value="Quick actions"
+                  detail="Jump straight into the tools you use most."
+                />
+              </div>
+            </section>
+
+            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <OverviewActionCard
+                icon={<UtensilsCrossed className="h-4 w-4" />}
+                title="Manage menu"
+                description="Add items, update pricing, and control availability."
+                onClick={() => setActiveTab("menu")}
+              />
+              <OverviewActionCard
+                icon={<ClipboardList className="h-4 w-4" />}
+                title="View orders"
+                description={
+                  pendingOrders > 0
+                    ? `${pendingOrders} pending tickets need attention.`
+                    : "Monitor live order flow and status updates."
+                }
+                badge={
+                  pendingOrders > 0 ? `${pendingOrders} pending` : undefined
+                }
+                onClick={() => setActiveTab("orders")}
+              />
+              <OverviewActionCard
+                icon={<BarChart3 className="h-4 w-4" />}
+                title="Open analytics"
+                description="Dive into revenue trends, peak hours, and top sellers."
+                onClick={() => setActiveTab("analytics")}
+              />
+              <OverviewActionCard
+                icon={<QrCode className="h-4 w-4" />}
+                title="QR codes"
+                description="Generate table QR codes for contactless ordering."
+                onClick={() => setActiveTab("qr")}
+              />
+            </section>
           </div>
         )}
 
@@ -1227,5 +1368,98 @@ export default function AdminDashboard() {
         </div>
       )}
     </div>
+  );
+}
+
+function OverviewMetricTile({
+  icon,
+  label,
+  value,
+  detail,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  detail: string;
+}) {
+  return (
+    <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div className="rounded-md bg-background p-2 text-secondary">{icon}</div>
+        <Activity className="h-4 w-4 text-muted-foreground/50" />
+      </div>
+      <p className="mt-4 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+        {label}
+      </p>
+      <p className="mt-1 text-2xl font-bold text-foreground">{value}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
+    </div>
+  );
+}
+
+function OverviewInsightTile({
+  icon,
+  label,
+  value,
+  detail,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  detail: string;
+}) {
+  return (
+    <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+      <div className="flex items-center gap-3">
+        <div className="rounded-md bg-primary p-2 text-primary-foreground">
+          {icon}
+        </div>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            {label}
+          </p>
+          <p className="mt-0.5 text-lg font-bold">{value}</p>
+        </div>
+      </div>
+      <p className="mt-4 text-sm text-muted-foreground">{detail}</p>
+    </div>
+  );
+}
+
+function OverviewActionCard({
+  icon,
+  title,
+  description,
+  badge,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  badge?: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group rounded-lg border border-border bg-card p-4 text-left shadow-sm transition-colors hover:border-primary/30 hover:bg-muted/30"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="rounded-md bg-background p-2 text-secondary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+          {icon}
+        </div>
+        <ArrowUpRight className="h-4 w-4 text-muted-foreground/50 transition-colors group-hover:text-primary" />
+      </div>
+      <div className="mt-4 flex items-center gap-2">
+        <p className="font-serif text-lg font-semibold">{title}</p>
+        {badge && (
+          <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-bold text-red-700">
+            {badge}
+          </span>
+        )}
+      </div>
+      <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+    </button>
   );
 }

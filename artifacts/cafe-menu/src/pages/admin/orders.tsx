@@ -21,6 +21,7 @@ type Order = {
   id: number;
   is_updated?: boolean;
   latest_added_items?: string[];
+  table_id?: number | null;
   tableNumber?: string | null;
   customerName?: string | null;
   order_items?: any[];
@@ -330,6 +331,7 @@ export default function OrdersPage() {
           {sorted.map((order) => {
             const cfg = STATUS_CONFIG[order.status] ?? STATUS_CONFIG.pending;
             const next = STATUS_FLOW[order.status];
+            const latestAddedItems = order.latest_added_items ?? [];
             return (
               <div
                 key={order.id}
@@ -369,22 +371,20 @@ export default function OrdersPage() {
                   </div>
                 </div>
 
-                {order.latest_added_items?.length > 0 && (
+                {latestAddedItems.length > 0 && (
                   <div className="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-3 mb-3">
                     <div className="font-bold text-yellow-700 mb-2 text-sm">
                       ⚡ NEW ITEMS ADDED
                     </div>
 
-                    {order.latest_added_items.map(
-                      (item: string, index: number) => (
-                        <div
-                          key={index}
-                          className="text-sm font-medium text-black"
-                        >
-                          + {item}
-                        </div>
-                      ),
-                    )}
+                    {latestAddedItems.map((item: string, index: number) => (
+                      <div
+                        key={index}
+                        className="text-sm font-medium text-black"
+                      >
+                        + {item}
+                      </div>
+                    ))}
                   </div>
                 )}
 

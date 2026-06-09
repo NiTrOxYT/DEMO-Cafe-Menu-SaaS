@@ -1,0 +1,4 @@
+// Subtle gradient effect for header
+const headerGradient = pdf.createLinearGradient(0, 0, 210, 0);
+headerGradient.addColorStop(0, "#c9a96e");
+headerGradient.addColorStop(1, "#8b5a1d");

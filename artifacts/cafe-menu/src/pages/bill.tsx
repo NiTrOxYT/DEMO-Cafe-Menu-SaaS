@@ -60,12 +60,7 @@ const BillPage: React.FC = () => {
         pdf.setLineWidth(0.2);
         pdf.line(20, 40, 190, 40);
         
-        // Subtle gradient effect for header
-        const headerGradient = pdf.createLinearGradient(0, 0, 210, 0);
-        headerGradient.addColorStop(0, "#c9a96e");
-        headerGradient.addColorStop(1, "#8b5a1d");
-        // Note: jsPDF doesn't support gradients directly, so we'll use a solid color
-        
+        // Remove gradient and use solid color instead
         pdf.setFont("helvetica", "normal");
         pdf.setFontSize(10);
 
@@ -151,10 +146,10 @@ const BillPage: React.FC = () => {
         pdf.setDrawColor(201, 169, 110);
         pdf.setLineWidth(1.5);
 
-        // Luxury border with gold accent
+        // Luxury border with gold accent - using solid color instead of gradient
         pdf.roundedRect(102, finalY, 90, 48, 6, 6, "S");
         
-        // Gradient-like effect for total card background
+        // Solid background color instead of gradient-like effect
         pdf.setFillColor(252, 249, 244);
         pdf.roundedRect(102, finalY, 90, 48, 6, 6, "F");
 

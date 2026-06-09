@@ -30,6 +30,12 @@ const BillPage: React.FC = () => {
     }
 
     async function downloadBill() {
+        // Check if order data is available
+        if (!order) {
+            console.error("Order data not available");
+            return;
+        }
+
         const pdf = new jsPDF();
 
         // Header with decorative elements

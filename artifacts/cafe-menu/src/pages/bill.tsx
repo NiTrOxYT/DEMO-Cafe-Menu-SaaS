@@ -32,7 +32,7 @@ const BillPage: React.FC = () => {
     async function downloadBill() {
         const pdf = new jsPDF();
 
-        // Header
+        // Header with decorative elements
         pdf.setDrawColor(201, 169, 110);
         pdf.setLineWidth(0.5);
 
@@ -50,105 +50,112 @@ const BillPage: React.FC = () => {
             align: "center",
         });
 
+        // Decorative line
+        pdf.setLineWidth(0.2);
+        pdf.line(20, 40, 190, 40);
+        
+        // Subtle gradient effect for header
+        const headerGradient = pdf.createLinearGradient(0, 0, 210, 0);
+        headerGradient.addColorStop(0, "#c9a96e");
+        headerGradient.addColorStop(1, "#8b5a1d");
+        // Note: jsPDF doesn't support gradients directly, so we'll use a solid color
+        
         pdf.setFont("helvetica", "normal");
         pdf.setFontSize(10);
 
-        pdf.text(`Invoice #TT-${order.id}`, 105, 42, {
+        pdf.text(`Invoice #TT-${order.id}`, 105, 48, {
             align: "center",
         });
 
         pdf.setFont("times", "italic");
         pdf.setFontSize(11);
 
-        pdf.text("Crafted with passion • Served with love", 105, 49, {
+        pdf.text("Crafted with passion • Served with love", 105, 55, {
             align: "center",
         });
 
-        pdf.line(20, 56, 190, 56);
-
-        // Order Info
+        // Order Info Section
         pdf.setFont("times", "normal");
         pdf.setFontSize(11);
-
+        
+        // Add a decorative border around order info
+        pdf.setLineWidth(0.3);
+        pdf.roundedRect(20, 65, 170, 25, 4, 4, "S");
+        
         pdf.text(
             `Date: ${new Date(order.created_at).toLocaleString()}`,
             25,
-            63,
+            75,
         );
 
-        pdf.setFillColor(
-            order.is_paid ? 34 : 220,
-            order.is_paid ? 197 : 53,
-            order.is_paid ? 94 : 69,
-        );
-
-        pdf.roundedRect(150, 60, 30, 10, 2, 2, "F");
-
-        pdf.setTextColor(255, 255, 255);
-
-        pdf.text(order.is_paid ? "PAID" : "UNPAID", 165, 67, {
+        // Status badge with better styling
+        const statusColor = order.is_paid ? [34, 197, 94] : [220, 53, 69];
+        const statusTextColor = [255, 255, 255];
+        
+        pdf.setFillColor(...statusColor);
+        pdf.roundedRect(150, 68, 30, 10, 2, 2, "F");
+        
+        pdf.setTextColor(...statusTextColor);
+        pdf.text(order.is_paid ? "PAID" : "UNPAID", 165, 75, {
             align: "center",
         });
-
+        
         pdf.setTextColor(0, 0, 0);
 
+        // Enhanced table with better styling
         autoTable(pdf, {
-            startY: 85,
-
+            startY: 100,
             head: [["Item", "Qty", "Amount"]],
-
             body:
                 order.order_items?.map((item: any) => [
                     item.item_name,
                     item.quantity,
                     `Rs. ${item.price * item.quantity}`,
                 ]) || [],
-
             theme: "grid",
-
             headStyles: {
                 fillColor: [201, 169, 110],
                 textColor: [20, 20, 20],
                 fontStyle: "bold",
                 fontSize: 12,
+                cellPadding: { top: 8, bottom: 8, left: 5, right: 5 },
             },
-
             bodyStyles: {
                 fontSize: 11,
+                cellPadding: { top: 6, bottom: 6, left: 5, right: 5 },
             },
-
             alternateRowStyles: {
                 fillColor: [248, 248, 248],
             },
-
             margin: {
                 left: 20,
                 right: 20,
             },
+            tableWidth: "wrap",
+            columnStyles: {
+                0: { cellWidth: 70 },
+                1: { cellWidth: 20 },
+                2: { cellWidth: 40 }
+            }
         });
 
         const finalY = (pdf as any).lastAutoTable.finalY + 15;
 
-        pdf.setDrawColor(201, 169, 110);
-        pdf.setLineWidth(1);
-
+        // Premium total card with enhanced styling
         pdf.setDrawColor(201, 169, 110);
         pdf.setLineWidth(1.5);
 
-        // Luxury total card background
+        // Luxury border with gold accent
+        pdf.roundedRect(102, finalY, 90, 48, 6, 6, "S");
+        
+        // Gradient-like effect for total card background
         pdf.setFillColor(252, 249, 244);
-
         pdf.roundedRect(102, finalY, 90, 48, 6, 6, "F");
-
-        // Luxury border
-        pdf.setDrawColor(201, 169, 110);
-        pdf.setLineWidth(1.5);
-
-        pdf.roundedRect(102, finalY, 90, 48, 6, 6);
 
         pdf.setFont("times", "normal");
         pdf.setFontSize(11);
 
+        // Enhanced total calculations
         pdf.text("Subtotal", 118, finalY + 12);
         pdf.text(`Rs. ${order.subtotal}`, 168, finalY + 12);
 
@@ -161,7 +168,7 @@ const BillPage: React.FC = () => {
         pdf.text("Grand Total", 118, finalY + 36);
         pdf.text(`Rs. ${order.total}`, 168, finalY + 36);
 
-        // Footer
+        // Enhanced footer with decorative elements
         pdf.setFont("times", "italic");
         pdf.setFontSize(12);
 
@@ -172,6 +179,16 @@ const BillPage: React.FC = () => {
         });
 
         pdf.text("Thank you for choosing The Golden Brew", 105, footerY + 10, {
+            align: "center",
+        });
+
+        // Add decorative elements
+        pdf.setLineWidth(0.3);
+        pdf.line(20, footerY + 18, 190, footerY + 18);
+        
+        pdf.setFont("times", "bold");
+        pdf.setFontSize(10);
+        pdf.text("GSTIN: 12ABCDE1234567890", 105, footerY + 25, {
             align: "center",
         });
 
@@ -217,13 +234,6 @@ const BillPage: React.FC = () => {
                     <div className="relative p-6 space-y-8">
                         {/* Logo & Branding */}
                         <div className="flex flex-col items-center text-center space-y-4">
-                            {/* <div className="flex items-center justify-center w-20 h-20 border rounded-lg bg-[#1c1b1b] border-[#c9a96e]/30"> */}
-                            {/* <img
-                                    src="/logo.png"
-                                    alt="Cafe Logo"
-                                    className="w-12 h-12 object-contain"
-                                /> */}
-                            {/* </div> */}
                             <div>
                                 <h2 className="text-3xl font-bold font-serif text-[#c9a96e] tracking-tight">
                                     The Golden Brew

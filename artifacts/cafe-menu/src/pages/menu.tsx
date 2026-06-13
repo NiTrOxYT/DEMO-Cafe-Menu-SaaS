@@ -1143,16 +1143,40 @@ export default function MenuPage() {
           >
             {restaurantName}
           </motion.h1>
-          <div
-            className="w-16 h-px mb-5"
-            style={{ background: GOLD_GRADIENT }}
-          />
+          <div className="flex items-center justify-center gap-4 mb-6">
+  <div
+    className="h-px w-16"
+    style={{
+      background:
+        "linear-gradient(to right, transparent, rgba(201,169,110,0.9))",
+    }}
+  />
+
+  <div
+    className="w-2.5 h-2.5 rotate-45"
+    style={{
+      background: AMBER,
+      boxShadow: "0 0 12px rgba(201,169,110,0.45)",
+    }}
+  />
+
+  <div
+    className="h-px w-16"
+    style={{
+      background:
+        "linear-gradient(to left, transparent, rgba(201,169,110,0.9))",
+    }}
+  />
+</div>
           <motion.p
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="text-sm md:text-base max-w-lg leading-relaxed"
-            style={{ color: "rgba(245,240,232,0.7)" }}
+            className="text-sm md:text-lg max-w-xl leading-relaxed"
+style={{
+  color: "rgba(245,240,232,0.78)",
+  letterSpacing: "0.02em",
+}}
           >
             {tagline}
           </motion.p>

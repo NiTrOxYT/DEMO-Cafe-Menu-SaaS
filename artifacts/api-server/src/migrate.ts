@@ -78,6 +78,51 @@ async function run() {
 
     console.log("Tables created (or already existed).");
 
+    // Upgrade existing databases to the latest schema
+    await client.query(`
+  ALTER TABLE menu_items
+    ADD COLUMN IF NOT EXISTS image_url TEXT,
+    ADD COLUMN IF NOT EXISTS available BOOLEAN NOT NULL DEFAULT TRUE,
+    ADD COLUMN IF NOT EXISTS sort_order INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS is_veg BOOLEAN NOT NULL DEFAULT TRUE,
+    ADD COLUMN IF NOT EXISTS is_bestseller BOOLEAN NOT NULL DEFAULT FALSE,
+    ADD COLUMN IF NOT EXISTS is_spicy BOOLEAN NOT NULL DEFAULT FALSE;
+`);
+
+    // Rename old column if it exists
+    await client.query(`
+  DO $$
+  BEGIN
+    IF EXISTS (
+      SELECT 1
+      FROM information_schema.columns
+      WHERE table_name = 'menu_items'
+        AND column_name = 'image'
+    ) AND NOT EXISTS (
+      SELECT 1
+      FROM information_schema.columns
+      WHERE table_name = 'menu_items'
+        AND column_name = 'image_url'
+    ) THEN
+      ALTER TABLE menu_items RENAME COLUMN image TO image_url;
+    END IF;
+  END $$;
+`);
+
+    await client.query(`
+  ALTER TABLE restaurant_settings
+    ADD COLUMN IF NOT EXISTS banner_url TEXT,
+    ADD COLUMN IF NOT EXISTS logo_url TEXT,
+    ADD COLUMN IF NOT EXISTS tagline TEXT,
+    ADD COLUMN IF NOT EXISTS primary_color TEXT NOT NULL DEFAULT '#c9a96e';
+`);
+
+    await client.query(`
+  ALTER TABLE orders
+    ADD COLUMN IF NOT EXISTS whatsapp_sent BOOLEAN NOT NULL DEFAULT FALSE,
+    ADD COLUMN IF NOT EXISTS notes TEXT;
+`);
+
     // ──────────────────────────────────────────────
     // 2. Seed default settings (only if table empty)
     // ──────────────────────────────────────────────
@@ -138,162 +183,162 @@ async function run() {
       is_spicy?: boolean;
       sort_order: number;
     }> = [
-      // ── Coffee ────────────────────────────────────
-      {
-        name: "Espresso",
-        description:
-          "A rich, bold shot of pure arabica — the heart of every great coffee.",
-        price: 120,
-        category: "Coffee",
-        is_veg: true,
-        is_bestseller: true,
-        sort_order: 0,
-      },
-      {
-        name: "Cappuccino",
-        description:
-          "Velvety espresso topped with thick microfoam and a dusting of cocoa.",
-        price: 180,
-        category: "Coffee",
-        is_veg: true,
-        is_bestseller: true,
-        sort_order: 1,
-      },
-      {
-        name: "Café Latte",
-        description:
-          "Smooth espresso with steamed milk and a light layer of foam.",
-        price: 200,
-        category: "Coffee",
-        is_veg: true,
-        sort_order: 2,
-      },
-      {
-        name: "Cold Brew",
-        description: "Steeped for 12 hours, slow-chilled, refreshingly smooth.",
-        price: 220,
-        category: "Coffee",
-        is_veg: true,
-        is_bestseller: true,
-        sort_order: 3,
-      },
-      {
-        name: "Caramel Macchiato",
-        description:
-          "Layers of vanilla syrup, steamed milk, espresso and caramel drizzle.",
-        price: 240,
-        category: "Coffee",
-        is_veg: true,
-        sort_order: 4,
-      },
-      // ── Tea & Cold Drinks ─────────────────────────
-      {
-        name: "Masala Chai",
-        description:
-          "Aromatic Indian spiced tea brewed with ginger, cardamom and cinnamon.",
-        price: 90,
-        category: "Tea & Cold Drinks",
-        is_veg: true,
-        is_bestseller: true,
-        sort_order: 0,
-      },
-      {
-        name: "Iced Matcha Latte",
-        description: "Ceremonial-grade matcha whisked with oat milk over ice.",
-        price: 230,
-        category: "Tea & Cold Drinks",
-        is_veg: true,
-        sort_order: 1,
-      },
-      {
-        name: "Fresh Lime Soda",
-        description:
-          "Freshly squeezed limes, sparkling water, rock salt — pure refreshment.",
-        price: 110,
-        category: "Tea & Cold Drinks",
-        is_veg: true,
-        sort_order: 2,
-      },
-      {
-        name: "Mango Smoothie",
-        description:
-          "Alphonso mango blended with yoghurt and a touch of cardamom.",
-        price: 190,
-        category: "Tea & Cold Drinks",
-        is_veg: true,
-        is_bestseller: true,
-        sort_order: 3,
-      },
-      // ── Food & Pastries ────────────────────────────
-      {
-        name: "Butter Croissant",
-        description:
-          "Flaky, golden, layered with real French butter. Baked fresh each morning.",
-        price: 150,
-        category: "Food & Pastries",
-        is_veg: true,
-        is_bestseller: true,
-        sort_order: 0,
-      },
-      {
-        name: "Avocado Toast",
-        description:
-          "Sourdough, smashed avocado, chilli flakes, poached egg and microgreens.",
-        price: 280,
-        category: "Food & Pastries",
-        is_veg: true,
-        sort_order: 1,
-      },
-      {
-        name: "Spicy Chicken Sandwich",
-        description:
-          "Grilled chicken, sriracha mayo, pickled jalapeños and crisp lettuce.",
-        price: 320,
-        category: "Food & Pastries",
-        is_veg: false,
-        is_spicy: true,
-        sort_order: 2,
-      },
-      {
-        name: "Banana Walnut Muffin",
-        description:
-          "Moist banana muffin studded with toasted walnuts and brown sugar.",
-        price: 130,
-        category: "Food & Pastries",
-        is_veg: true,
-        sort_order: 3,
-      },
-      // ── Desserts ───────────────────────────────────
-      {
-        name: "Chocolate Brownie",
-        description:
-          "Dense, fudgy dark chocolate brownie with a sea-salt caramel swirl.",
-        price: 180,
-        category: "Desserts",
-        is_veg: true,
-        is_bestseller: true,
-        sort_order: 0,
-      },
-      {
-        name: "New York Cheesecake",
-        description:
-          "Classic baked cheesecake on a buttery graham cracker crust.",
-        price: 240,
-        category: "Desserts",
-        is_veg: true,
-        sort_order: 1,
-      },
-      {
-        name: "Tiramisu",
-        description:
-          "Espresso-soaked ladyfingers, mascarpone cream, dusted with premium cocoa.",
-        price: 260,
-        category: "Desserts",
-        is_veg: true,
-        is_bestseller: true,
-        sort_order: 2,
-      },
-    ];
+        // ── Coffee ────────────────────────────────────
+        {
+          name: "Espresso",
+          description:
+            "A rich, bold shot of pure arabica — the heart of every great coffee.",
+          price: 120,
+          category: "Coffee",
+          is_veg: true,
+          is_bestseller: true,
+          sort_order: 0,
+        },
+        {
+          name: "Cappuccino",
+          description:
+            "Velvety espresso topped with thick microfoam and a dusting of cocoa.",
+          price: 180,
+          category: "Coffee",
+          is_veg: true,
+          is_bestseller: true,
+          sort_order: 1,
+        },
+        {
+          name: "Café Latte",
+          description:
+            "Smooth espresso with steamed milk and a light layer of foam.",
+          price: 200,
+          category: "Coffee",
+          is_veg: true,
+          sort_order: 2,
+        },
+        {
+          name: "Cold Brew",
+          description: "Steeped for 12 hours, slow-chilled, refreshingly smooth.",
+          price: 220,
+          category: "Coffee",
+          is_veg: true,
+          is_bestseller: true,
+          sort_order: 3,
+        },
+        {
+          name: "Caramel Macchiato",
+          description:
+            "Layers of vanilla syrup, steamed milk, espresso and caramel drizzle.",
+          price: 240,
+          category: "Coffee",
+          is_veg: true,
+          sort_order: 4,
+        },
+        // ── Tea & Cold Drinks ─────────────────────────
+        {
+          name: "Masala Chai",
+          description:
+            "Aromatic Indian spiced tea brewed with ginger, cardamom and cinnamon.",
+          price: 90,
+          category: "Tea & Cold Drinks",
+          is_veg: true,
+          is_bestseller: true,
+          sort_order: 0,
+        },
+        {
+          name: "Iced Matcha Latte",
+          description: "Ceremonial-grade matcha whisked with oat milk over ice.",
+          price: 230,
+          category: "Tea & Cold Drinks",
+          is_veg: true,
+          sort_order: 1,
+        },
+        {
+          name: "Fresh Lime Soda",
+          description:
+            "Freshly squeezed limes, sparkling water, rock salt — pure refreshment.",
+          price: 110,
+          category: "Tea & Cold Drinks",
+          is_veg: true,
+          sort_order: 2,
+        },
+        {
+          name: "Mango Smoothie",
+          description:
+            "Alphonso mango blended with yoghurt and a touch of cardamom.",
+          price: 190,
+          category: "Tea & Cold Drinks",
+          is_veg: true,
+          is_bestseller: true,
+          sort_order: 3,
+        },
+        // ── Food & Pastries ────────────────────────────
+        {
+          name: "Butter Croissant",
+          description:
+            "Flaky, golden, layered with real French butter. Baked fresh each morning.",
+          price: 150,
+          category: "Food & Pastries",
+          is_veg: true,
+          is_bestseller: true,
+          sort_order: 0,
+        },
+        {
+          name: "Avocado Toast",
+          description:
+            "Sourdough, smashed avocado, chilli flakes, poached egg and microgreens.",
+          price: 280,
+          category: "Food & Pastries",
+          is_veg: true,
+          sort_order: 1,
+        },
+        {
+          name: "Spicy Chicken Sandwich",
+          description:
+            "Grilled chicken, sriracha mayo, pickled jalapeños and crisp lettuce.",
+          price: 320,
+          category: "Food & Pastries",
+          is_veg: false,
+          is_spicy: true,
+          sort_order: 2,
+        },
+        {
+          name: "Banana Walnut Muffin",
+          description:
+            "Moist banana muffin studded with toasted walnuts and brown sugar.",
+          price: 130,
+          category: "Food & Pastries",
+          is_veg: true,
+          sort_order: 3,
+        },
+        // ── Desserts ───────────────────────────────────
+        {
+          name: "Chocolate Brownie",
+          description:
+            "Dense, fudgy dark chocolate brownie with a sea-salt caramel swirl.",
+          price: 180,
+          category: "Desserts",
+          is_veg: true,
+          is_bestseller: true,
+          sort_order: 0,
+        },
+        {
+          name: "New York Cheesecake",
+          description:
+            "Classic baked cheesecake on a buttery graham cracker crust.",
+          price: 240,
+          category: "Desserts",
+          is_veg: true,
+          sort_order: 1,
+        },
+        {
+          name: "Tiramisu",
+          description:
+            "Espresso-soaked ladyfingers, mascarpone cream, dusted with premium cocoa.",
+          price: 260,
+          category: "Desserts",
+          is_veg: true,
+          is_bestseller: true,
+          sort_order: 2,
+        },
+      ];
 
     for (const item of items) {
       const catId = catIds[item.category];

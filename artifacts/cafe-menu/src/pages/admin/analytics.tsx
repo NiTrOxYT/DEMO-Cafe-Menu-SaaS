@@ -26,34 +26,22 @@ import {
   Table2,
   Timer,
   Utensils,
+  Users,
+  X,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 
-type OrderItem = {
-  id?: number;
-  item_name?: string | null;
-  name?: string | null;
-  price?: number | string | null;
-  quantity?: number | string | null;
-  menu_items?: { name?: string | null } | null;
-};
-
-type Order = {
-  id: number;
-  status?: string | null;
-  total?: number | string | null;
-  total_amount?: number | string | null;
-  totalAmount?: number | string | null;
-  table_id?: number | string | null;
-  tableNumber?: string | null;
-  customerName?: string | null;
-  created_at?: string | null;
-  createdAt?: string | null;
-  order_items?: OrderItem[] | null;
-};
-
-type RangeKey = "7d" | "30d" | "all";
+import {
+  RangeKey,
+  Order,
+  Category,
+  MenuItem,
+  AnalyticsResult,
+} from "@/lib/analytics/types";
+import { AnalyticsService } from "@/lib/analytics/service";
+import { getOrderDate } from "@/lib/analytics/date-utils";
+import { getOrderTotal } from "@/lib/analytics/revenue";
 
 const STATUS_COLORS: Record<string, string> = {
   pending: "#d97706",
@@ -64,36 +52,16 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const RANGE_LABELS: Record<RangeKey, string> = {
+  today: "Today",
+  yesterday: "Yesterday",
   "7d": "7D",
   "30d": "30D",
+  thisMonth: "This Month",
+  prevMonth: "Previous Month",
   all: "All",
 };
 
 const ANALYTICS_READ_TIMEOUT_MS = 6000;
-
-function toNumber(value: unknown) {
-  const n = Number(value ?? 0);
-  return Number.isFinite(n) ? n : 0;
-}
-
-function getOrderTotal(order: Order) {
-  return toNumber(order.total ?? order.total_amount ?? order.totalAmount);
-}
-
-function getOrderDate(order: Order) {
-  const raw = order.created_at ?? order.createdAt;
-  const date = raw ? new Date(raw) : new Date();
-  return Number.isNaN(date.getTime()) ? new Date() : date;
-}
-
-function getItemName(item: OrderItem) {
-  return (
-    item.item_name ||
-    item.name ||
-    item.menu_items?.name ||
-    "Unknown item"
-  ).trim();
-}
 
 function getTableLabel(order: Order) {
   return String(order.table_id ?? order.tableNumber ?? "Walk-in");
@@ -114,22 +82,6 @@ function formatCompact(value: number) {
   }).format(value);
 }
 
-function formatDateKey(date: Date) {
-  return date.toISOString().slice(0, 10);
-}
-
-function shortDate(date: Date) {
-  return date.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
-}
-
-function isSameDay(a: Date, b: Date) {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
-}
-
 function EmptyState() {
   return (
     <div className="border border-dashed border-border bg-card/70 rounded-lg px-6 py-14 text-center">
@@ -145,15 +97,17 @@ function EmptyState() {
 }
 
 export default function AnalyticsPage() {
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [report, setReport] = useState<AnalyticsResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [range, setRange] = useState<RangeKey>("7d");
 
   useEffect(() => {
-    loadData();
+    loadData(range);
+  }, [range]);
 
+  useEffect(() => {
     const channel = supabase
-      .channel("analytics")
+      .channel("analytics-realtime")
       .on(
         "postgres_changes",
         {
@@ -161,220 +115,37 @@ export default function AnalyticsPage() {
           schema: "public",
           table: "orders",
         },
-        () => loadData(),
+        () => loadData(range),
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [range]);
 
-  async function loadData() {
+  async function loadData(currentRange: RangeKey = range) {
     setIsLoading(true);
     try {
-      const query = supabase
-        .from("orders")
-        .select(
-          `
-        *,
-        order_items (
-          *,
-          menu_items (
-            name
-          )
-        )
-      `,
-        )
-        .order("created_at", { ascending: false });
-      const timeout = new Promise<never>((_, reject) => {
-        window.setTimeout(
-          () => reject(new Error("Analytics read timed out")),
-          ANALYTICS_READ_TIMEOUT_MS,
-        );
-      });
-      const { data, error } = await Promise.race([query, timeout]);
-
-      if (!error) {
-        setOrders((data || []) as Order[]);
-      }
+      const data = await AnalyticsService.getReport(currentRange);
+      setReport(data);
+    } catch (err) {
+      console.error("Failed to load analytics:", err);
     } finally {
       setIsLoading(false);
     }
   }
 
-  const analytics = useMemo(() => {
-    const now = new Date();
-    const rangeStart =
-      range === "all"
-        ? null
-        : new Date(
-            now.getFullYear(),
-            now.getMonth(),
-            now.getDate() - (range === "7d" ? 6 : 29),
-          );
-
-    const scopedOrders = orders.filter((order) => {
-      if (!rangeStart) return true;
-      return getOrderDate(order) >= rangeStart;
-    });
-
-    const completedOrders = scopedOrders.filter(
-      (order) => order.status === "completed",
-    );
-    const activeOrders = scopedOrders.filter(
-      (order) => !["completed", "cancelled"].includes(order.status || ""),
-    );
-    const revenue = scopedOrders.reduce(
-      (sum, order) => sum + getOrderTotal(order),
-      0,
-    );
-    const todayRevenue = scopedOrders
-      .filter((order) => isSameDay(getOrderDate(order), now))
-      .reduce((sum, order) => sum + getOrderTotal(order), 0);
-    const yesterday = new Date(now);
-    yesterday.setDate(now.getDate() - 1);
-    const yesterdayRevenue = scopedOrders
-      .filter((order) => isSameDay(getOrderDate(order), yesterday))
-      .reduce((sum, order) => sum + getOrderTotal(order), 0);
-
-    const itemStats: Record<
-      string,
-      { name: string; quantity: number; revenue: number; orders: number }
-    > = {};
-    const tableStats: Record<
-      string,
-      { table: string; orders: number; revenue: number }
-    > = {};
-    const statusStats: Record<string, number> = {};
-    const hourStats: Record<string, { hour: string; orders: number }> = {};
-    const dayStats: Record<
-      string,
-      { label: string; revenue: number; orders: number }
-    > = {};
-
-    const daysToShow = range === "all" ? 14 : range === "7d" ? 7 : 30;
-    for (let i = daysToShow - 1; i >= 0; i -= 1) {
-      const date = new Date(now);
-      date.setDate(now.getDate() - i);
-      dayStats[formatDateKey(date)] = {
-        label: shortDate(date),
-        revenue: 0,
-        orders: 0,
-      };
-    }
-
-    scopedOrders.forEach((order) => {
-      const status = order.status || "unknown";
-      statusStats[status] = (statusStats[status] || 0) + 1;
-
-      const orderDate = getOrderDate(order);
-      const dayKey = formatDateKey(orderDate);
-      if (dayStats[dayKey]) {
-        dayStats[dayKey].revenue += getOrderTotal(order);
-        dayStats[dayKey].orders += 1;
-      }
-
-      const hour = `${orderDate.getHours().toString().padStart(2, "0")}:00`;
-      hourStats[hour] = hourStats[hour] || { hour, orders: 0 };
-      hourStats[hour].orders += 1;
-
-      const table = getTableLabel(order);
-      tableStats[table] = tableStats[table] || { table, orders: 0, revenue: 0 };
-      tableStats[table].orders += 1;
-      tableStats[table].revenue += getOrderTotal(order);
-
-      const orderItemNames = new Set<string>();
-      order.order_items?.forEach((item) => {
-        const name = getItemName(item);
-        const quantity = toNumber(item.quantity || 1);
-        const lineRevenue = toNumber(item.price) * quantity;
-
-        itemStats[name] = itemStats[name] || {
-          name,
-          quantity: 0,
-          revenue: 0,
-          orders: 0,
-        };
-        itemStats[name].quantity += quantity;
-        itemStats[name].revenue += lineRevenue;
-        orderItemNames.add(name);
-      });
-
-      orderItemNames.forEach((name) => {
-        itemStats[name].orders += 1;
-      });
-    });
-
-    const itemCount = Object.values(itemStats).reduce(
-      (sum, item) => sum + item.quantity,
-      0,
-    );
-    const revenueItems = Object.values(itemStats).sort(
-      (a, b) => b.revenue - a.revenue,
-    );
-    const quantityItems = Object.values(itemStats).sort(
-      (a, b) => b.quantity - a.quantity,
-    );
-    const topTables = Object.values(tableStats)
-      .sort((a, b) => b.revenue - a.revenue)
-      .slice(0, 5);
-    const peakHour =
-      Object.values(hourStats).sort((a, b) => b.orders - a.orders)[0]?.hour ||
-      "No peak";
-
-    const dayTrend = Object.values(dayStats);
-    const statusMix = Object.entries(statusStats).map(([name, value]) => ({
-      name: name.charAt(0).toUpperCase() + name.slice(1),
-      key: name,
-      value,
-    }));
-    const hourlyDemand = Object.values(hourStats)
-      .sort((a, b) => a.hour.localeCompare(b.hour))
-      .slice(-12);
-
-    return {
-      scopedOrders,
-      activeOrders,
-      completedOrders,
-      revenue,
-      todayRevenue,
-      yesterdayRevenue,
-      avgOrder: scopedOrders.length ? revenue / scopedOrders.length : 0,
-      avgItems: scopedOrders.length ? itemCount / scopedOrders.length : 0,
-      completionRate: scopedOrders.length
-        ? (completedOrders.length / scopedOrders.length) * 100
-        : 0,
-      topItem: revenueItems[0],
-      topTables,
-      peakHour,
-      dayTrend,
-      statusMix,
-      hourlyDemand,
-      revenueItems: revenueItems.slice(0, 8),
-      quantityItems: quantityItems.slice(0, 8),
-      highValueOrders: [...scopedOrders]
-        .sort((a, b) => getOrderTotal(b) - getOrderTotal(a))
-        .slice(0, 5),
-    };
-  }, [orders, range]);
-
-  const revenueDelta =
-    analytics.yesterdayRevenue > 0
-      ? ((analytics.todayRevenue - analytics.yesterdayRevenue) /
-          analytics.yesterdayRevenue) *
-        100
-      : analytics.todayRevenue > 0
-        ? 100
-        : 0;
-
-  if (isLoading) {
+  if (isLoading || !report) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
+
+  const analytics = report;
+  const revenueDelta = report.revenueDelta;
 
   return (
     <div className="space-y-6">
@@ -407,7 +178,7 @@ export default function AnalyticsPage() {
               </button>
             ))}
           </div>
-          <Button variant="outline" size="sm" onClick={loadData}>
+          <Button variant="outline" size="sm" onClick={() => loadData(range)}>
             <RefreshCw className="mr-2 h-4 w-4" />
             Refresh
           </Button>
@@ -422,7 +193,7 @@ export default function AnalyticsPage() {
             <MetricTile
               icon={<BadgeIndianRupee className="h-5 w-5" />}
               label="Gross revenue"
-              value={formatCurrency(analytics.revenue)}
+              value={formatCurrency(analytics.grossRevenue)}
               detail={`${formatCurrency(analytics.todayRevenue)} today`}
             />
             <MetricTile
@@ -442,6 +213,34 @@ export default function AnalyticsPage() {
               label="Completion rate"
               value={`${Math.round(analytics.completionRate)}%`}
               detail={`${analytics.completedOrders.length} completed tickets`}
+            />
+          </section>
+
+          {/* Customer & Detailed Revenue Metrics */}
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <MetricTile
+              icon={<Users className="h-5 w-5" />}
+              label="Total Customers"
+              value={analytics.customers.totalCustomers.toString()}
+              detail={`${analytics.customers.newCustomers} new vs ${analytics.customers.returningCustomers} returning`}
+            />
+            <MetricTile
+              icon={<RefreshCw className="h-5 w-5" />}
+              label="Repeat Purchase Rate"
+              value={`${analytics.customers.repeatPurchaseRate.toFixed(1)}%`}
+              detail="Guests with >1 orders in range"
+            />
+            <MetricTile
+              icon={<BadgeIndianRupee className="h-5 w-5" />}
+              label="Paid Revenue"
+              value={formatCurrency(analytics.paidRevenue)}
+              detail={`${formatCurrency(analytics.pendingRevenue)} pending`}
+            />
+            <MetricTile
+              icon={<X className="h-5 w-5" />}
+              label="Cancelled Value"
+              value={formatCurrency(analytics.cancelledValue)}
+              detail="Excluded from active revenue"
             />
           </section>
 
@@ -557,7 +356,7 @@ export default function AnalyticsPage() {
             </div>
           </section>
 
-          <section className="grid gap-4 xl:grid-cols-3">
+          <section className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
             <Panel title="Status mix" subtitle="Current order pipeline.">
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
@@ -651,6 +450,23 @@ export default function AnalyticsPage() {
                       value={formatCurrency(table.revenue)}
                       detail={`${table.orders} orders`}
                       percent={(table.revenue / max) * 100}
+                    />
+                  );
+                })}
+              </div>
+            </Panel>
+
+            <Panel title="Category share" subtitle="Sales contribution.">
+              <div className="space-y-3">
+                {analytics.categories.map((cat, index) => {
+                  return (
+                    <RankRow
+                      key={cat.name}
+                      rank={index + 1}
+                      name={cat.name}
+                      value={formatCurrency(cat.revenue)}
+                      detail={`${cat.ordersCount} orders (${cat.percent}%)`}
+                      percent={cat.percent}
                     />
                   );
                 })}

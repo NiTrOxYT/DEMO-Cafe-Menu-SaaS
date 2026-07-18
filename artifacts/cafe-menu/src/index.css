@@ -173,3 +173,13 @@ body,
 #root {
   background: #0f0e0c;
 }
+
+.floating-order-bar {
+  bottom: max(env(safe-area-inset-bottom), 16px);
+}
+
+@media (min-width: 1024px) {
+  .floating-order-bar {
+    bottom: 24px;
+  }
+}

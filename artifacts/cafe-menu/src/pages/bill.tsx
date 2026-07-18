@@ -90,8 +90,8 @@ const BillPage: React.FC = () => {
         );
 
         // Status badge with better styling
-        const statusColor = order.is_paid ? [34, 197, 94] : [220, 53, 69];
-        const statusTextColor = [255, 255, 255];
+        const statusColor: [number, number, number] = order.is_paid ? [34, 197, 94] : [220, 53, 69];
+        const statusTextColor: [number, number, number] = [255, 255, 255];
         
         pdf.setFillColor(...statusColor);
         pdf.roundedRect(150, 68, 30, 10, 2, 2, "F");

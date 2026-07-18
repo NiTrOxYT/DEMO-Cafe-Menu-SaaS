@@ -21,6 +21,8 @@ import {
   MessageCircle,
   Sparkles,
   ArrowRight,
+  ClipboardList,
+  ShoppingBag,
 } from "lucide-react";
 
 const DARK = "#080706";
@@ -761,6 +763,189 @@ function CartDrawer({
   );
 }
 
+// ---------- Floating Action Order Bar ----------
+interface FloatingActionOrderBarProps {
+  cartCount: number;
+  cartTotal: number;
+  activeOrderId: string | null;
+  tableNumber: string | null;
+  onContinue: () => void;
+  visible: boolean;
+}
+
+function FloatingActionOrderBar({
+  cartCount,
+  cartTotal,
+  activeOrderId,
+  tableNumber,
+  onContinue,
+  visible,
+}: FloatingActionOrderBarProps) {
+  const hasItems = cartCount > 0;
+  const hasActiveOrder = !hasItems && !!activeOrderId;
+
+  if (!hasItems && !hasActiveOrder) return null;
+
+  return (
+    <AnimatePresence>
+      {visible && (
+        <motion.div
+          layout
+          layoutId="floating-order-bar-container"
+          initial={{ y: 120, opacity: 0, filter: "blur(8px)" }}
+          animate={{
+            y: 0,
+            opacity: 1,
+            filter: "blur(0px)",
+            boxShadow: [
+              "0 16px 48px rgba(0, 0, 0, 0.6)",
+              "0 16px 48px rgba(201, 169, 110, 0.25), 0 0 20px rgba(201, 169, 110, 0.15)",
+              "0 16px 48px rgba(0, 0, 0, 0.6)",
+            ],
+          }}
+          exit={{ y: 120, opacity: 0, filter: "blur(8px)" }}
+          transition={{
+            y: { type: "spring", damping: 25, stiffness: 220 },
+            opacity: { duration: 0.2 },
+            boxShadow: { duration: 1.2, times: [0, 0.4, 1] },
+            layout: { type: "spring", damping: 26, stiffness: 210 },
+          }}
+          className="fixed left-1/2 -translate-x-1/2 z-40 flex items-center justify-between w-[calc(100%-32px)] md:w-full md:max-w-[520px] lg:max-w-[480px] h-[60px] px-4 rounded-full floating-order-bar"
+          style={{
+            background: "rgba(18, 18, 18, 0.82)",
+            backdropFilter: "blur(22px)",
+            WebkitBackdropFilter: "blur(22px)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+          }}
+        >
+          {hasItems ? (
+            <div className="flex items-center justify-between w-full">
+              {/* Left Section */}
+              <div className="flex items-center gap-3">
+                <motion.div
+                  layout
+                  className="flex items-center justify-center w-10 h-10 rounded-full"
+                  style={{ background: "rgba(255,255,255,0.04)" }}
+                >
+                  <motion.div
+                    key={`cart-icon-${cartCount}`}
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                  >
+                    <ShoppingBag size={20} style={{ color: AMBER }} />
+                  </motion.div>
+                </motion.div>
+                <div className="flex flex-col items-start leading-tight">
+                  <motion.span
+                    layout
+                    className="font-bold text-[14px]"
+                    style={{ color: CREAM }}
+                  >
+                    Cart
+                  </motion.span>
+                  <motion.span
+                    key={`cart-count-${cartCount}`}
+                    initial={{ scale: 0.95, opacity: 0.7 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.2 }}
+                    className="text-[11px]"
+                    style={{ color: MUTED }}
+                  >
+                    {cartCount} {cartCount === 1 ? "Item" : "Items"}
+                  </motion.span>
+                </div>
+              </div>
+
+              {/* Middle Section */}
+              <div className="flex-1 flex justify-center">
+                <motion.span
+                  key={`cart-total-${cartTotal}`}
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                  className="font-manrope font-extrabold text-[16px] tracking-wide"
+                  style={{ color: CREAM }}
+                >
+                  {formatINR(cartTotal)}
+                </motion.span>
+              </div>
+
+              {/* Right Section */}
+              <motion.button
+                layout
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.97 }}
+                transition={{ duration: 0.22 }}
+                onClick={onContinue}
+                className="flex items-center gap-1.5 px-5 py-2 h-10 rounded-full font-bold text-xs uppercase tracking-wider hover:brightness-110"
+                style={{
+                  background: GOLD_GRADIENT,
+                  color: DARK,
+                  boxShadow: "0 4px 16px rgba(201, 169, 110, 0.25)",
+                }}
+              >
+                Continue <ArrowRight size={14} />
+              </motion.button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between w-full">
+              {/* Left Section */}
+              <div className="flex items-center gap-3">
+                <motion.div
+                  layout
+                  className="flex items-center justify-center w-10 h-10 rounded-full"
+                  style={{ background: "rgba(255,255,255,0.04)" }}
+                >
+                  <ClipboardList size={20} style={{ color: AMBER }} />
+                </motion.div>
+                <div className="flex flex-col items-start leading-tight">
+                  <motion.span
+                    layout
+                    className="font-bold text-[14px]"
+                    style={{ color: CREAM }}
+                  >
+                    Active Order
+                  </motion.span>
+                  <motion.span
+                    layout
+                    className="text-[11px]"
+                    style={{ color: MUTED }}
+                  >
+                    Track status
+                  </motion.span>
+                </div>
+              </div>
+
+              {/* Middle Section (spacer) */}
+              <div className="flex-1" />
+
+              {/* Right Section */}
+              <motion.button
+                layout
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.97 }}
+                transition={{ duration: 0.22 }}
+                onClick={() => {
+                  window.location.href = `/current-order?table=${tableNumber}`;
+                }}
+                className="flex items-center gap-1.5 px-5 py-2 h-10 rounded-full font-bold text-xs uppercase tracking-wider hover:brightness-110"
+                style={{
+                  background: GOLD_GRADIENT,
+                  color: DARK,
+                  boxShadow: "0 4px 16px rgba(201, 169, 110, 0.25)",
+                }}
+              >
+                Track Order <ArrowRight size={14} />
+              </motion.button>
+            </div>
+          )}
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
 // ---------- Main Menu Page ----------
 export default function MenuPage() {
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
@@ -788,6 +973,58 @@ export default function MenuPage() {
     "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=1600&q=80";
 
   const cart = useCart();
+
+  // Scroll tracking state for Floating Action Order Bar
+  const [showOrderBar, setShowOrderBar] = useState(true);
+  const lastScrollY = useRef(0);
+  const scrollAccumulator = useRef(0);
+
+  useEffect(() => {
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const currentScrollY = window.scrollY;
+          const diff = currentScrollY - lastScrollY.current;
+
+          // 1. Always show when at the top (e.g., scroll position <= 20px)
+          if (currentScrollY <= 20) {
+            setShowOrderBar(true);
+            scrollAccumulator.current = 0;
+          } else if (Math.abs(diff) >= 10) {
+            // Ignore scroll changes smaller than 10px
+            if (diff > 0) {
+              // Scrolling down
+              if (scrollAccumulator.current < 0) {
+                scrollAccumulator.current = 0;
+              }
+              scrollAccumulator.current += diff;
+              if (scrollAccumulator.current >= 70) {
+                setShowOrderBar(false);
+              }
+            } else {
+              // Scrolling up
+              if (scrollAccumulator.current > 0) {
+                scrollAccumulator.current = 0;
+              }
+              scrollAccumulator.current += diff; // diff is negative
+              if (Math.abs(scrollAccumulator.current) >= 20) {
+                setShowOrderBar(true);
+              }
+            }
+          }
+
+          lastScrollY.current = currentScrollY;
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const cartItemById = (id: number) => cart.items.find((i) => i.id === id);
 
@@ -1103,24 +1340,7 @@ export default function MenuPage() {
                 Table {tableNumber}
               </motion.div>
             )}
-            {activeOrderId && (
-              <motion.button
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                onClick={() => {
-                  window.location.href = `/current-order?table=${tableNumber}`;
-                }}
-                className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition-all hover:brightness-110"
-                style={{
-                  background: "rgba(255,255,255,0.08)",
-                  color: CREAM,
-                  border: `1px solid ${BORDER}`,
-                  backdropFilter: "blur(12px)",
-                }}
-              >
-                Current Order <ArrowRight size={12} />
-              </motion.button>
-            )}
+            {/* Current Order button moved to bottom action bar */}
           </div>
           <motion.p
             initial={{ opacity: 0, y: 10 }}
@@ -1458,35 +1678,15 @@ style={{
         />
       )}
 
-      {/* Floating Cart Button */}
-      <AnimatePresence>
-        {cart.count > 0 && !cartOpen && (
-          <motion.button
-            initial={{ y: 80, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 80, opacity: 0 }}
-            transition={{ type: "spring", damping: 24, stiffness: 260 }}
-            onClick={() => setCartOpen(true)}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-6 py-4 rounded-2xl font-bold text-sm transition-all hover:brightness-110 active:scale-[0.98]"
-            style={{
-              background: GOLD_GRADIENT,
-              color: DARK,
-              boxShadow:
-                "0 12px 40px rgba(201,169,110,0.45), 0 0 0 1px rgba(255,255,255,0.1)",
-              backdropFilter: "blur(12px)",
-            }}
-          >
-            <span
-              className="flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-black"
-              style={{ background: DARK, color: AMBER_LIGHT }}
-            >
-              {cart.count}
-            </span>
-            View Cart
-            <span className="font-black">{formatINR(cart.total)}</span>
-          </motion.button>
-        )}
-      </AnimatePresence>
+      {/* Floating Action Order Bar */}
+      <FloatingActionOrderBar
+        cartCount={cart.count}
+        cartTotal={cart.total}
+        activeOrderId={activeOrderId}
+        tableNumber={tableNumber}
+        onContinue={() => setCartOpen(true)}
+        visible={showOrderBar && !cartOpen}
+      />
 
       {/* Order placed toast */}
       <AnimatePresence>

@@ -51,3 +51,5 @@ Thumbs.db
 .local/
 .aider*
 .continue/
+
+.agents/

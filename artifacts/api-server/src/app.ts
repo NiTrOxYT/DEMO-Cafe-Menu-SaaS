@@ -26,9 +26,29 @@ app.use(
     },
   }),
 );
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(",")
+      .map((o) => o.trim())
+      .filter((o) => o.length > 0)
+  : [
+      "https://demo-cafe-menu-saa-s-cafe-menu.vercel.app",
+      "https://cafe.annex-consultancy.com",
+    ];
+
 app.use(
   cors({
-    origin: ["https://demo-cafe-menu-saa-s-cafe-menu.vercel.app"],
+    origin: (origin, callback) => {
+      if (!origin) {
+        return callback(null, true);
+      }
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      if (process.env.NODE_ENV !== "production") {
+        logger.warn(`CORS rejected origin: ${origin}`);
+      }
+      return callback(null, false);
+    },
     credentials: true,
   }),
 );

@@ -23,6 +23,20 @@ tags:
   - name: Storage
     description: Object storage upload and serving endpoints.
 paths:
+  /health:
+    get:
+      operationId: getHealth
+      tags: [health]
+      summary: Health check
+      description: Returns server health status and timestamp
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
   /healthz:
     get:
       operationId: healthCheck
@@ -436,6 +450,9 @@ components:
       properties:
         status:
           type: string
+        timestamp:
+          type: string
+          format: date-time
       required:
         - status
 

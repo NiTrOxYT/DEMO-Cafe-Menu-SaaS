@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import healthRouter from "./health";
+import healthRouter, { handleHealth } from "./health";
 import authRouter from "./auth";
 import categoriesRouter from "./categories";
 import menuRouter from "./menu";
@@ -17,4 +17,5 @@ router.use(storageRouter);
 router.use(ordersRouter);
 router.use(settingsRouter);
 
+export { handleHealth };
 export default router;

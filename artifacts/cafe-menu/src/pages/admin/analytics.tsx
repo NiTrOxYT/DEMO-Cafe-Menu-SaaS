@@ -99,6 +99,7 @@ function EmptyState() {
 export default function AnalyticsPage() {
   const [report, setReport] = useState<AnalyticsResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [range, setRange] = useState<RangeKey>("7d");
 
   useEffect(() => {
@@ -126,22 +127,40 @@ export default function AnalyticsPage() {
 
   async function loadData(currentRange: RangeKey = range) {
     setIsLoading(true);
+    setError(null);
     try {
       const data = await AnalyticsService.getReport(currentRange);
       setReport(data);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to load analytics:", err);
+      setError(err?.message || "Failed to load analytics data.");
     } finally {
       setIsLoading(false);
     }
   }
 
-  if (isLoading || !report) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
+  }
+
+  if (error && !report) {
+    return (
+      <div className="border border-destructive/30 bg-destructive/10 rounded-lg p-6 text-center space-y-3">
+        <p className="text-sm text-destructive font-medium">{error}</p>
+        <Button variant="outline" size="sm" onClick={() => loadData(range)}>
+          <RefreshCw className="mr-2 h-4 w-4" />
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
+  if (!report) {
+    return <EmptyState />;
   }
 
   const analytics = report;

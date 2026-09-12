@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import { RangeKey, Order, Category, MenuItem, AnalyticsResult } from "./types";
 import { calculateAnalytics } from "./calculations";
+import { listCategories, listMenuItems } from "@/lib/api/api";
 
 const ANALYTICS_READ_TIMEOUT_MS = 6000;
 
@@ -10,7 +11,9 @@ export class AnalyticsService {
    */
   static async getReport(
     range: RangeKey,
-    cafeId?: number | string | null
+    cafeId?: number | string | null,
+    injectedCategories?: Category[],
+    injectedMenuItems?: MenuItem[]
   ): Promise<AnalyticsResult> {
     const t0 = performance.now();
     const now = new Date();
@@ -18,12 +21,7 @@ export class AnalyticsService {
     // 1. Build Query with Range Bounds and Tenant Filtering
     let query = supabase.from("orders").select(`
       *,
-      order_items (
-        *,
-        menu_items (
-          name
-        )
-      )
+      order_items (*)
     `);
 
     // Tenant / Multi-café Filter
@@ -61,24 +59,56 @@ export class AnalyticsService {
       );
     });
 
-    const [ordersRes, categoriesRes, menuItemsRes] = await Promise.race([
+    const fetchCategories = async (): Promise<Category[]> => {
+      if (injectedCategories && injectedCategories.length > 0) return injectedCategories;
+      try {
+        const data = await listCategories();
+        return (data || []).map((c: any) => ({ id: c.id, name: c.name }));
+      } catch {
+        return [];
+      }
+    };
+
+    const fetchMenuItems = async (): Promise<MenuItem[]> => {
+      if (injectedMenuItems && injectedMenuItems.length > 0) return injectedMenuItems;
+      try {
+        const data = await listMenuItems();
+        return (data || []).map((m: any) => ({
+          id: m.id,
+          name: m.name,
+          price: Number(m.price || 0),
+          category_id: m.categoryId ?? m.category_id ?? 0,
+        }));
+      } catch {
+        return [];
+      }
+    };
+
+    const [ordersRes, categories, menuItems] = await Promise.race([
       Promise.all([
         query,
-        supabase.from("categories").select("id, name"),
-        supabase.from("menu_items").select("id, name, category_id"),
+        fetchCategories(),
+        fetchMenuItems(),
       ]),
       timeout,
     ]);
 
     const t1 = performance.now();
 
-    if (ordersRes.error) throw ordersRes.error;
-    if (categoriesRes.error) throw categoriesRes.error;
-    if (menuItemsRes.error) throw menuItemsRes.error;
-
-    const rawOrders = (ordersRes.data || []) as Order[];
-    const categories = (categoriesRes.data || []) as Category[];
-    const menuItems = (menuItemsRes.data || []) as MenuItem[];
+    let rawOrders: Order[] = [];
+    if (ordersRes.error) {
+      console.warn("Orders query with order_items failed, trying fallback to plain orders:", ordersRes.error);
+      const fallbackQuery = await supabase
+        .from("orders")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (fallbackQuery.error) {
+        throw ordersRes.error;
+      }
+      rawOrders = (fallbackQuery.data || []) as Order[];
+    } else {
+      rawOrders = (ordersRes.data || []) as Order[];
+    }
 
     // 3. Orchestrate Calculations
     const t2 = performance.now();

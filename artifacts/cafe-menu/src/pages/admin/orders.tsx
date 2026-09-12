@@ -146,12 +146,7 @@ export default function OrdersPage() {
       .select(
         `
         *,
-        order_items (
-          *,
-          menu_items (
-            name
-          )
-        )
+        order_items (*)
       `,
       )
       .order("created_at", { ascending: false });

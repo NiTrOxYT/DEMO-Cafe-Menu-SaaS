@@ -546,9 +546,12 @@ function FoodCard({
   }
 
   return (
-    <div
+    <motion.div
+      whileHover={{ y: -3 }}
+      whileTap={{ scale: 0.97 }}
+      transition={{ type: "spring", stiffness: 400, damping: 25 }}
       onClick={onClick}
-      className="group flex flex-col bg-[#FFFDF9] rounded-2xl border border-[#E5DDD1] overflow-hidden shadow-[0_2px_10px_rgba(41,35,31,0.03)] hover:shadow-[0_8px_20px_rgba(41,35,31,0.07)] transition-all duration-300 cursor-pointer min-w-0"
+      className="group flex flex-col bg-[#FFFDF9] rounded-2xl border border-[#E5DDD1] overflow-hidden shadow-[0_2px_10px_rgba(41,35,31,0.03)] hover:shadow-[0_8px_20px_rgba(41,35,31,0.07)] transition-all duration-300 cursor-pointer min-w-0 btn-smooth-press"
     >
       {/* Top Image Container */}
       <div className="relative aspect-[1/0.88] w-full overflow-hidden bg-[#EFE7DA]">
@@ -581,14 +584,15 @@ function FoodCard({
         )}
 
         {/* Favorite Heart (Top Right) */}
-        <button
+        <motion.button
           type="button"
+          whileTap={{ scale: 0.8 }}
           onClick={onToggleFavorite}
           className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/20 backdrop-blur-xs flex items-center justify-center text-white hover:text-[#D84040] transition-colors z-10"
           aria-label="Favorite"
         >
           <Heart size={14} fill={isFavorite ? "#D84040" : "none"} strokeWidth={2} />
-        </button>
+        </motion.button>
 
         {!item.available && (
           <div className="absolute inset-0 bg-[#F8F5EF]/85 backdrop-blur-xs flex items-center justify-center z-10">
@@ -622,40 +626,43 @@ function FoodCard({
           <div onClick={(e) => e.stopPropagation()}>
             {item.available && (
               cartQty === 0 ? (
-                <button
+                <motion.button
                   type="button"
+                  whileTap={{ scale: 0.85 }}
                   onClick={onAdd}
-                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#7B4E35] text-white flex items-center justify-center hover:bg-[#633D28] transition-all active:scale-95 shadow-xs"
+                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#7B4E35] text-white flex items-center justify-center hover:bg-[#633D28] transition-colors shadow-xs"
                   aria-label={`Add ${item.name}`}
                 >
                   <Plus size={15} />
-                </button>
+                </motion.button>
               ) : (
                 <div className="flex items-center gap-1.5 bg-[#EFE7DA] border border-[#D8CEBF] rounded-full px-1.5 py-0.5 shadow-xs">
-                  <button
+                  <motion.button
                     type="button"
+                    whileTap={{ scale: 0.8 }}
                     onClick={onRemove}
                     className="w-5 h-5 rounded-full flex items-center justify-center text-[#7B4E35]"
                   >
                     <Minus size={11} />
-                  </button>
+                  </motion.button>
                   <span className="text-xs font-bold text-[#29231F] min-w-3 text-center">
                     {cartQty}
                   </span>
-                  <button
+                  <motion.button
                     type="button"
+                    whileTap={{ scale: 0.8 }}
                     onClick={onAdd}
                     className="w-5 h-5 rounded-full flex items-center justify-center text-[#7B4E35]"
                   >
                     <Plus size={11} />
-                  </button>
+                  </motion.button>
                 </div>
               )
             )}
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -903,9 +910,10 @@ export default function MenuPage() {
           </button>
 
           {/* Cart Button with Count Badge */}
-          <button
+          <motion.button
+            whileTap={{ scale: 0.92 }}
             onClick={() => setCartOpen(true)}
-            className="relative w-10 h-10 rounded-xl bg-[#FFFDF9] border border-[#E5DDD1] flex items-center justify-center text-[#29231F] shadow-2xs hover:bg-[#EFE7DA] transition-colors"
+            className="relative w-10 h-10 rounded-xl bg-[#FFFDF9] border border-[#E5DDD1] flex items-center justify-center text-[#29231F] shadow-2xs hover:bg-[#EFE7DA] transition-colors btn-smooth-press"
             aria-label="Shopping Cart"
           >
             <ShoppingBag size={17} />
@@ -914,10 +922,11 @@ export default function MenuPage() {
                 {cart.count}
               </span>
             )}
-          </button>
+          </motion.button>
 
           {/* Current Order Button */}
-          <button
+          <motion.button
+            whileTap={{ scale: 0.92 }}
             onClick={() => {
               if (activeOrderId || (cart.items.length === 0 && !activeOrderId)) {
                 setShowActiveOrderModal(true);
@@ -925,7 +934,7 @@ export default function MenuPage() {
                 setCartOpen(true);
               }
             }}
-            className="relative px-3 py-2 rounded-xl bg-[#FFFDF9] border border-[#E5DDD1] flex items-center gap-1.5 text-[#29231F] shadow-2xs hover:bg-[#EFE7DA] transition-colors text-xs font-semibold"
+            className="relative px-3 py-2 rounded-xl bg-[#FFFDF9] border border-[#E5DDD1] flex items-center gap-1.5 text-[#29231F] shadow-2xs hover:bg-[#EFE7DA] transition-colors text-xs font-semibold btn-smooth-press"
             aria-label="Current Order"
           >
             <Clock size={15} className="text-[#7B4E35]" />
@@ -933,7 +942,7 @@ export default function MenuPage() {
             {activeOrderId && (
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             )}
-          </button>
+          </motion.button>
         </div>
       </header>
 
@@ -1008,15 +1017,17 @@ export default function MenuPage() {
 
             {/* Explore Menu Button */}
             <div className="pt-0.5">
-              <button
+              <motion.button
+                whileTap={{ scale: 0.94 }}
+                whileHover={{ scale: 1.02 }}
                 onClick={() => {
                   document.getElementById("category-scroller")?.scrollIntoView({ behavior: "smooth" });
                 }}
-                className="px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-[#54321E] text-white font-semibold text-xs sm:text-sm inline-flex items-center gap-2 hover:bg-[#3D2314] transition-all transform active:scale-95 shadow-md"
+                className="px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-[#54321E] text-white font-semibold text-xs sm:text-sm inline-flex items-center gap-2 hover:bg-[#3D2314] transition-colors shadow-md btn-smooth-press"
               >
                 <span>Explore Menu</span>
                 <ArrowRight size={13} />
-              </button>
+              </motion.button>
             </div>
 
             {/* Script below button */}
@@ -1043,12 +1054,13 @@ export default function MenuPage() {
             className="w-full pl-10 pr-9 py-2.5 sm:py-3 rounded-full bg-[#FFFDF9] border border-[#E5DDD1] text-xs sm:text-sm text-[#29231F] placeholder:text-[#766B61]/70 focus:outline-none focus:border-[#7B4E35] shadow-2xs"
           />
           {searchQuery && (
-            <button
+            <motion.button
+              whileTap={{ scale: 0.85 }}
               onClick={() => setSearchQuery("")}
               className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#766B61]"
             >
               <X size={14} />
-            </button>
+            </motion.button>
           )}
         </div>
 
@@ -1063,10 +1075,12 @@ export default function MenuPage() {
             {displayCategories.map((cat, idx) => {
               const isSelected = selectedCategory === cat.id;
               return (
-                <button
+                <motion.button
                   key={cat.name + idx}
+                  whileTap={{ scale: 0.92 }}
+                  whileHover={{ y: -2 }}
                   onClick={() => setSelectedCategory(cat.id)}
-                  className={`flex flex-col items-center justify-center min-w-[72px] sm:min-w-[80px] h-[74px] sm:h-[80px] rounded-2xl p-2 transition-all flex-shrink-0 ${
+                  className={`flex flex-col items-center justify-center min-w-[72px] sm:min-w-[80px] h-[74px] sm:h-[80px] rounded-2xl p-2 transition-all flex-shrink-0 btn-smooth-press ${
                     isSelected
                       ? "bg-[#7B4E35] text-white shadow-sm"
                       : "bg-[#FFFDF9] text-[#29231F] border border-[#E5DDD1] hover:bg-[#EFE7DA]"
@@ -1078,7 +1092,7 @@ export default function MenuPage() {
                   <span className="text-[11px] sm:text-[12px] font-semibold tracking-tight">
                     {cat.name}
                   </span>
-                </button>
+                </motion.button>
               );
             })}
           </div>
@@ -1093,18 +1107,19 @@ export default function MenuPage() {
               const isSelected = vegFilter === f.id;
               const Icon = f.icon;
               return (
-                <button
+                <motion.button
                   key={f.id}
+                  whileTap={{ scale: 0.92 }}
                   onClick={() => setVegFilter(f.id as any)}
-                  className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all btn-smooth-press ${
                     isSelected
-                      ? "bg-[#29231F] text-white"
+                      ? "bg-[#7B4E35] text-white shadow-xs"
                       : "bg-[#FFFDF9] text-[#766B61] border border-[#E5DDD1] hover:bg-[#EFE7DA]"
                   }`}
                 >
-                  {Icon && <Icon size={11} />}
+                  {Icon && <Icon size={12} className={f.id === "veg" ? "text-emerald-600" : f.id === "nonveg" ? "text-rose-500" : ""} />}
                   <span>{f.label}</span>
-                </button>
+                </motion.button>
               );
             })}
           </div>
@@ -1496,502 +1511,557 @@ export default function MenuPage() {
       {/* ==================================================== */}
       {/* OFFERS & DEALS MODAL                                 */}
       {/* ==================================================== */}
-      {showOffers && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
-          onClick={() => setShowOffers(false)}
-        >
-          <div
-            className="w-full max-w-md max-h-[85vh] overflow-y-auto bg-[#FFFDF9] rounded-3xl border border-[#E5DDD1] shadow-2xl p-5 sm:p-6 space-y-4"
-            onClick={(e) => e.stopPropagation()}
+      <AnimatePresence>
+        {showOffers && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
+            onClick={() => setShowOffers(false)}
           >
-            {/* Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-[#E5DDD1]">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-full bg-[#EFE7DA] flex items-center justify-center text-[#7B4E35]">
-                  <Percent size={18} />
-                </div>
-                <div>
-                  <h3 className="font-serif text-xl font-bold text-[#29231F]">Offers & Combos</h3>
-                  <p className="text-[11px] text-[#766B61]">Exclusive discounts at {restaurantName}</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowOffers(false)}
-                className="w-8 h-8 rounded-full bg-[#F8F5EF] border border-[#E5DDD1] flex items-center justify-center text-[#29231F] hover:bg-[#EFE7DA]"
-              >
-                <X size={15} />
-              </button>
-            </div>
-
-            {/* Offer Cards List */}
-            <div className="space-y-3 pt-1">
-              {[
-                {
-                  code: "MORNING20",
-                  title: "20% OFF Breakfast Combo",
-                  desc: "Order any handcrafted specialty coffee with a croissant or avocado toast before 11:30 AM.",
-                  badge: "Daily until 11:30 AM",
-                  bgBadge: "bg-[#E8BA60] text-[#29231F]",
-                },
-                {
-                  code: "GOLDENBREW",
-                  title: "Buy 2 Coffees, Get 1 Pastry",
-                  desc: "Order any 2 signature espresso or cold brew drinks and receive a complimentary artisan pastry.",
-                  badge: "All-Day Special",
-                  bgBadge: "bg-[#DFBA79] text-[#29231F]",
-                },
-                {
-                  code: "FLAT75",
-                  title: "Flat ₹75 OFF on QR Orders",
-                  desc: "Enjoy ₹75 instant savings on orders above ₹300 placed directly from your table.",
-                  badge: "Min Order ₹300",
-                  bgBadge: "bg-[#A7B89B] text-[#1E2819]",
-                },
-                {
-                  code: "HAPPYHOUR",
-                  title: "15% OFF Desserts & Coolers",
-                  desc: "Relax during afternoon hours with 15% discount on all cakes, tarts, and botanical coolers.",
-                  badge: "4:00 PM – 7:00 PM",
-                  bgBadge: "bg-[#EFE7DA] text-[#7B4E35]",
-                },
-              ].map((offer) => (
-                <div
-                  key={offer.code}
-                  className="p-4 rounded-2xl bg-[#F8F5EF] border border-[#E5DDD1] space-y-2 hover:border-[#7B4E35]/40 transition-colors"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${offer.bgBadge}`}>
-                      {offer.badge}
-                    </span>
-                    <button
-                      onClick={() => copyPromoCode(offer.code)}
-                      className="inline-flex items-center gap-1 text-[11px] font-bold text-[#7B4E35] bg-white px-2.5 py-1 rounded-full border border-[#E5DDD1] hover:bg-[#EFE7DA] transition-colors"
-                    >
-                      {copiedCode === offer.code ? (
-                        <>
-                          <Check size={12} className="text-emerald-600" />
-                          <span className="text-emerald-700">Copied!</span>
-                        </>
-                      ) : (
-                        <>
-                          <span>{offer.code}</span>
-                          <span className="text-[9px] text-[#766B61]">(Copy)</span>
-                        </>
-                      )}
-                    </button>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: 16 }}
+              transition={{ type: "spring", damping: 25, stiffness: 350 }}
+              className="w-full max-w-md max-h-[85vh] overflow-y-auto bg-[#FFFDF9] rounded-3xl border border-[#E5DDD1] shadow-2xl p-5 sm:p-6 space-y-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between pb-3 border-b border-[#E5DDD1]">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-full bg-[#EFE7DA] flex items-center justify-center text-[#7B4E35]">
+                    <Percent size={18} />
                   </div>
                   <div>
-                    <h4 className="font-serif font-bold text-[15px] text-[#29231F]">{offer.title}</h4>
-                    <p className="text-xs text-[#766B61] mt-0.5 leading-relaxed font-sans">{offer.desc}</p>
+                    <h3 className="font-serif text-xl font-bold text-[#29231F]">Offers & Combos</h3>
+                    <p className="text-[11px] text-[#766B61]">Exclusive discounts at {restaurantName}</p>
                   </div>
                 </div>
-              ))}
-            </div>
-
-            <div className="pt-2 text-center">
-              <button
-                onClick={() => setShowOffers(false)}
-                className="w-full py-3 rounded-full bg-[#7B4E35] text-white font-medium text-xs hover:bg-[#633D28] transition-colors shadow-xs"
-              >
-                Back to Menu
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ==================================================== */}
-      {/* LOCATIONS & HOURS MODAL                              */}
-      {/* ==================================================== */}
-      {showLocations && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
-          onClick={() => setShowLocations(false)}
-        >
-          <div
-            className="w-full max-w-md max-h-[85vh] overflow-y-auto bg-[#FFFDF9] rounded-3xl border border-[#E5DDD1] shadow-2xl p-5 sm:p-6 space-y-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-[#E5DDD1]">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-full bg-[#EFE7DA] flex items-center justify-center text-[#737D63]">
-                  <MapPin size={18} />
-                </div>
-                <div>
-                  <h3 className="font-serif text-xl font-bold text-[#29231F]">Our Locations</h3>
-                  <p className="text-[11px] text-[#766B61]">Visit our specialty cafés</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowLocations(false)}
-                className="w-8 h-8 rounded-full bg-[#F8F5EF] border border-[#E5DDD1] flex items-center justify-center text-[#29231F] hover:bg-[#EFE7DA]"
-              >
-                <X size={15} />
-              </button>
-            </div>
-
-            {/* Location Cards */}
-            <div className="space-y-3 pt-1">
-              {[
-                {
-                  title: "The Golden Brew — Flagship Roastery",
-                  area: "Connaught Place, Central District",
-                  address: "142 Park Avenue, Near Central Fountain",
-                  hours: "Daily • 7:30 AM – 11:00 PM",
-                  phone: "+91 98765 43210",
-                  amenities: "Pet Friendly • Outdoor Patio • Pour-Over Bar • Free WiFi",
-                },
-                {
-                  title: "The Golden Brew — Artisan Studio",
-                  area: "Golf Course Road",
-                  address: "Shop 8, Ground Floor, Horizon Galleria",
-                  hours: "Mon – Sun • 8:00 AM – 10:30 PM",
-                  phone: "+91 98765 43211",
-                  amenities: "Quiet Work Zone • Bakery Counter • Valet Parking",
-                },
-              ].map((loc, idx) => (
-                <div
-                  key={idx}
-                  className="p-4 rounded-2xl bg-[#F8F5EF] border border-[#E5DDD1] space-y-2.5"
+                <motion.button
+                  whileTap={{ scale: 0.85 }}
+                  onClick={() => setShowOffers(false)}
+                  className="w-8 h-8 rounded-full bg-[#F8F5EF] border border-[#E5DDD1] flex items-center justify-center text-[#29231F] hover:bg-[#EFE7DA] btn-smooth-press"
                 >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h4 className="font-serif font-bold text-[15px] text-[#29231F]">{loc.title}</h4>
-                      <p className="text-[11px] font-semibold text-[#7B4E35]">{loc.area}</p>
+                  <X size={15} />
+                </motion.button>
+              </div>
+
+              {/* Offer Cards List */}
+              <div className="space-y-3 pt-1">
+                {[
+                  {
+                    code: "MORNING20",
+                    title: "20% OFF Breakfast Combo",
+                    desc: "Order any handcrafted specialty coffee with a croissant or avocado toast before 11:30 AM.",
+                    badge: "Daily until 11:30 AM",
+                    bgBadge: "bg-[#E8BA60] text-[#29231F]",
+                  },
+                  {
+                    code: "GOLDENBREW",
+                    title: "Buy 2 Coffees, Get 1 Pastry",
+                    desc: "Order any 2 signature espresso or cold brew drinks and receive a complimentary artisan pastry.",
+                    badge: "All-Day Special",
+                    bgBadge: "bg-[#DFBA79] text-[#29231F]",
+                  },
+                  {
+                    code: "FLAT75",
+                    title: "Flat ₹75 OFF on QR Orders",
+                    desc: "Enjoy ₹75 instant savings on orders above ₹300 placed directly from your table.",
+                    badge: "Min Order ₹300",
+                    bgBadge: "bg-[#A7B89B] text-[#1E2819]",
+                  },
+                  {
+                    code: "HAPPYHOUR",
+                    title: "15% OFF Desserts & Coolers",
+                    desc: "Relax during afternoon hours with 15% discount on all cakes, tarts, and botanical coolers.",
+                    badge: "4:00 PM – 7:00 PM",
+                    bgBadge: "bg-[#EAE2D5] text-[#29231F]",
+                  },
+                ].map((offer, idx) => (
+                  <div
+                    key={idx}
+                    className="p-4 rounded-2xl bg-[#F8F5EF] border border-[#E5DDD1] space-y-2.5 relative overflow-hidden"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider mb-1 ${offer.bgBadge}`}>
+                          {offer.badge}
+                        </span>
+                        <h4 className="font-serif font-bold text-[15px] text-[#29231F]">{offer.title}</h4>
+                      </div>
                     </div>
-                    <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide bg-[#A7B89B] text-[#1E2819]">
-                      Open Now
-                    </span>
+
+                    <p className="text-xs text-[#766B61] leading-relaxed font-sans">{offer.desc}</p>
+
+                    <div className="flex items-center justify-between pt-1 border-t border-[#E5DDD1]/70">
+                      <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-[#7B4E35] bg-white px-2.5 py-1 rounded-lg border border-[#E5DDD1]">
+                        <Tag size={12} />
+                        <span>{offer.code}</span>
+                      </div>
+                      <motion.button
+                        whileTap={{ scale: 0.92 }}
+                        onClick={() => copyPromoCode(offer.code)}
+                        className="px-4 py-1.5 rounded-full bg-[#7B4E35] text-white font-semibold text-xs hover:bg-[#633D28] transition-colors btn-smooth-press"
+                      >
+                        {copiedCode === offer.code ? "✓ Copied!" : "Apply Code"}
+                      </motion.button>
+                    </div>
                   </div>
+                ))}
+              </div>
 
-                  <p className="text-xs text-[#766B61] leading-relaxed font-sans">{loc.address}</p>
+              <div className="pt-2 text-center">
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setShowOffers(false)}
+                  className="w-full py-3 rounded-full bg-[#29231F] text-white font-medium text-xs hover:bg-black transition-colors btn-smooth-press"
+                >
+                  Close Offers
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-                  <div className="flex items-center gap-2 text-xs text-[#29231F] font-medium pt-0.5">
-                    <Clock size={13} className="text-[#7B4E35]" />
-                    <span>{loc.hours}</span>
+      {/* ==================================================== */}
+      {/* CAFE LOCATIONS & HOURS MODAL                         */}
+      {/* ==================================================== */}
+      <AnimatePresence>
+        {showLocations && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
+            onClick={() => setShowLocations(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: 16 }}
+              transition={{ type: "spring", damping: 25, stiffness: 350 }}
+              className="w-full max-w-md max-h-[85vh] overflow-y-auto bg-[#FFFDF9] rounded-3xl border border-[#E5DDD1] shadow-2xl p-5 sm:p-6 space-y-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between pb-3 border-b border-[#E5DDD1]">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-full bg-[#EFE7DA] flex items-center justify-center text-[#7B4E35]">
+                    <MapPin size={18} />
                   </div>
-
-                  <div className="text-[10px] text-[#766B61] bg-white px-2.5 py-1.5 rounded-lg border border-[#E5DDD1]">
-                    {loc.amenities}
-                  </div>
-
-                  <div className="flex items-center gap-2 pt-1">
-                    <a
-                      href={`tel:${loc.phone.replace(/\s+/g, "")}`}
-                      className="flex-1 py-2 rounded-xl bg-white border border-[#E5DDD1] text-center text-xs font-semibold text-[#29231F] hover:bg-[#EFE7DA] transition-colors"
-                    >
-                      Call Café
-                    </a>
-                    <button
-                      onClick={() => alert(`Opening navigation for ${loc.title}`)}
-                      className="flex-1 py-2 rounded-xl bg-[#7B4E35] text-white text-center text-xs font-semibold hover:bg-[#633D28] transition-colors"
-                    >
-                      Get Directions
-                    </button>
+                  <div>
+                    <h3 className="font-serif text-xl font-bold text-[#29231F]">Our Locations</h3>
+                    <p className="text-[11px] text-[#766B61]">Find a {restaurantName} near you</p>
                   </div>
                 </div>
-              ))}
-            </div>
+                <motion.button
+                  whileTap={{ scale: 0.85 }}
+                  onClick={() => setShowLocations(false)}
+                  className="w-8 h-8 rounded-full bg-[#F8F5EF] border border-[#E5DDD1] flex items-center justify-center text-[#29231F] hover:bg-[#EFE7DA] btn-smooth-press"
+                >
+                  <X size={15} />
+                </motion.button>
+              </div>
 
-            <div className="pt-2 text-center">
-              <button
-                onClick={() => setShowLocations(false)}
-                className="w-full py-3 rounded-full bg-[#29231F] text-white font-medium text-xs hover:bg-black transition-colors"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+              {/* Locations List */}
+              <div className="space-y-3 pt-1">
+                {[
+                  {
+                    title: "Flagship Roastery & Café",
+                    area: "Downtown / Park Avenue",
+                    address: "142 Park Avenue, Central District, City",
+                    hours: "Mon – Sun • 7:30 AM – 11:00 PM",
+                    phone: "+91 98765 43210",
+                    amenities: "Free High-Speed Wi-Fi • Outdoor Patio • Pet Friendly",
+                  },
+                  {
+                    title: "Artisan Kitchen & Bakery",
+                    area: "West End Boulevard",
+                    address: "88 West End Boulevard, Near Metro Station",
+                    hours: "Mon – Sun • 8:00 AM – 10:30 PM",
+                    phone: "+91 98765 43211",
+                    amenities: "Quiet Work Zone • Bakery Counter • Valet Parking",
+                  },
+                ].map((loc, idx) => (
+                  <div
+                    key={idx}
+                    className="p-4 rounded-2xl bg-[#F8F5EF] border border-[#E5DDD1] space-y-2.5"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h4 className="font-serif font-bold text-[15px] text-[#29231F]">{loc.title}</h4>
+                        <p className="text-[11px] font-semibold text-[#7B4E35]">{loc.area}</p>
+                      </div>
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide bg-[#A7B89B] text-[#1E2819]">
+                        Open Now
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-[#766B61] leading-relaxed font-sans">{loc.address}</p>
+
+                    <div className="flex items-center gap-2 text-xs text-[#29231F] font-medium pt-0.5">
+                      <Clock size={13} className="text-[#7B4E35]" />
+                      <span>{loc.hours}</span>
+                    </div>
+
+                    <div className="text-[10px] text-[#766B61] bg-white px-2.5 py-1.5 rounded-lg border border-[#E5DDD1]">
+                      {loc.amenities}
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-1">
+                      <motion.a
+                        whileTap={{ scale: 0.94 }}
+                        href={`tel:${loc.phone.replace(/\s+/g, "")}`}
+                        className="flex-1 py-2 rounded-xl bg-white border border-[#E5DDD1] text-center text-xs font-semibold text-[#29231F] hover:bg-[#EFE7DA] transition-colors btn-smooth-press"
+                      >
+                        Call Café
+                      </motion.a>
+                      <motion.button
+                        whileTap={{ scale: 0.94 }}
+                        onClick={() => alert(`Opening navigation for ${loc.title}`)}
+                        className="flex-1 py-2 rounded-xl bg-[#7B4E35] text-white text-center text-xs font-semibold hover:bg-[#633D28] transition-colors btn-smooth-press"
+                      >
+                        Get Directions
+                      </motion.button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="pt-2 text-center">
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setShowLocations(false)}
+                  className="w-full py-3 rounded-full bg-[#29231F] text-white font-medium text-xs hover:bg-black transition-colors btn-smooth-press"
+                >
+                  Close
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ==================================================== */}
       {/* CURRENT ACTIVE ORDER MODAL                           */}
       {/* ==================================================== */}
-      {showActiveOrderModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
-          onClick={() => setShowActiveOrderModal(false)}
-        >
-          <div
-            className="w-full max-w-md max-h-[85vh] overflow-y-auto bg-[#FFFDF9] rounded-3xl border border-[#E5DDD1] shadow-2xl p-5 sm:p-6 space-y-4"
-            onClick={(e) => e.stopPropagation()}
+      <AnimatePresence>
+        {showActiveOrderModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
+            onClick={() => setShowActiveOrderModal(false)}
           >
-            {/* Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-[#E5DDD1]">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-full bg-[#EFE7DA] flex items-center justify-center text-[#7B4E35]">
-                  <Clock size={18} />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: 16 }}
+              transition={{ type: "spring", damping: 25, stiffness: 350 }}
+              className="w-full max-w-md max-h-[85vh] overflow-y-auto bg-[#FFFDF9] rounded-3xl border border-[#E5DDD1] shadow-2xl p-5 sm:p-6 space-y-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between pb-3 border-b border-[#E5DDD1]">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-full bg-[#EFE7DA] flex items-center justify-center text-[#7B4E35]">
+                    <Clock size={18} />
+                  </div>
+                  <div>
+                    <h3 className="font-serif text-xl font-bold text-[#29231F]">Current Order</h3>
+                    <p className="text-[11px] text-[#766B61]">Table {tableNumber || 1} • {restaurantName}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-serif text-xl font-bold text-[#29231F]">Current Order</h3>
-                  <p className="text-[11px] text-[#766B61]">Table {tableNumber || 1} • {restaurantName}</p>
-                </div>
+                <motion.button
+                  whileTap={{ scale: 0.85 }}
+                  onClick={() => setShowActiveOrderModal(false)}
+                  className="w-8 h-8 rounded-full bg-[#F8F5EF] border border-[#E5DDD1] flex items-center justify-center text-[#29231F] hover:bg-[#EFE7DA] btn-smooth-press"
+                >
+                  <X size={15} />
+                </motion.button>
               </div>
-              <button
-                onClick={() => setShowActiveOrderModal(false)}
-                className="w-8 h-8 rounded-full bg-[#F8F5EF] border border-[#E5DDD1] flex items-center justify-center text-[#29231F] hover:bg-[#EFE7DA]"
-              >
-                <X size={15} />
-              </button>
-            </div>
 
-            {/* If there is an active order in kitchen */}
-            {activeOrderId ? (
-              <div className="space-y-4 pt-1">
-                {/* Status Card */}
-                <div className="p-4 rounded-2xl bg-[#F8F5EF] border border-[#E5DDD1] space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-[10px] uppercase font-bold text-[#766B61] tracking-wider">Order #{activeOrderId}</p>
-                      <h4 className="font-serif text-lg font-bold text-[#29231F]">
-                        {activeOrderData?.status === "preparing"
-                          ? "👨‍🍳 Kitchen is Preparing"
-                          : activeOrderData?.status === "ready"
-                          ? "✨ Order is Ready!"
-                          : "⏳ Order Received"}
-                      </h4>
-                    </div>
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase bg-amber-100 text-amber-900 border border-amber-200">
-                      <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
-                      {activeOrderData?.status || "In Kitchen"}
-                    </span>
-                  </div>
-
-                  {/* Progress Bar */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-[11px] text-[#766B61]">
-                      <span>Estimated Time</span>
-                      <span className="font-bold text-[#29231F]">~10-15 mins</span>
-                    </div>
-                    <div className="w-full h-2 bg-[#E5DDD1] rounded-full overflow-hidden">
-                      <div className="h-full bg-[#7B4E35] rounded-full w-2/3 animate-pulse" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Items Ordered List */}
-                <div className="space-y-2">
-                  <p className="text-xs font-bold text-[#29231F] uppercase tracking-wider">Items on Table</p>
-                  <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
-                    {activeOrderData?.order_items && activeOrderData.order_items.length > 0 ? (
-                      activeOrderData.order_items.map((it: any, idx: number) => (
-                        <div key={idx} className="flex justify-between items-center p-2.5 rounded-xl bg-[#F8F5EF] text-xs">
-                          <span className="font-medium text-[#29231F]">{it.quantity}x {it.item_name}</span>
-                          <span className="font-bold text-[#7B4E35]">{formatINR(it.price * it.quantity)}</span>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="p-2.5 rounded-xl bg-[#F8F5EF] text-xs text-[#766B61]">
-                        Order items sent to kitchen display
+              {/* If there is an active order in kitchen */}
+              {activeOrderId ? (
+                <div className="space-y-4 pt-1">
+                  {/* Status Card */}
+                  <div className="p-4 rounded-2xl bg-[#F8F5EF] border border-[#E5DDD1] space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-[10px] uppercase font-bold text-[#766B61] tracking-wider">Order #{activeOrderId}</p>
+                        <h4 className="font-serif text-lg font-bold text-[#29231F]">
+                          {activeOrderData?.status === "preparing"
+                            ? "👨‍🍳 Kitchen is Preparing"
+                            : activeOrderData?.status === "ready"
+                            ? "✨ Order is Ready!"
+                            : "⏳ Order Received"}
+                        </h4>
                       </div>
-                    )}
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase bg-amber-100 text-amber-900 border border-amber-200">
+                        <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+                        {activeOrderData?.status || "In Kitchen"}
+                      </span>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[11px] text-[#766B61]">
+                        <span>Estimated Time</span>
+                        <span className="font-bold text-[#29231F]">~10-15 mins</span>
+                      </div>
+                      <div className="w-full h-2 bg-[#E5DDD1] rounded-full overflow-hidden">
+                        <div className="h-full bg-[#7B4E35] rounded-full w-2/3 animate-pulse" />
+                      </div>
+                    </div>
                   </div>
-                </div>
 
-                {/* Total */}
-                <div className="flex justify-between items-center pt-3 border-t border-[#E5DDD1] font-bold text-base text-[#29231F]">
-                  <span>Total Amount</span>
-                  <span>{formatINR(activeOrderData?.total || cart.total || 0)}</span>
-                </div>
-
-                {/* Actions */}
-                <div className="space-y-2 pt-2">
-                  <button
-                    onClick={() => {
-                      setShowActiveOrderModal(false);
-                      document.getElementById("category-scroller")?.scrollIntoView({ behavior: "smooth" });
-                    }}
-                    className="w-full py-3 rounded-full bg-[#7B4E35] text-white font-medium text-xs hover:bg-[#633D28] transition-colors shadow-xs"
-                  >
-                    + Add More Items to Table
-                  </button>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      onClick={() => setShowBillModal(true)}
-                      className="py-2.5 rounded-full bg-white border border-[#E5DDD1] text-[#29231F] font-bold text-xs hover:bg-[#EFE7DA] transition-colors flex items-center justify-center gap-1.5 shadow-2xs"
-                    >
-                      <Receipt size={14} className="text-[#7B4E35]" />
-                      <span>View Bill</span>
-                    </button>
-                    <button
-                      onClick={() => alert(`Server called for Table ${tableNumber || 1}. A team member will assist you shortly!`)}
-                      className="py-2.5 rounded-full bg-[#F8F5EF] border border-[#E5DDD1] text-[#29231F] font-semibold text-xs hover:bg-[#EFE7DA] transition-colors"
-                    >
-                      Call Server
-                    </button>
+                  {/* Items Ordered List */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-bold text-[#29231F] uppercase tracking-wider">Items on Table</p>
+                    <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
+                      {activeOrderData?.order_items && activeOrderData.order_items.length > 0 ? (
+                        activeOrderData.order_items.map((it: any, idx: number) => (
+                          <div key={idx} className="flex justify-between items-center p-2.5 rounded-xl bg-[#F8F5EF] text-xs">
+                            <span className="font-medium text-[#29231F]">{it.quantity}x {it.item_name}</span>
+                            <span className="font-bold text-[#7B4E35]">{formatINR(it.price * it.quantity)}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="p-2.5 rounded-xl bg-[#F8F5EF] text-xs text-[#766B61]">
+                          Order items sent to kitchen display
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </div>
-            ) : (
-              /* No active order currently placed */
-              <div className="py-8 text-center space-y-3">
-                <div className="w-14 h-14 rounded-full bg-[#EFE7DA] flex items-center justify-center mx-auto text-[#7B4E35]">
-                  <ShoppingBag size={24} />
-                </div>
-                <div>
-                  <h4 className="font-serif text-lg font-bold text-[#29231F]">No Active Order</h4>
-                  <p className="text-xs text-[#766B61] mt-1 max-w-xs mx-auto">
-                    You haven't placed an order for Table {tableNumber || 1} yet.
-                  </p>
-                </div>
-                <div className="pt-2">
-                  {cart.count > 0 ? (
-                    <button
-                      onClick={() => {
-                        setShowActiveOrderModal(false);
-                        setCartOpen(true);
-                      }}
-                      className="px-6 py-2.5 rounded-full bg-[#7B4E35] text-white font-semibold text-xs hover:bg-[#633D28]"
-                    >
-                      View Cart ({cart.count} items)
-                    </button>
-                  ) : (
-                    <button
+
+                  {/* Total */}
+                  <div className="flex justify-between items-center pt-3 border-t border-[#E5DDD1] font-bold text-base text-[#29231F]">
+                    <span>Total Amount</span>
+                    <span>{formatINR(activeOrderData?.total || cart.total || 0)}</span>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="space-y-2 pt-2">
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      whileHover={{ scale: 1.01 }}
                       onClick={() => {
                         setShowActiveOrderModal(false);
                         document.getElementById("category-scroller")?.scrollIntoView({ behavior: "smooth" });
                       }}
-                      className="px-6 py-2.5 rounded-full bg-[#7B4E35] text-white font-semibold text-xs hover:bg-[#633D28]"
+                      className="w-full py-3 rounded-full bg-[#7B4E35] text-white font-medium text-xs hover:bg-[#633D28] transition-colors shadow-xs btn-smooth-press"
                     >
-                      Explore Menu & Order
-                    </button>
-                  )}
+                      + Add More Items to Table
+                    </motion.button>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <motion.button
+                        whileTap={{ scale: 0.94 }}
+                        whileHover={{ scale: 1.02 }}
+                        onClick={() => setShowBillModal(true)}
+                        className="py-2.5 rounded-full bg-white border border-[#E5DDD1] text-[#29231F] font-bold text-xs hover:bg-[#EFE7DA] transition-colors flex items-center justify-center gap-1.5 shadow-2xs btn-smooth-press"
+                      >
+                        <Receipt size={14} className="text-[#7B4E35]" />
+                        <span>View Bill</span>
+                      </motion.button>
+                      <motion.button
+                        whileTap={{ scale: 0.94 }}
+                        whileHover={{ scale: 1.02 }}
+                        onClick={() => alert(`Server called for Table ${tableNumber || 1}. A team member will assist you shortly!`)}
+                        className="py-2.5 rounded-full bg-[#F8F5EF] border border-[#E5DDD1] text-[#29231F] font-semibold text-xs hover:bg-[#EFE7DA] transition-colors btn-smooth-press"
+                      >
+                        Call Server
+                      </motion.button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+              ) : (
+                /* No active order currently placed */
+                <div className="py-8 text-center space-y-3">
+                  <div className="w-14 h-14 rounded-full bg-[#EFE7DA] flex items-center justify-center mx-auto text-[#7B4E35]">
+                    <ShoppingBag size={24} />
+                  </div>
+                  <div>
+                    <h4 className="font-serif text-lg font-bold text-[#29231F]">No Active Order</h4>
+                    <p className="text-xs text-[#766B61] mt-1 max-w-xs mx-auto">
+                      You haven't placed an order for Table {tableNumber || 1} yet.
+                    </p>
+                  </div>
+                  <div className="pt-2">
+                    {cart.count > 0 ? (
+                      <motion.button
+                        whileTap={{ scale: 0.95 }}
+                        whileHover={{ scale: 1.01 }}
+                        onClick={() => {
+                          setShowActiveOrderModal(false);
+                          setCartOpen(true);
+                        }}
+                        className="px-6 py-2.5 rounded-full bg-[#7B4E35] text-white font-semibold text-xs hover:bg-[#633D28] btn-smooth-press"
+                      >
+                        View Cart ({cart.count} items)
+                      </motion.button>
+                    ) : (
+                      <motion.button
+                        whileTap={{ scale: 0.95 }}
+                        whileHover={{ scale: 1.01 }}
+                        onClick={() => {
+                          setShowActiveOrderModal(false);
+                          document.getElementById("category-scroller")?.scrollIntoView({ behavior: "smooth" });
+                        }}
+                        className="px-6 py-2.5 rounded-full bg-[#7B4E35] text-white font-semibold text-xs hover:bg-[#633D28] btn-smooth-press"
+                      >
+                        Explore Menu & Order
+                      </motion.button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ==================================================== */}
       {/* DETAILED BILL & TAX INVOICE MODAL                    */}
       {/* ==================================================== */}
-      {showBillModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
-          onClick={() => setShowBillModal(false)}
-        >
-          <div
-            className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-[#FFFDF9] rounded-3xl border border-[#E5DDD1] shadow-2xl p-6 space-y-4 font-mono text-xs"
-            onClick={(e) => e.stopPropagation()}
+      <AnimatePresence>
+        {showBillModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
+            onClick={() => setShowBillModal(false)}
           >
-            {/* Receipt Top Header */}
-            <div className="text-center space-y-1 pb-3 border-b-2 border-dashed border-[#DED4C7]">
-              <div className="flex items-center justify-center gap-2 mb-1">
-                <BotanicalLeaf className="w-5 h-5 text-[#29231F]" />
-                <h3 className="font-serif text-lg font-bold text-[#29231F] font-sans tracking-tight">
-                  {restaurantName}
-                </h3>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: 16 }}
+              transition={{ type: "spring", damping: 25, stiffness: 350 }}
+              className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-[#FFFDF9] rounded-3xl border border-[#E5DDD1] shadow-2xl p-6 space-y-4 font-mono text-xs"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Receipt Top Header */}
+              <div className="text-center space-y-1 pb-3 border-b-2 border-dashed border-[#DED4C7]">
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <BotanicalLeaf className="w-5 h-5 text-[#29231F]" />
+                  <h3 className="font-serif text-lg font-bold text-[#29231F] font-sans tracking-tight">
+                    {restaurantName}
+                  </h3>
+                </div>
+                <p className="text-[10px] text-[#766B61] uppercase tracking-widest font-sans">
+                  CAFÉ & ARTISAN KITCHEN
+                </p>
+                <p className="text-[10px] text-[#766B61]">142 Park Avenue, Central District</p>
+                <p className="text-[10px] text-[#766B61]">GSTIN: 07AAAAA0000A1Z5</p>
               </div>
-              <p className="text-[10px] text-[#766B61] uppercase tracking-widest font-sans">
-                CAFÉ & ARTISAN KITCHEN
-              </p>
-              <p className="text-[10px] text-[#766B61]">142 Park Avenue, Central District</p>
-              <p className="text-[10px] text-[#766B61]">GSTIN: 07AAAAA0000A1Z5</p>
-            </div>
 
-            {/* Bill Info Meta */}
-            <div className="grid grid-cols-2 gap-1 py-2 text-[11px] text-[#29231F] border-b border-dashed border-[#DED4C7]">
-              <div>
-                <span className="text-[#766B61]">Table: </span>
-                <span className="font-bold">Table {tableNumber || 1}</span>
-              </div>
-              <div className="text-right">
-                <span className="text-[#766B61]">Order: </span>
-                <span className="font-bold">#{activeOrderId || "102"}</span>
-              </div>
-              <div>
-                <span className="text-[#766B61]">Date: </span>
-                <span>{new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</span>
-              </div>
-              <div className="text-right">
-                <span className="text-[#766B61]">Time: </span>
-                <span>{new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span>
-              </div>
-            </div>
-
-            {/* Itemized Table */}
-            <div className="space-y-2 py-2">
-              <div className="flex justify-between font-bold text-[11px] text-[#766B61] border-b border-[#E5DDD1] pb-1 uppercase">
-                <span>Item</span>
-                <div className="flex gap-4">
-                  <span className="w-8 text-center">Qty</span>
-                  <span className="w-14 text-right">Amount</span>
+              {/* Bill Info Meta */}
+              <div className="grid grid-cols-2 gap-1 py-2 text-[11px] text-[#29231F] border-b border-dashed border-[#DED4C7]">
+                <div>
+                  <span className="text-[#766B61]">Table: </span>
+                  <span className="font-bold">Table {tableNumber || 1}</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[#766B61]">Order: </span>
+                  <span className="font-bold">#{activeOrderId || "102"}</span>
+                </div>
+                <div>
+                  <span className="text-[#766B61]">Date: </span>
+                  <span>{new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[#766B61]">Time: </span>
+                  <span>{new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span>
                 </div>
               </div>
 
-              {activeOrderData?.order_items && activeOrderData.order_items.length > 0 ? (
-                activeOrderData.order_items.map((it: any, idx: number) => (
-                  <div key={idx} className="flex justify-between items-center text-[12px] text-[#29231F]">
-                    <span className="font-medium truncate max-w-[180px]">{it.item_name}</span>
+              {/* Itemized Table */}
+              <div className="space-y-2 py-2">
+                <div className="flex justify-between font-bold text-[11px] text-[#766B61] border-b border-[#E5DDD1] pb-1 uppercase">
+                  <span>Item</span>
+                  <div className="flex gap-4">
+                    <span className="w-8 text-center">Qty</span>
+                    <span className="w-14 text-right">Amount</span>
+                  </div>
+                </div>
+
+                {activeOrderData?.order_items && activeOrderData.order_items.length > 0 ? (
+                  activeOrderData.order_items.map((it: any, idx: number) => (
+                    <div key={idx} className="flex justify-between items-center text-[12px] text-[#29231F]">
+                      <span className="font-medium truncate max-w-[180px]">{it.item_name}</span>
+                      <div className="flex gap-4 items-center">
+                        <span className="w-8 text-center text-[#766B61]">x{it.quantity}</span>
+                        <span className="w-14 text-right font-bold">{formatINR(it.price * it.quantity)}</span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="flex justify-between items-center text-[12px] text-[#29231F]">
+                    <span className="font-medium">Specialty Food & Drinks</span>
                     <div className="flex gap-4 items-center">
-                      <span className="w-8 text-center text-[#766B61]">x{it.quantity}</span>
-                      <span className="w-14 text-right font-bold">{formatINR(it.price * it.quantity)}</span>
+                      <span className="w-8 text-center text-[#766B61]">x1</span>
+                      <span className="w-14 text-right font-bold">{formatINR(activeOrderData?.total || cart.total || 0)}</span>
                     </div>
                   </div>
-                ))
-              ) : (
-                <div className="flex justify-between items-center text-[12px] text-[#29231F]">
-                  <span className="font-medium">Specialty Food & Drinks</span>
-                  <div className="flex gap-4 items-center">
-                    <span className="w-8 text-center text-[#766B61]">x1</span>
-                    <span className="w-14 text-right font-bold">{formatINR(activeOrderData?.total || cart.total || 0)}</span>
-                  </div>
+                )}
+              </div>
+
+              {/* Financial Summary */}
+              <div className="pt-2 border-t-2 border-dashed border-[#DED4C7] space-y-1.5 text-[11px]">
+                <div className="flex justify-between text-[#766B61]">
+                  <span>Item Subtotal</span>
+                  <span className="font-bold text-[#29231F]">{formatINR(activeOrderData?.total ? activeOrderData.total * 0.952 : (cart.total || 0) * 0.952)}</span>
                 </div>
-              )}
-            </div>
+                <div className="flex justify-between text-[#766B61]">
+                  <span>CGST (2.5%)</span>
+                  <span>{formatINR(activeOrderData?.total ? activeOrderData.total * 0.024 : (cart.total || 0) * 0.024)}</span>
+                </div>
+                <div className="flex justify-between text-[#766B61]">
+                  <span>SGST (2.5%)</span>
+                  <span>{formatINR(activeOrderData?.total ? activeOrderData.total * 0.024 : (cart.total || 0) * 0.024)}</span>
+                </div>
+                <div className="flex justify-between items-center pt-2 border-t border-[#E5DDD1] font-bold text-sm text-[#29231F]">
+                  <span className="font-serif font-bold text-base">Grand Total</span>
+                  <span className="text-base text-[#7B4E35]">{formatINR(activeOrderData?.total || cart.total || 0)}</span>
+                </div>
+              </div>
 
-            {/* Financial Summary */}
-            <div className="pt-2 border-t-2 border-dashed border-[#DED4C7] space-y-1.5 text-[11px]">
-              <div className="flex justify-between text-[#766B61]">
-                <span>Item Subtotal</span>
-                <span className="font-bold text-[#29231F]">{formatINR(activeOrderData?.total ? activeOrderData.total * 0.952 : (cart.total || 0) * 0.952)}</span>
+              {/* Payment Tag */}
+              <div className="p-3 rounded-xl bg-[#F8F5EF] border border-[#E5DDD1] text-center space-y-0.5">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[#7B4E35]">
+                  {activeOrderData?.is_paid ? "✓ PAID VIA DIGITAL ORDER" : "PAY AT COUNTER / UPI / CASH"}
+                </p>
+                <p className="text-[10px] text-[#766B61]">Thank you for dining at {restaurantName}!</p>
               </div>
-              <div className="flex justify-between text-[#766B61]">
-                <span>CGST (2.5%)</span>
-                <span>{formatINR(activeOrderData?.total ? activeOrderData.total * 0.024 : (cart.total || 0) * 0.024)}</span>
-              </div>
-              <div className="flex justify-between text-[#766B61]">
-                <span>SGST (2.5%)</span>
-                <span>{formatINR(activeOrderData?.total ? activeOrderData.total * 0.024 : (cart.total || 0) * 0.024)}</span>
-              </div>
-              <div className="flex justify-between items-center pt-2 border-t border-[#E5DDD1] font-bold text-sm text-[#29231F]">
-                <span className="font-serif font-bold text-base">Grand Total</span>
-                <span className="text-base text-[#7B4E35]">{formatINR(activeOrderData?.total || cart.total || 0)}</span>
-              </div>
-            </div>
 
-            {/* Payment Tag */}
-            <div className="p-3 rounded-xl bg-[#F8F5EF] border border-[#E5DDD1] text-center space-y-0.5">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-[#7B4E35]">
-                {activeOrderData?.is_paid ? "✓ PAID VIA DIGITAL ORDER" : "PAY AT COUNTER / UPI / CASH"}
-              </p>
-              <p className="text-[10px] text-[#766B61]">Thank you for dining at {restaurantName}!</p>
-            </div>
-
-            {/* Receipt Modal Actions */}
-            <div className="pt-2 space-y-2 font-sans">
-              <button
-                onClick={() => window.print()}
-                className="w-full py-2.5 rounded-full bg-[#7B4E35] text-white font-semibold text-xs hover:bg-[#633D28] transition-colors flex items-center justify-center gap-2"
-              >
-                <Printer size={14} />
-                <span>Print / Save Receipt</span>
-              </button>
-              <button
-                onClick={() => setShowBillModal(false)}
-                className="w-full py-2.5 rounded-full bg-[#F8F5EF] border border-[#E5DDD1] text-[#29231F] font-semibold text-xs hover:bg-[#EFE7DA] transition-colors"
-              >
-                Back to Current Order
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+              {/* Receipt Modal Actions */}
+              <div className="pt-2 space-y-2 font-sans">
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: 1.01 }}
+                  onClick={() => window.print()}
+                  className="w-full py-2.5 rounded-full bg-[#7B4E35] text-white font-semibold text-xs hover:bg-[#633D28] transition-colors flex items-center justify-center gap-2 btn-smooth-press"
+                >
+                  <Printer size={14} />
+                  <span>Print / Save Receipt</span>
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setShowBillModal(false)}
+                  className="w-full py-2.5 rounded-full bg-[#F8F5EF] border border-[#E5DDD1] text-[#29231F] font-semibold text-xs hover:bg-[#EFE7DA] transition-colors btn-smooth-press"
+                >
+                  Back to Current Order
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

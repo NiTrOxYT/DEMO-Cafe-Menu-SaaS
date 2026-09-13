@@ -125,6 +125,7 @@
 @layer base {
   * {
     @apply border-border;
+    -webkit-tap-highlight-color: transparent;
   }
   body {
     @apply font-sans antialiased bg-background text-foreground;
@@ -132,6 +133,33 @@
     background-color: #FAF8F5;
     color: #1F1B18;
   }
+  button, 
+  [role="button"],
+  .clickable {
+    cursor: pointer;
+    user-select: none;
+    touch-action: manipulation;
+  }
+}
+
+/* Smooth Click & Tap Physics */
+.btn-smooth-press {
+  transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+.btn-smooth-press:active {
+  transform: scale(0.94);
+  filter: brightness(0.95);
+}
+
+.btn-smooth-press-sm:active {
+  transform: scale(0.90);
+}
+
+.card-smooth-press {
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s ease;
+}
+.card-smooth-press:active {
+  transform: scale(0.98);
 }
 
 /* Subtle organic paper texture */

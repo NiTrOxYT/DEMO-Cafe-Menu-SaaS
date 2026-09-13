@@ -200,7 +200,7 @@ function ItemCard({
         borderRadius: 20,
         boxShadow: CARD_SHADOW,
       }}
-      className="flex flex-col cursor-pointer group overflow-hidden"
+      className="flex flex-col cursor-pointer group overflow-hidden transition-all duration-300 hover:shadow-lg hover:border-[#B58428]/40 hover:-translate-y-0.5"
       onClick={onClick}
     >
       <div
@@ -228,7 +228,7 @@ function ItemCard({
           className="absolute inset-0 pointer-events-none"
           style={{
             background:
-              "linear-gradient(to top, rgba(8,7,6,0.75) 0%, transparent 55%)",
+              "linear-gradient(to top, rgba(28,24,21,0.18) 0%, transparent 40%)",
           }}
         />
         <div className="absolute top-3 left-3 flex flex-col gap-1.5">
@@ -237,11 +237,11 @@ function ItemCard({
               className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.12em]"
               style={{
                 background: GOLD_GRADIENT,
-                color: DARK,
-                boxShadow: "0 4px 16px rgba(201,169,110,0.35)",
+                color: "#1C1815",
+                boxShadow: "0 2px 8px rgba(181,132,40,0.25)",
               }}
             >
-              <Star size={9} fill={DARK} /> Bestseller
+              <Star size={9} fill="#1C1815" /> Bestseller
             </span>
           )}
         </div>
@@ -249,7 +249,7 @@ function ItemCard({
           <div
             className="absolute inset-0 flex items-center justify-center"
             style={{
-              background: "rgba(8,7,6,0.72)",
+              background: "rgba(250,248,245,0.85)",
               backdropFilter: "blur(4px)",
             }}
           >
@@ -258,7 +258,7 @@ function ItemCard({
               style={{
                 color: MUTED,
                 border: `1px solid ${BORDER}`,
-                background: "rgba(255,255,255,0.04)",
+                background: "#FFFFFF",
               }}
             >
               Unavailable
@@ -383,7 +383,7 @@ function ItemDetailOverlay({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        style={{ background: "rgba(8,7,6,0.88)", backdropFilter: "blur(20px)" }}
+        style={{ background: "rgba(28, 24, 21, 0.45)", backdropFilter: "blur(12px)" }}
         className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-8"
         onClick={onClose}
       >
@@ -397,17 +397,17 @@ function ItemDetailOverlay({
             background: DARK_CARD,
             maxHeight: "92dvh",
             border: `1px solid ${BORDER}`,
-            boxShadow: "0 32px 80px rgba(0,0,0,0.6)",
+            boxShadow: "0 24px 60px rgba(28,24,21,0.18)",
           }}
           className="w-full md:max-w-3xl md:rounded-3xl overflow-hidden flex flex-col md:flex-row relative"
           onClick={(e: React.MouseEvent) => e.stopPropagation()}
         >
           <div
-            className="absolute top-0 left-0 right-0 h-0.5 z-10"
+            className="absolute top-0 left-0 right-0 h-1 z-10"
             style={{ background: GOLD_GRADIENT }}
           />
           {imgSrc && (
-            <div className="w-full md:w-1/2 aspect-[4/3] md:aspect-auto md:min-h-[420px] flex-shrink-0 overflow-hidden">
+            <div className="w-full md:w-1/2 aspect-[4/3] md:aspect-auto md:min-h-[420px] flex-shrink-0 overflow-hidden bg-[#F5F0E8]">
               <img
                 src={imgSrc}
                 alt={item.name}
@@ -437,7 +437,7 @@ function ItemDetailOverlay({
                 onClick={onClose}
                 style={{
                   color: MUTED,
-                  background: "rgba(255,255,255,0.05)",
+                  background: "#F5F0E8",
                   border: `1px solid ${BORDER}`,
                 }}
                 className="hover:opacity-70 mt-1 p-2 rounded-full transition-opacity"
@@ -449,16 +449,16 @@ function ItemDetailOverlay({
               <VegBadge isVeg={item.isVeg} />
               {item.isBestseller && (
                 <span
-                  className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full"
-                  style={{ background: AMBER, color: DARK }}
+                  className="flex items-center gap-1 text-xs font-bold px-2.5 py-0.5 rounded-full"
+                  style={{ background: GOLD_GRADIENT, color: "#1C1815" }}
                 >
-                  <Star size={10} fill={DARK} /> Bestseller
+                  <Star size={10} fill="#1C1815" /> Bestseller
                 </span>
               )}
               {item.isSpicy && (
                 <span
-                  className="flex items-center gap-1 text-xs font-medium"
-                  style={{ color: "#ff7043" }}
+                  className="flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full"
+                  style={{ color: "#D84040", background: "rgba(216,64,64,0.1)" }}
                 >
                   <Flame size={12} /> Spicy
                 </span>
@@ -489,8 +489,8 @@ function ItemDetailOverlay({
                     className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all hover:brightness-110 active:scale-[0.98]"
                     style={{
                       background: GOLD_GRADIENT,
-                      color: DARK,
-                      boxShadow: "0 8px 24px rgba(201,169,110,0.35)",
+                      color: "#1C1815",
+                      boxShadow: "0 4px 16px rgba(181,132,40,0.3)",
                     }}
                   >
                     <Plus size={16} /> Add to Cart
@@ -498,7 +498,7 @@ function ItemDetailOverlay({
                 ) : (
                   <div
                     className="flex items-center gap-3 rounded-xl px-3 py-2"
-                    style={{ background: AMBER }}
+                    style={{ background: GOLD_GRADIENT, boxShadow: "0 4px 16px rgba(181,132,40,0.3)" }}
                   >
                     <button
                       onClick={onRemove}
@@ -520,7 +520,7 @@ function ItemDetailOverlay({
               ) : (
                 <span
                   className="text-sm font-medium px-4 py-2 rounded-xl"
-                  style={{ background: "rgba(255,255,255,0.06)", color: MUTED }}
+                  style={{ background: "#F5F0E8", color: MUTED, border: `1px solid ${BORDER}` }}
                 >
                   Not Available
                 </span>
@@ -579,7 +579,7 @@ function CartDrawer({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="fixed inset-0 z-50 flex justify-end"
-        style={{ background: "rgba(8,7,6,0.75)", backdropFilter: "blur(12px)" }}
+        style={{ background: "rgba(28, 24, 21, 0.45)", backdropFilter: "blur(12px)" }}
         onClick={onClose}
       >
         <motion.div
@@ -589,15 +589,15 @@ function CartDrawer({
           transition={{ type: "spring", damping: 30, stiffness: 260 }}
           style={{
             background: DARK_CARD,
-            border: `1px solid ${BORDER}`,
+            borderLeft: `1px solid ${BORDER}`,
             width: "min(100vw, 420px)",
-            boxShadow: "-16px 0 48px rgba(0,0,0,0.45)",
+            boxShadow: "-16px 0 48px rgba(28, 24, 21, 0.15)",
           }}
           className="h-full flex flex-col relative"
           onClick={(e: React.MouseEvent) => e.stopPropagation()}
         >
           <div
-            className="absolute top-0 left-0 right-0 h-0.5"
+            className="absolute top-0 left-0 right-0 h-1"
             style={{ background: GOLD_GRADIENT }}
           />
           <div
@@ -797,25 +797,20 @@ function FloatingActionOrderBar({
             y: 0,
             opacity: 1,
             filter: "blur(0px)",
-            boxShadow: [
-              "0 16px 48px rgba(0, 0, 0, 0.6)",
-              "0 16px 48px rgba(201, 169, 110, 0.25), 0 0 20px rgba(201, 169, 110, 0.15)",
-              "0 16px 48px rgba(0, 0, 0, 0.6)",
-            ],
+            boxShadow: "0 12px 36px rgba(28, 24, 21, 0.12), 0 0 0 1px rgba(181, 132, 40, 0.2)",
           }}
           exit={{ y: 120, opacity: 0, filter: "blur(8px)" }}
           transition={{
             y: { type: "spring", damping: 25, stiffness: 220 },
             opacity: { duration: 0.2 },
-            boxShadow: { duration: 1.2, times: [0, 0.4, 1] },
             layout: { type: "spring", damping: 26, stiffness: 210 },
           }}
-          className="fixed left-1/2 -translate-x-1/2 z-40 flex items-center justify-between w-[calc(100%-32px)] md:w-full md:max-w-[520px] lg:max-w-[480px] h-[60px] px-4 rounded-full floating-order-bar"
+          className="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 flex items-center justify-between w-[calc(100%-32px)] md:w-full md:max-w-[520px] lg:max-w-[480px] h-[64px] px-4 rounded-full floating-order-bar"
           style={{
-            background: "rgba(18, 18, 18, 0.82)",
+            background: "rgba(255, 255, 255, 0.96)",
             backdropFilter: "blur(22px)",
             WebkitBackdropFilter: "blur(22px)",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
+            border: `1px solid ${BORDER}`,
           }}
         >
           {hasItems ? (
@@ -825,14 +820,14 @@ function FloatingActionOrderBar({
                 <motion.div
                   layout
                   className="flex items-center justify-center w-10 h-10 rounded-full"
-                  style={{ background: "rgba(255,255,255,0.04)" }}
+                  style={{ background: "rgba(181, 132, 40, 0.1)" }}
                 >
                   <motion.div
                     key={`cart-icon-${cartCount}`}
                     animate={{ scale: [1, 1.2, 1] }}
                     transition={{ type: "spring", stiffness: 300, damping: 15 }}
                   >
-                    <ShoppingBag size={20} style={{ color: AMBER }} />
+                    <ShoppingBag size={18} style={{ color: AMBER }} />
                   </motion.div>
                 </motion.div>
                 <div className="flex flex-col items-start leading-tight">
@@ -874,15 +869,15 @@ function FloatingActionOrderBar({
               {/* Right Section */}
               <motion.button
                 layout
-                whileHover={{ y: -2 }}
+                whileHover={{ y: -1, scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
                 transition={{ duration: 0.22 }}
                 onClick={onContinue}
-                className="flex items-center gap-1.5 px-5 py-2 h-10 rounded-full font-bold text-xs uppercase tracking-wider hover:brightness-110"
+                className="flex items-center gap-1.5 px-5 py-2.5 h-10 rounded-full font-bold text-xs uppercase tracking-wider hover:brightness-105"
                 style={{
                   background: GOLD_GRADIENT,
-                  color: DARK,
-                  boxShadow: "0 4px 16px rgba(201, 169, 110, 0.25)",
+                  color: "#1C1815",
+                  boxShadow: "0 4px 14px rgba(181, 132, 40, 0.28)",
                 }}
               >
                 Continue <ArrowRight size={14} />
@@ -895,9 +890,9 @@ function FloatingActionOrderBar({
                 <motion.div
                   layout
                   className="flex items-center justify-center w-10 h-10 rounded-full"
-                  style={{ background: "rgba(255,255,255,0.04)" }}
+                  style={{ background: "rgba(181, 132, 40, 0.1)" }}
                 >
-                  <ClipboardList size={20} style={{ color: AMBER }} />
+                  <ClipboardList size={18} style={{ color: AMBER }} />
                 </motion.div>
                 <div className="flex flex-col items-start leading-tight">
                   <motion.span
@@ -923,17 +918,17 @@ function FloatingActionOrderBar({
               {/* Right Section */}
               <motion.button
                 layout
-                whileHover={{ y: -2 }}
+                whileHover={{ y: -1, scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
                 transition={{ duration: 0.22 }}
                 onClick={() => {
                   window.location.href = `/current-order?table=${tableNumber}`;
                 }}
-                className="flex items-center gap-1.5 px-5 py-2 h-10 rounded-full font-bold text-xs uppercase tracking-wider hover:brightness-110"
+                className="flex items-center gap-1.5 px-5 py-2.5 h-10 rounded-full font-bold text-xs uppercase tracking-wider hover:brightness-105"
                 style={{
                   background: GOLD_GRADIENT,
-                  color: DARK,
-                  boxShadow: "0 4px 16px rgba(201, 169, 110, 0.25)",
+                  color: "#1C1815",
+                  boxShadow: "0 4px 14px rgba(181, 132, 40, 0.28)",
                 }}
               >
                 Track Order <ArrowRight size={14} />
@@ -1299,124 +1294,94 @@ export default function MenuPage() {
         }}
       />
 
-      <div
-        className="relative overflow-hidden"
-        style={{ height: "62dvh", minHeight: 340 }}
-      >
-        <img
-          src={bannerUrl}
-          alt="banner"
-          className="absolute inset-0 w-full h-full object-cover scale-105"
-          style={{ filter: "brightness(0.32) saturate(0.9)" }}
-        />
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "linear-gradient(to bottom, rgba(8,7,6,0.15) 0%, rgba(8,7,6,0.55) 45%, rgba(8,7,6,0.95) 100%)",
-          }}
-        />
+      {/* Minimalist Luxury Editorial Hero */}
+      <div className="relative overflow-hidden border-b border-[#E8E2D8] bg-[#FAF8F5] pt-14 pb-12 md:pt-20 md:pb-16 px-6">
+        {/* Subtle Ambient Radial Warm Glow */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
             background:
-              "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(201,169,110,0.12), transparent 70%)",
+              "radial-gradient(ellipse 70% 60% at 50% 20%, rgba(212,168,77,0.12), transparent 75%)",
           }}
         />
-        <div className="relative h-full flex flex-col items-center justify-center text-center px-6 z-10">
-          <div className="flex flex-wrap items-center justify-center gap-2 mb-5">
-            {tableNumber && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] border"
-                style={{
-                  color: AMBER_LIGHT,
-                  borderColor: "rgba(201,169,110,0.35)",
-                  background: "rgba(201,169,110,0.1)",
-                  backdropFilter: "blur(12px)",
-                }}
-              >
-                Table {tableNumber}
-              </motion.div>
-            )}
-            {/* Current Order button moved to bottom action bar */}
-          </div>
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
+
+        {/* Delicate Decorative Border Accents */}
+        <div className="absolute top-4 left-6 right-6 hidden md:flex items-center justify-between text-[#B58428]/40 text-xs font-mono select-none pointer-events-none">
+          <span>❖ ARTISANAL SERVICE</span>
+          <span className="h-px flex-1 mx-6 bg-gradient-to-r from-transparent via-[#B58428]/20 to-transparent" />
+          <span>FINE DINING ❖</span>
+        </div>
+
+        <div className="relative max-w-3xl mx-auto flex flex-col items-center justify-center text-center z-10">
+          {/* Table Badge */}
+          {tableNumber && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-[0.16em] mb-4 bg-white border border-[#B58428]/35 text-[#1C1815] shadow-[0_2px_10px_rgba(181,132,40,0.12)]"
+            >
+              <span className="w-2 h-2 rounded-full bg-[#B58428] animate-pulse" />
+              Table {tableNumber}
+            </motion.div>
+          )}
+
+          {/* Subheading / Monogram Crest */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-[10px] uppercase tracking-[0.32em] font-semibold mb-4"
-            style={{ color: AMBER }}
+            transition={{ delay: 0.08 }}
+            className="flex items-center gap-2 mb-3"
           >
-            Seasonal Menu · 2026
-          </motion.p>
+            <span className="text-[#B58428] text-xs">✦</span>
+            <p className="text-[11px] uppercase tracking-[0.28em] font-bold text-[#B58428]">
+              Artisanal Roastery & Kitchen
+            </p>
+            <span className="text-[#B58428] text-xs">✦</span>
+          </motion.div>
+
+          {/* Main Title */}
           <motion.h1
-            initial={{ opacity: 0, y: 16 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="font-serif text-5xl md:text-7xl lg:text-8xl font-bold mb-5 leading-[1.05]"
-            style={{
-              color: CREAM,
-              textShadow: "0 4px 32px rgba(0,0,0,0.6)",
-            }}
+            transition={{ delay: 0.15 }}
+            className="font-serif text-4xl sm:text-6xl md:text-7xl font-bold mb-4 leading-[1.1] text-[#1C1815] tracking-tight"
           >
             {restaurantName}
           </motion.h1>
-          <div className="flex items-center justify-center gap-4 mb-6">
-  <div
-    className="h-px w-16"
-    style={{
-      background:
-        "linear-gradient(to right, transparent, rgba(201,169,110,0.9))",
-    }}
-  />
 
-  <div
-    className="w-2.5 h-2.5 rotate-45"
-    style={{
-      background: AMBER,
-      boxShadow: "0 0 12px rgba(201,169,110,0.45)",
-    }}
-  />
+          {/* Luxury Filigree Divider */}
+          <div className="flex items-center justify-center gap-4 mb-4 w-full max-w-xs">
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent to-[#B58428]/70" />
+            <div className="w-2.5 h-2.5 rotate-45 bg-[#B58428] shadow-[0_0_8px_rgba(181,132,40,0.4)]" />
+            <div className="h-px flex-1 bg-gradient-to-l from-transparent to-[#B58428]/70" />
+          </div>
 
-  <div
-    className="h-px w-16"
-    style={{
-      background:
-        "linear-gradient(to left, transparent, rgba(201,169,110,0.9))",
-    }}
-  />
-</div>
+          {/* Tagline */}
           <motion.p
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="text-sm md:text-lg max-w-xl leading-relaxed"
-style={{
-  color: "rgba(245,240,232,0.78)",
-  letterSpacing: "0.02em",
-}}
+            transition={{ delay: 0.22 }}
+            className="font-serif italic text-base sm:text-lg md:text-xl max-w-lg text-[#5C554E] leading-relaxed mb-6"
           >
             {tagline}
           </motion.p>
+
+          {/* Micro Feature Badges */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 1.2, duration: 0.8 }}
-            className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1"
+            transition={{ delay: 0.3 }}
+            className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-xs text-[#78716A]"
           >
-            <span
-              className="text-[9px] uppercase tracking-[0.2em] font-medium"
-              style={{ color: MUTED }}
-            >
-              Explore
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#E8E2D8] shadow-sm">
+              <span className="text-[#B58428]">☕</span> Single-Origin
             </span>
-            <ChevronDown
-              size={20}
-              style={{ color: AMBER }}
-              className="animate-bounce"
-            />
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#E8E2D8] shadow-sm">
+              <span className="text-[#2E8540]">🌿</span> Fresh Ingredients
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#E8E2D8] shadow-sm">
+              <span className="text-[#B58428]">⏱</span> 15-20m Avg Prep
+            </span>
           </motion.div>
         </div>
       </div>
@@ -1700,9 +1665,9 @@ style={{
             <div
               className="px-6 py-5 rounded-2xl flex flex-col gap-3 items-center"
               style={{
-                background: DARK_CARD,
+                background: "#FFFFFF",
                 border: `1px solid ${BORDER}`,
-                boxShadow: "0 16px 48px rgba(0,0,0,0.5)",
+                boxShadow: "0 16px 40px rgba(28,24,21,0.14)",
               }}
             >
               <p
@@ -1718,10 +1683,11 @@ style={{
                 onClick={() => {
                   window.location.href = `/current-order?table=${tableNumber}`;
                 }}
-                className="px-5 py-2.5 rounded-xl font-bold text-sm transition-all hover:brightness-110"
+                className="px-5 py-2.5 rounded-xl font-bold text-sm transition-all hover:brightness-105"
                 style={{
                   background: GOLD_GRADIENT,
-                  color: DARK,
+                  color: "#1C1815",
+                  boxShadow: "0 2px 10px rgba(181,132,40,0.25)",
                 }}
               >
                 Track Current Order
@@ -1741,19 +1707,19 @@ style={{
           }}
           className="fixed bottom-24 right-4 z-40 px-4 py-3 rounded-2xl transition-all hover:scale-[1.03] active:scale-[0.98]"
           style={{
-            background: DARK_CARD,
+            background: "#FFFFFF",
             color: CREAM,
-            border: `1px solid rgba(201,169,110,0.35)`,
-            boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+            border: `1px solid rgba(181,132,40,0.35)`,
+            boxShadow: "0 8px 24px rgba(28,24,21,0.08)",
             backdropFilter: "blur(16px)",
           }}
         >
           <div className="flex items-center gap-2.5">
             <div
               className="flex items-center justify-center w-8 h-8 rounded-full"
-              style={{ background: GOLD_GRADIENT }}
+              style={{ background: GOLD_GRADIENT, boxShadow: "0 2px 8px rgba(181,132,40,0.3)" }}
             >
-              <Gift size={14} style={{ color: DARK }} />
+              <Gift size={14} style={{ color: "#1C1815" }} />
             </div>
             <div className="text-left">
               <div className="text-xs font-bold">

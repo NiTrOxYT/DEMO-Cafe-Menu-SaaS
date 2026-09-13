@@ -21,6 +21,8 @@ function Router() {
     <Switch>
       <Route path="/" component={Menu} />
       <Route path="/qr-menu" component={Menu} />
+      <Route path="/offers" component={Menu} />
+      <Route path="/locations" component={Menu} />
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/analytics" component={AnalyticsPage} />

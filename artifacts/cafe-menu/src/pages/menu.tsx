@@ -619,33 +619,25 @@ export default function MenuPage() {
                 (e.target as HTMLImageElement).src = "/hero-cafe-banner.jpg";
               }}
             />
-            {/* Subtle soft gradient fade on left for crystal-clear readability if screen is small */}
-            <div className="absolute inset-0 bg-gradient-to-r from-[#F7F3EB]/80 via-[#F7F3EB]/40 to-transparent sm:via-transparent" />
+            {/* Subtle soft gradient fade on left for maximum text contrast and readability */}
+            <div className="absolute inset-0 bg-gradient-to-r from-[#F8F5EF]/95 via-[#F8F5EF]/70 to-transparent sm:via-[#F8F5EF]/50 sm:to-transparent" />
           </div>
 
-          {/* Top Right Handwritten Script "Good Food Good Mood" */}
-          <div className="absolute top-3 sm:top-5 right-3.5 sm:right-6 text-right select-none pointer-events-none z-10">
-            <div className="font-script text-[18px] sm:text-[22px] md:text-[26px] text-[#6B4226] -rotate-6 leading-[1.05] font-semibold tracking-wide drop-shadow-[0_1px_2px_rgba(255,255,255,0.9)]">
-              Good <br /> Food <br /> Good <br /> Mood
-            </div>
-            <div className="w-5 h-[2px] bg-[#6B4226]/50 rounded-full ml-auto mt-1 -rotate-6" />
-          </div>
-
-          {/* Foreground Hero Content (Left Aligned) */}
-          <div className="relative z-10 px-5 sm:px-8 py-5 sm:py-7 max-w-[240px] sm:max-w-[320px] md:max-w-[420px] space-y-2.5 sm:space-y-3.5">
+          {/* Foreground Hero Content (Left Aligned - High Contrast) */}
+          <div className="relative z-10 px-5 sm:px-8 py-5 sm:py-7 max-w-[250px] sm:max-w-[340px] md:max-w-[440px] space-y-2.5 sm:space-y-3.5">
             {/* Tagline */}
-            <p className="text-[9px] sm:text-[11px] uppercase tracking-[0.24em] font-bold text-[#665A50]">
+            <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.26em] font-extrabold text-[#524135]">
               GOOD FOOD • GOOD PEOPLE
             </p>
 
             {/* Main Heading */}
-            <h2 className="font-serif text-[28px] sm:text-[38px] md:text-[46px] font-bold text-[#241D18] leading-[1.02] tracking-tight">
+            <h2 className="font-serif text-[30px] sm:text-[40px] md:text-[48px] font-bold text-[#191410] leading-[1.02] tracking-tight">
               More Than <br />
               Just a Meal
             </h2>
 
             {/* Subtitle */}
-            <p className="text-[11px] sm:text-[13px] text-[#5A524C] leading-snug font-sans max-w-[210px] sm:max-w-xs">
+            <p className="text-[12px] sm:text-[13.5px] text-[#3D322A] font-medium leading-snug sm:leading-relaxed font-sans max-w-[220px] sm:max-w-xs">
               {tagline}
             </p>
 
@@ -655,7 +647,7 @@ export default function MenuPage() {
                 onClick={() => {
                   document.getElementById("category-scroller")?.scrollIntoView({ behavior: "smooth" });
                 }}
-                className="px-4.5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-[#5C3826] text-white font-medium text-xs sm:text-sm inline-flex items-center gap-2 hover:bg-[#4A2D1E] transition-all transform active:scale-95 shadow-sm"
+                className="px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-[#54321E] text-white font-semibold text-xs sm:text-sm inline-flex items-center gap-2 hover:bg-[#3D2314] transition-all transform active:scale-95 shadow-md"
               >
                 <span>Explore Menu</span>
                 <ArrowRight size={13} />
@@ -664,8 +656,8 @@ export default function MenuPage() {
 
             {/* Script below button */}
             <div className="pt-1 space-y-0.5">
-              <div className="w-6 h-[1.5px] bg-[#8C654D]/70" />
-              <p className="font-script text-[16px] sm:text-[20px] text-[#7B4E35] -rotate-2 select-none leading-snug">
+              <div className="w-7 h-[2px] bg-[#6B4226]" />
+              <p className="font-script text-[18px] sm:text-[22px] text-[#54321E] font-bold -rotate-2 select-none leading-snug">
                 Food Tastes Better <br /> Together
               </p>
             </div>

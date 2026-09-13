@@ -606,71 +606,70 @@ export default function MenuPage() {
 
       <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto px-4 sm:px-6 pt-3 space-y-4 sm:space-y-5">
         {/* ==================================================== */}
-        {/* 2. HERO SECTION (Editorial Large Café Photograph)    */}
+        {/* 2. HERO BANNER SECTION (Exact Match to Reference)    */}
         {/* ==================================================== */}
-        <section className="relative overflow-hidden pt-1 pb-1">
-          {/* Subtle Decorative Botanical Leaf in Background */}
-          <div className="absolute -top-1 -right-2 w-32 h-32 opacity-25 pointer-events-none text-[#737D63]">
-            <BotanicalLeaf className="w-full h-full" color="#737D63" />
+        <section className="relative overflow-hidden rounded-[24px] border border-[#E5DDD1] bg-[#F8F5EF] shadow-[0_4px_24px_rgba(41,35,31,0.04)] min-h-[300px] sm:min-h-[340px] flex items-center">
+          {/* Background Photo on Right with Seamless Fade to Left */}
+          <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+            <img
+              src="/hero-cafe-banner.jpg"
+              alt="Speckled ceramic latte cup on saucer in natural morning light"
+              className="absolute right-0 top-0 w-[70%] sm:w-[60%] md:w-[55%] h-full object-cover object-center"
+              onError={(e) => {
+                // Fallback to high-res unsplash if local asset is loading
+                (e.target as HTMLImageElement).src = DEFAULT_HERO_LATTE;
+              }}
+            />
+            {/* Smooth Left Gradient Blend so Text is 100% Crisp and Background Matches Page */}
+            <div className="absolute inset-0 bg-gradient-to-r from-[#F8F5EF] via-[#F8F5EF]/90 sm:via-[#F8F5EF]/75 to-transparent z-1" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#F8F5EF]/40 via-transparent to-transparent z-1" />
           </div>
-          <div className="absolute bottom-2 -left-4 w-20 h-20 opacity-15 pointer-events-none text-[#A86E4D] -rotate-45">
-            <BotanicalLeaf className="w-full h-full" color="#A86E4D" />
+
+          {/* Top Right Handwritten Script "Good Food Good Mood" */}
+          <div className="absolute top-3.5 sm:top-5 right-3.5 sm:right-6 text-right select-none pointer-events-none z-10">
+            <div className="font-script text-[18px] sm:text-[22px] md:text-[24px] text-[#6B4226] -rotate-6 leading-[1.1] font-semibold tracking-wide drop-shadow-[0_1px_2px_rgba(255,255,255,0.8)]">
+              Good <br /> Food <br /> Good <br /> Mood
+            </div>
+            <div className="w-5 h-[2px] bg-[#6B4226]/50 rounded-full ml-auto mt-1 -rotate-6" />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-8 items-center">
-            {/* Left Copy */}
-            <div className="md:col-span-7 space-y-2.5 z-10">
-              <p className="text-[10px] uppercase tracking-[0.24em] font-bold text-[#766B61]">
-                GOOD FOOD • GOOD PEOPLE
-              </p>
+          {/* Foreground Hero Content (Left Aligned) */}
+          <div className="relative z-10 px-5 sm:px-8 py-6 sm:py-8 max-w-[280px] sm:max-w-[360px] md:max-w-[420px] space-y-3 sm:space-y-3.5">
+            {/* Tagline */}
+            <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.24em] font-bold text-[#766B61]">
+              GOOD FOOD • GOOD PEOPLE
+            </p>
 
-              <h2 className="font-serif text-[32px] sm:text-[40px] lg:text-[46px] font-bold text-[#29231F] leading-[1.05] tracking-tight">
-                More Than <br />
-                Just a Meal
-              </h2>
+            {/* Main Heading */}
+            <h2 className="font-serif text-[30px] sm:text-[38px] md:text-[44px] font-bold text-[#1C1917] leading-[1.06] tracking-tight">
+              More Than <br />
+              Just a Meal
+            </h2>
 
-              <p className="text-[12px] sm:text-[13px] text-[#766B61] leading-relaxed max-w-sm font-sans">
-                {tagline}
-              </p>
+            {/* Subtitle */}
+            <p className="text-[11px] sm:text-[13px] text-[#5A524C] leading-snug sm:leading-relaxed font-sans">
+              {tagline}
+            </p>
 
-              <div className="pt-1 flex flex-wrap items-center gap-3.5">
-                <button
-                  onClick={() => {
-                    document.getElementById("category-scroller")?.scrollIntoView({ behavior: "smooth" });
-                  }}
-                  className="px-5 py-2.5 rounded-full bg-[#7B4E35] text-white font-medium text-xs inline-flex items-center gap-2 hover:bg-[#633D28] transition-all transform active:scale-95 shadow-sm"
-                >
-                  <span>Explore Menu</span>
-                  <ArrowRight size={14} />
-                </button>
-
-                {/* Handwritten Script (Bottom Left) */}
-                <div className="font-script text-[18px] sm:text-[20px] text-[#7B4E35] -rotate-2 select-none">
-                  —— Food Tastes Better Together
-                </div>
-              </div>
+            {/* Explore Menu Button */}
+            <div className="pt-1">
+              <button
+                onClick={() => {
+                  document.getElementById("category-scroller")?.scrollIntoView({ behavior: "smooth" });
+                }}
+                className="px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-[#5C3826] text-white font-medium text-xs sm:text-sm inline-flex items-center gap-2 hover:bg-[#4A2D1E] transition-all transform active:scale-95 shadow-sm"
+              >
+                <span>Explore Menu</span>
+                <ArrowRight size={14} />
+              </button>
             </div>
 
-            {/* Right/Bottom Large Integrated Editorial Café Photograph */}
-            <div className="md:col-span-5 relative mt-2 md:mt-0">
-              {/* Handwritten Script (Top Right / Above Image) */}
-              <div className="flex justify-end pr-3 -mb-2 relative z-10">
-                <span className="font-script text-[20px] sm:text-[23px] text-[#7B4E35] -rotate-6 select-none leading-none">
-                  Good Food Good Mood
-                </span>
-              </div>
-
-              {/* Large Integrated Editorial Photo (Aspect Ratio ~4/3, Full Width with Side Margins) */}
-              <div className="relative w-full h-[230px] sm:h-[260px] md:h-[340px] rounded-[22px] overflow-hidden border border-[#E5DDD1] shadow-[0_6px_24px_rgba(41,35,31,0.05)] bg-[#EFE7DA]">
-                <img
-                  src={DEFAULT_HERO_LATTE}
-                  alt="Artisan ceramic coffee cup and pastry in morning light at boutique cafe"
-                  className="w-full h-full object-cover transition-transform duration-700 hover:scale-[1.02]"
-                />
-                {/* Subtle warm overlay for background blending */}
-                <div className="absolute inset-0 bg-[#F8F5EF]/[0.05] pointer-events-none" />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#29231F]/15 via-transparent to-transparent pointer-events-none" />
-              </div>
+            {/* Script below button */}
+            <div className="pt-2 space-y-1">
+              <div className="w-7 h-[1.5px] bg-[#8C654D]/70" />
+              <p className="font-script text-[17px] sm:text-[20px] text-[#7B4E35] -rotate-2 select-none leading-snug">
+                Food Tastes Better <br /> Together
+              </p>
             </div>
           </div>
         </section>

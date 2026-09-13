@@ -39,6 +39,7 @@ import {
   Printer,
   Download,
   CreditCard,
+  Tag,
 } from "lucide-react";
 
 // --- Color System Tokens ---

@@ -25,19 +25,19 @@ import {
   ShoppingBag,
 } from "lucide-react";
 
-const DARK = "#080706";
-const DARK_CARD = "#141210";
-const DARK_ELEVATED = "#1c1916";
-const CREAM = "#f5f0e8";
-const MUTED = "#8a8278";
-const AMBER = "#c9a96e";
-const AMBER_LIGHT = "#e8d4a8";
-const GREEN = "#5cb85c";
-const RED = "#e05252";
-const BORDER = "rgba(255,255,255,0.08)";
+const DARK = "#FAF8F5";
+const DARK_CARD = "#FFFFFF";
+const DARK_ELEVATED = "#F5F0E8";
+const CREAM = "#1C1815";
+const MUTED = "#78716A";
+const AMBER = "#B58428";
+const AMBER_LIGHT = "#9C6F1E";
+const GREEN = "#2E8540";
+const RED = "#D84040";
+const BORDER = "#E8E2D8";
 const GOLD_GRADIENT =
-  "linear-gradient(135deg, #b8924f 0%, #e8d4a8 45%, #c9a96e 100%)";
-const CARD_SHADOW = "0 4px 24px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.04)";
+  "linear-gradient(135deg, #B58428 0%, #D4A84D 45%, #9C6F1E 100%)";
+const CARD_SHADOW = "0 2px 14px rgba(28,24,21,0.04), 0 0 0 1px rgba(232,226,216,0.8)";
 
 function formatINR(amount: number) {
   return `₹${Math.round(amount)}`;
@@ -1422,9 +1422,9 @@ style={{
       </div>
 
       <div
-        className="sticky top-0 z-30 border-b"
+        className="sticky top-0 z-30 border-b shadow-sm"
         style={{
-          background: "rgba(8,7,6,0.82)",
+          background: "rgba(250,248,245,0.92)",
           backdropFilter: "blur(20px) saturate(1.2)",
           borderColor: BORDER,
         }}
@@ -1432,7 +1432,7 @@ style={{
         <div className="max-w-5xl mx-auto px-4 pt-4 pb-2">
           <div className="relative">
             <Search
-              size={15}
+              size={16}
               className="absolute left-4 top-1/2 -translate-y-1/2"
               style={{ color: MUTED }}
             />
@@ -1441,12 +1441,12 @@ style={{
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search food & drinks..."
-              className="w-full pl-10 pr-10 py-3 rounded-2xl text-sm outline-none transition-all focus:ring-2"
+              className="w-full pl-11 pr-10 py-3 rounded-2xl text-sm outline-none transition-all focus:ring-2 focus:ring-[#B58428]/40"
               style={{
-                background: "rgba(255,255,255,0.04)",
+                background: "#FFFFFF",
                 border: `1px solid ${BORDER}`,
                 color: CREAM,
-                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
+                boxShadow: "0 1px 4px rgba(31,27,24,0.03)",
               }}
             />
             {searchQuery && (
@@ -1470,15 +1470,15 @@ style={{
             className="flex-shrink-0 px-5 py-2 rounded-full text-xs font-bold transition-all duration-300"
             style={{
               background:
-                selectedCategory === null ? GOLD_GRADIENT : "rgba(255,255,255,0.04)",
-              color: selectedCategory === null ? DARK : CREAM,
+                selectedCategory === null ? GOLD_GRADIENT : "#FFFFFF",
+              color: selectedCategory === null ? "#FFFFFF" : CREAM,
               border: `1px solid ${
-                selectedCategory === null ? "rgba(232,212,168,0.5)" : BORDER
+                selectedCategory === null ? "#B58428" : BORDER
               }`,
               boxShadow:
                 selectedCategory === null
-                  ? "0 6px 20px rgba(201,169,110,0.3)"
-                  : "none",
+                  ? "0 4px 16px rgba(181,132,40,0.3)"
+                  : "0 1px 3px rgba(31,27,24,0.03)",
             }}
           >
             All
@@ -1492,17 +1492,17 @@ style={{
                 background:
                   selectedCategory === cat.id
                     ? GOLD_GRADIENT
-                    : "rgba(255,255,255,0.04)",
-                color: selectedCategory === cat.id ? DARK : CREAM,
+                    : "#FFFFFF",
+                color: selectedCategory === cat.id ? "#FFFFFF" : CREAM,
                 border: `1px solid ${
                   selectedCategory === cat.id
-                    ? "rgba(232,212,168,0.5)"
+                    ? "#B58428"
                     : BORDER
                 }`,
                 boxShadow:
                   selectedCategory === cat.id
-                    ? "0 6px 20px rgba(201,169,110,0.3)"
-                    : "none",
+                    ? "0 4px 16px rgba(181,132,40,0.3)"
+                    : "0 1px 3px rgba(31,27,24,0.03)",
               }}
             >
               {cat.name}
@@ -1521,11 +1521,11 @@ style={{
                 background:
                   vegFilter === f
                     ? f === "veg"
-                      ? "rgba(76,175,80,0.18)"
+                      ? "rgba(46,133,64,0.12)"
                       : f === "nonveg"
-                        ? "rgba(229,57,53,0.18)"
-                        : "rgba(201,169,110,0.18)"
-                    : "rgba(255,255,255,0.04)",
+                        ? "rgba(216,64,64,0.12)"
+                        : "rgba(181,132,40,0.14)"
+                    : "#FFFFFF",
 
                 color:
                   vegFilter === f
@@ -1534,7 +1534,7 @@ style={{
                       : f === "nonveg"
                         ? RED
                         : AMBER
-                    : CREAM,
+                    : MUTED,
 
                 border:
                   vegFilter === f
@@ -1544,7 +1544,7 @@ style={{
                     : `1px solid ${BORDER}`,
 
                 boxShadow:
-                  vegFilter === f ? "0 4px 16px rgba(0,0,0,0.25)" : "none",
+                  vegFilter === f ? "0 2px 8px rgba(181,132,40,0.12)" : "none",
               }}
             >
               {f === "veg" && <Leaf size={10} />}

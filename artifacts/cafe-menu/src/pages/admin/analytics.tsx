@@ -44,11 +44,11 @@ import { getOrderDate } from "@/lib/analytics/date-utils";
 import { getOrderTotal } from "@/lib/analytics/revenue";
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: "#d97706",
-  preparing: "#2563eb",
+  pending: "#D97706",
+  preparing: "#2563EB",
   ready: "#059669",
-  completed: "#18181b",
-  cancelled: "#dc2626",
+  completed: "#B58428",
+  cancelled: "#DC2626",
 };
 
 const RANGE_LABELS: Record<RangeKey, string> = {
@@ -182,23 +182,23 @@ export default function AnalyticsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex rounded-lg border border-border bg-card p-1">
+          <div className="flex rounded-xl border border-border/80 bg-card p-1 shadow-2xs">
             {(Object.keys(RANGE_LABELS) as RangeKey[]).map((key) => (
               <button
                 key={key}
                 onClick={() => setRange(key)}
-                className={`h-8 min-w-12 rounded-md px-3 text-xs font-bold transition-colors ${
+                className={`h-8 min-w-12 rounded-lg px-3 text-xs font-semibold transition-all ${
                   range === key
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    ? "bg-[#FAF3E6] text-[#8E6314] border border-[#ECD7A9] shadow-2xs font-bold"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 }`}
               >
                 {RANGE_LABELS[key]}
               </button>
             ))}
           </div>
-          <Button variant="outline" size="sm" onClick={() => loadData(range)}>
-            <RefreshCw className="mr-2 h-4 w-4" />
+          <Button variant="outline" size="sm" onClick={() => loadData(range)} className="border-border/80 hover:bg-[#FAF8F5]">
+            <RefreshCw className="mr-2 h-4 w-4 text-[#8E6314]" />
             Refresh
           </Button>
         </div>
@@ -264,10 +264,10 @@ export default function AnalyticsPage() {
           </section>
 
           <section className="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
-            <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+            <div className="rounded-xl border border-border/80 bg-card p-5 shadow-xs">
               <div className="mb-4 flex items-center justify-between">
                 <div>
-                  <h3 className="font-serif text-xl font-semibold">
+                  <h3 className="font-serif text-xl font-bold text-foreground">
                     Revenue trend
                   </h3>
                   <p className="text-xs text-muted-foreground">
@@ -275,10 +275,10 @@ export default function AnalyticsPage() {
                   </p>
                 </div>
                 <span
-                  className={`rounded-full px-2.5 py-1 text-xs font-bold ${
+                  className={`rounded-full px-2.5 py-1 text-xs font-bold border ${
                     revenueDelta >= 0
-                      ? "bg-emerald-500/15 text-emerald-700"
-                      : "bg-red-500/15 text-red-700"
+                      ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30"
+                      : "bg-rose-500/10 text-rose-700 border-rose-500/30"
                   }`}
                 >
                   {revenueDelta >= 0 ? "+" : ""}
@@ -296,22 +296,22 @@ export default function AnalyticsPage() {
                         y1="0"
                         y2="1"
                       >
-                        <stop offset="5%" stopColor="#18181b" stopOpacity={0.28} />
-                        <stop offset="95%" stopColor="#18181b" stopOpacity={0.02} />
+                        <stop offset="5%" stopColor="#B58428" stopOpacity={0.28} />
+                        <stop offset="95%" stopColor="#B58428" stopOpacity={0.02} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid stroke="#d6d3d1" strokeDasharray="3 3" />
+                    <CartesianGrid stroke="#E8E2D8" strokeDasharray="3 3" />
                     <XAxis
                       dataKey="label"
                       tickLine={false}
                       axisLine={false}
-                      tick={{ fill: "#57534e", fontSize: 12 }}
+                      tick={{ fill: "#78716A", fontSize: 12 }}
                     />
                     <YAxis
                       tickFormatter={(value) => `₹${formatCompact(Number(value))}`}
                       tickLine={false}
                       axisLine={false}
-                      tick={{ fill: "#57534e", fontSize: 12 }}
+                      tick={{ fill: "#78716A", fontSize: 12 }}
                     />
                     <Tooltip
                       formatter={(value, name) =>
@@ -320,16 +320,17 @@ export default function AnalyticsPage() {
                           : [value, "Orders"]
                       }
                       contentStyle={{
-                        borderRadius: 8,
-                        border: "1px solid #d6d3d1",
-                        boxShadow: "0 18px 40px rgba(0,0,0,.12)",
+                        borderRadius: 12,
+                        border: "1px solid #E8E2D8",
+                        backgroundColor: "#FFFFFF",
+                        boxShadow: "0 12px 36px rgba(31,27,24,0.08)",
                       }}
                     />
                     <Area
                       type="monotone"
                       dataKey="revenue"
-                      stroke="#18181b"
-                      strokeWidth={3}
+                      stroke="#B58428"
+                      strokeWidth={2.5}
                       fill="url(#revenueFill)"
                     />
                   </AreaChart>
@@ -607,16 +608,19 @@ function MetricTile({
   detail: string;
 }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+    <div className="rounded-xl border border-border/80 bg-card p-5 shadow-xs hover:border-[#ECD7A9] transition-all relative overflow-hidden group">
+      <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[#B58428]/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
       <div className="flex items-start justify-between gap-3">
-        <div className="rounded-md bg-background p-2 text-secondary">{icon}</div>
-        <Utensils className="h-4 w-4 text-muted-foreground/50" />
+        <div className="rounded-lg bg-[#FAF3E6] border border-[#ECD7A9] p-2.5 text-[#8E6314] shadow-2xs">
+          {icon}
+        </div>
+        <Utensils className="h-4 w-4 text-muted-foreground/40" />
       </div>
-      <p className="mt-4 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+      <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
         {label}
       </p>
-      <p className="mt-1 text-2xl font-bold text-foreground">{value}</p>
-      <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
+      <p className="mt-1 text-2xl font-bold font-serif text-foreground tracking-tight">{value}</p>
+      <p className="mt-1 text-xs text-muted-foreground font-medium">{detail}</p>
     </div>
   );
 }
@@ -633,19 +637,19 @@ function InsightTile({
   detail: string;
 }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+    <div className="rounded-xl border border-border/80 bg-card p-5 shadow-xs">
       <div className="flex items-center gap-3">
-        <div className="rounded-md bg-primary text-primary-foreground p-2">
+        <div className="rounded-lg bg-[#FAF3E6] border border-[#ECD7A9] text-[#8E6314] p-2.5 shadow-2xs">
           {icon}
         </div>
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
             {label}
           </p>
-          <p className="mt-0.5 text-lg font-bold">{value}</p>
+          <p className="mt-0.5 text-lg font-serif font-bold text-foreground">{value}</p>
         </div>
       </div>
-      <p className="mt-4 text-sm text-muted-foreground">{detail}</p>
+      <p className="mt-4 text-xs text-muted-foreground leading-relaxed">{detail}</p>
     </div>
   );
 }
@@ -660,9 +664,9 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+    <div className="rounded-xl border border-border/80 bg-card p-5 shadow-xs">
       <div className="mb-4">
-        <h3 className="font-serif text-xl font-semibold">{title}</h3>
+        <h3 className="font-serif text-xl font-bold text-foreground">{title}</h3>
         <p className="text-xs text-muted-foreground">{subtitle}</p>
       </div>
       {children}
@@ -684,22 +688,22 @@ function RankRow({
   percent: number;
 }) {
   return (
-    <div className="rounded-md bg-background p-3">
+    <div className="rounded-lg bg-muted/40 border border-border/60 p-3.5 transition-colors hover:bg-muted/70">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground">
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#FAF3E6] border border-[#ECD7A9] text-[10px] font-bold text-[#8E6314]">
               {rank}
             </span>
-            <p className="truncate font-semibold">{name}</p>
+            <p className="truncate font-semibold text-sm text-foreground">{name}</p>
           </div>
-          <p className="mt-1 pl-8 text-xs text-muted-foreground">{detail}</p>
+          <p className="mt-1 pl-7 text-xs text-muted-foreground font-medium">{detail}</p>
         </div>
-        <p className="shrink-0 text-sm font-bold">{value}</p>
+        <p className="shrink-0 text-sm font-bold font-serif text-foreground">{value}</p>
       </div>
-      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted">
+      <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-border/50">
         <div
-          className="h-full rounded-full bg-secondary"
+          className="h-full rounded-full bg-gradient-to-r from-[#B58428] to-[#D4A84D]"
           style={{ width: `${Math.max(8, Math.min(100, percent))}%` }}
         />
       </div>

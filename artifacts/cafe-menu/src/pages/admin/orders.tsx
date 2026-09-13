@@ -39,27 +39,27 @@ const STATUS_CONFIG: Record<
 > = {
   pending: {
     label: "Pending",
-    color: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
+    color: "bg-amber-500/10 text-amber-700 border-amber-500/30",
     icon: <Clock size={12} />,
   },
   preparing: {
     label: "Preparing",
-    color: "bg-blue-500/15 text-blue-400 border-blue-500/30",
+    color: "bg-blue-500/10 text-blue-700 border-blue-500/30",
     icon: <ChefHat size={12} />,
   },
   ready: {
     label: "Ready",
-    color: "bg-green-500/15 text-green-400 border-green-500/30",
+    color: "bg-emerald-500/10 text-emerald-700 border-emerald-500/30",
     icon: <CheckCircle size={12} />,
   },
   completed: {
     label: "Completed",
-    color: "bg-zinc-500/15 text-zinc-400 border-zinc-500/30",
+    color: "bg-[#FAF3E6] text-[#8E6314] border-[#ECD7A9]",
     icon: <CheckCircle size={12} />,
   },
   cancelled: {
     label: "Cancelled",
-    color: "bg-red-500/15 text-red-400 border-red-500/30",
+    color: "bg-rose-500/10 text-rose-700 border-rose-500/30",
     icon: <XCircle size={12} />,
   },
 };
@@ -301,15 +301,15 @@ export default function OrdersPage() {
             <button
               key={s}
               onClick={() => setFilter(s)}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all border ${
                 filter === s
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-transparent text-muted-foreground border-border hover:border-primary/40"
+                  ? "bg-[#FAF3E6] text-[#8E6314] border-[#ECD7A9] shadow-2xs font-bold"
+                  : "bg-card text-muted-foreground border-border/80 hover:border-[#ECD7A9] hover:text-foreground"
               }`}
             >
               {s.charAt(0).toUpperCase() + s.slice(1)}
               {counts[s] ? (
-                <span className="ml-1 opacity-70">({counts[s]})</span>
+                <span className="ml-1 opacity-80">({counts[s]})</span>
               ) : null}
             </button>
           ),
@@ -317,9 +317,9 @@ export default function OrdersPage() {
       </div>
 
       {sorted.length === 0 ? (
-        <div className="text-center py-20 text-muted-foreground">
+        <div className="text-center py-20 text-muted-foreground border border-dashed border-border/80 bg-card/60 rounded-xl">
           <p className="text-4xl mb-3">📋</p>
-          <p>No orders yet</p>
+          <p className="font-medium text-sm">No orders in this view</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -330,36 +330,36 @@ export default function OrdersPage() {
             return (
               <div
                 key={order.id}
-                className="bg-card rounded-xl border border-border p-4 flex flex-col gap-3"
+                className="bg-card rounded-xl border border-border/80 p-5 flex flex-col gap-3.5 shadow-xs hover:border-[#ECD7A9] transition-all relative overflow-hidden"
               >
                 {/* Order header */}
                 <div className="flex items-center justify-between">
                   {order.is_updated && (
-                    <div className="mb-2">
-                      <span className="bg-yellow-500 text-black px-2 py-1 rounded-md text-xs font-bold animate-pulse">
+                    <div className="mb-1">
+                      <span className="bg-amber-500/15 border border-amber-500/30 text-amber-900 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase animate-pulse">
                         UPDATED
                       </span>
                     </div>
                   )}
                   <div>
-                    <span className="text-sm font-bold text-foreground">
+                    <span className="text-base font-bold font-serif text-foreground">
                       Table {order.table_id || 1}
                     </span>
                     {order.tableNumber && (
-                      <span className="ml-2 text-xs text-muted-foreground">
+                      <span className="ml-2 text-xs text-muted-foreground font-medium">
                         Table {order.tableNumber}
                       </span>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
                     <span
-                      className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${cfg.color}`}
+                      className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${cfg.color}`}
                     >
                       {cfg.icon} {cfg.label}
                     </span>
                     <button
                       onClick={() => deleteOrder(order.id)}
-                      className="text-muted-foreground hover:text-destructive transition-colors"
+                      className="text-muted-foreground/60 hover:text-destructive transition-colors p-1 rounded-md hover:bg-destructive/10"
                     >
                       <Trash2 size={14} />
                     </button>
@@ -367,15 +367,15 @@ export default function OrdersPage() {
                 </div>
 
                 {latestAddedItems.length > 0 && (
-                  <div className="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-3 mb-3">
-                    <div className="font-bold text-yellow-700 mb-2 text-sm">
+                  <div className="bg-[#FAF3E6] border border-[#ECD7A9] rounded-lg p-3">
+                    <div className="font-bold text-[#8E6314] mb-1.5 text-xs flex items-center gap-1">
                       ⚡ NEW ITEMS ADDED
                     </div>
 
                     {latestAddedItems.map((item: string, index: number) => (
                       <div
                         key={index}
-                        className="text-sm font-medium text-black"
+                        className="text-xs font-semibold text-[#1F1B18]"
                       >
                         + {item}
                       </div>

@@ -597,26 +597,31 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-[100dvh] bg-background flex flex-col">
       {/* Header */}
-      <header className="border-b border-border bg-card sticky top-0 z-20">
-        <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <h1 className="text-lg font-serif font-semibold text-foreground">
-              The Golden Brew
-            </h1>
-            <nav className="hidden md:flex items-center gap-1">
+      <header className="border-b border-border/80 bg-card/95 backdrop-blur-md sticky top-0 z-20 shadow-xs">
+        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-8">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-[#FAF3E6] border border-[#ECD7A9] flex items-center justify-center text-sm shadow-2xs">
+                ☕
+              </div>
+              <h1 className="text-xl font-serif font-bold text-foreground tracking-tight">
+                The Golden Brew
+              </h1>
+            </div>
+            <nav className="hidden md:flex items-center gap-1.5">
               {NAV_ITEMS.map(({ tab, label, icon }) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all ${
                     activeTab === tab
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                      ? "bg-[#FAF3E6] text-[#8E6314] border border-[#ECD7A9] shadow-2xs"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60 border border-transparent"
                   }`}
                 >
                   {icon} {label}
                   {tab === "orders" && pendingOrders > 0 && (
-                    <span className="ml-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                    <span className="ml-1 bg-amber-600 text-white text-[10px] font-bold rounded-full px-1.5 py-0.2">
                       {pendingOrders}
                     </span>
                   )}
@@ -625,7 +630,7 @@ export default function AdminDashboard() {
             </nav>
           </div>
           <div className="flex items-center gap-3">
-            <span className="hidden sm:block text-xs text-muted-foreground">
+            <span className="hidden sm:block text-xs font-medium text-muted-foreground px-2.5 py-1 rounded-md bg-muted/50 border border-border/60">
               {me.email}
             </span>
             <Button
@@ -633,6 +638,7 @@ export default function AdminDashboard() {
               size="sm"
               onClick={handleLogout}
               disabled={logoutMutation.isPending}
+              className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
             >
               <LogOut className="h-4 w-4" />
             </Button>
@@ -1383,16 +1389,19 @@ function OverviewMetricTile({
   detail: string;
 }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+    <div className="rounded-xl border border-border/80 bg-card p-5 shadow-xs hover:border-[#ECD7A9] transition-all relative overflow-hidden group">
+      <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[#B58428]/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
       <div className="flex items-start justify-between gap-3">
-        <div className="rounded-md bg-background p-2 text-secondary">{icon}</div>
-        <Activity className="h-4 w-4 text-muted-foreground/50" />
+        <div className="rounded-lg bg-[#FAF3E6] border border-[#ECD7A9] p-2.5 text-[#8E6314] shadow-2xs">
+          {icon}
+        </div>
+        <Activity className="h-4 w-4 text-muted-foreground/40" />
       </div>
-      <p className="mt-4 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+      <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
         {label}
       </p>
-      <p className="mt-1 text-2xl font-bold text-foreground">{value}</p>
-      <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
+      <p className="mt-1 text-2xl font-bold font-serif text-foreground tracking-tight">{value}</p>
+      <p className="mt-1 text-xs text-muted-foreground font-medium">{detail}</p>
     </div>
   );
 }
@@ -1409,19 +1418,19 @@ function OverviewInsightTile({
   detail: string;
 }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+    <div className="rounded-xl border border-border/80 bg-card p-5 shadow-xs">
       <div className="flex items-center gap-3">
-        <div className="rounded-md bg-primary p-2 text-primary-foreground">
+        <div className="rounded-lg bg-primary text-primary-foreground p-2.5 shadow-2xs">
           {icon}
         </div>
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
             {label}
           </p>
-          <p className="mt-0.5 text-lg font-bold">{value}</p>
+          <p className="mt-0.5 text-lg font-serif font-bold text-foreground">{value}</p>
         </div>
       </div>
-      <p className="mt-4 text-sm text-muted-foreground">{detail}</p>
+      <p className="mt-4 text-xs text-muted-foreground leading-relaxed">{detail}</p>
     </div>
   );
 }
@@ -1443,23 +1452,23 @@ function OverviewActionCard({
     <button
       type="button"
       onClick={onClick}
-      className="group rounded-lg border border-border bg-card p-4 text-left shadow-sm transition-colors hover:border-primary/30 hover:bg-muted/30"
+      className="group rounded-xl border border-border/80 bg-card p-5 text-left shadow-xs transition-all hover:border-[#ECD7A9] hover:bg-[#FAF8F5] relative overflow-hidden"
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="rounded-md bg-background p-2 text-secondary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+        <div className="rounded-lg bg-[#FAF3E6] border border-[#ECD7A9] p-2.5 text-[#8E6314] transition-all group-hover:bg-[#B58428] group-hover:text-white shadow-2xs">
           {icon}
         </div>
-        <ArrowUpRight className="h-4 w-4 text-muted-foreground/50 transition-colors group-hover:text-primary" />
+        <ArrowUpRight className="h-4 w-4 text-muted-foreground/40 transition-colors group-hover:text-[#8E6314]" />
       </div>
       <div className="mt-4 flex items-center gap-2">
-        <p className="font-serif text-lg font-semibold">{title}</p>
+        <p className="font-serif text-base font-bold text-foreground">{title}</p>
         {badge && (
-          <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-bold text-red-700">
+          <span className="rounded-full bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 text-[10px] font-bold text-amber-800">
             {badge}
           </span>
         )}
       </div>
-      <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+      <p className="mt-1 text-xs text-muted-foreground leading-relaxed">{description}</p>
     </button>
   );
 }

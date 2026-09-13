@@ -198,24 +198,29 @@ const BillPage: React.FC = () => {
 
     if (!order) {
         return (
-            <div className="min-h-screen bg-[#131313] text-white flex items-center justify-center">
-                Loading Bill...
+            <div className="min-h-screen bg-[#FAF8F5] text-[#1F1B18] flex items-center justify-center">
+                <div className="flex flex-col items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-[#FAF3E6] border border-[#ECD7A9] flex items-center justify-center text-sm animate-pulse">
+                        ☕
+                    </div>
+                    <p className="text-xs uppercase tracking-[0.18em] font-semibold text-[#78716A]">Loading Bill...</p>
+                </div>
             </div>
         );
     }
     return (
-        <div className="min-h-screen bg-[#131313] text-white font-sans pb-24">
+        <div className="min-h-screen bg-[#FAF8F5] text-[#1F1B18] font-sans pb-24">
             {/* Top App Bar */}
-            <header className="sticky top-0 z-50 flex items-center w-full h-16 px-4 border-b bg-[#131313] border-white/10">
+            <header className="sticky top-0 z-50 flex items-center w-full h-16 px-4 border-b bg-[#FAF8F5]/95 backdrop-blur-md border-[#E8E2D8]">
                 <button
                     onClick={() => window.history.back()}
-                    className="p-2 transition-colors hover:bg-white/5 rounded-full"
+                    className="p-2 transition-colors hover:bg-muted/70 rounded-full"
                 >
-                    <ArrowLeft className="w-6 h-6 text-[#c9a96e]" />
+                    <ArrowLeft className="w-5 h-5 text-[#B58428]" />
                 </button>
 
                 <div className="flex-1 text-center">
-                    <h1 className="text-xl font-medium font-serif text-[#c9a96e]">
+                    <h1 className="text-lg font-serif font-bold text-[#B58428]">
                         Invoice Details
                     </h1>
                 </div>
@@ -223,69 +228,77 @@ const BillPage: React.FC = () => {
                 <div className="w-10" />
             </header>
 
-            <main className="p-4 space-y-6">
+            <main className="max-w-md mx-auto p-4 space-y-6">
                 {/* Invoice Card */}
                 <div
                     id="invoice-card"
-                    className="relative overflow-hidden border rounded-2xl bg-[#0e0e0e] border-white/10 shadow-2xl"
+                    className="relative overflow-hidden border rounded-2xl bg-white border-[#E8E2D8] shadow-xs"
                 >
                     {/* Decorative Gradient Background */}
-                    <div className="absolute inset-0 opacity-10 bg-gradient-to-b from-[#c9a96e]/20 to-transparent pointer-events-none" />
+                    <div className="absolute inset-0 opacity-20 bg-gradient-to-b from-[#B58428]/15 to-transparent pointer-events-none" />
 
-                    <div className="relative p-6 space-y-8">
+                    <div className="relative p-6 space-y-7">
                         {/* Logo & Branding */}
-                        <div className="flex flex-col items-center text-center space-y-4">
+                        <div className="flex flex-col items-center text-center space-y-3">
+                            <div className="w-10 h-10 rounded-xl bg-[#FAF3E6] border border-[#ECD7A9] flex items-center justify-center text-lg shadow-2xs">
+                                ☕
+                            </div>
                             <div>
-                                <h2 className="text-3xl font-bold font-serif text-[#c9a96e] tracking-tight">
+                                <h2 className="text-2xl font-bold font-serif text-[#1F1B18] tracking-tight">
                                     The Golden Brew
                                 </h2>
-                                <p className="text-xs tracking-[0.2em] uppercase text-gray-400">
+                                <p className="text-[11px] tracking-[0.2em] uppercase text-[#78716A] mt-0.5">
                                     Crafted with passion, served with love
                                 </p>
                             </div>
-                            <div className="w-24 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-                            <h3 className="text-2xl font-serif italic text-white/90">
+                            <div className="w-24 h-px bg-gradient-to-r from-transparent via-[#B58428]/30 to-transparent" />
+                            <h3 className="text-base font-serif italic text-[#78716A]">
                                 Bill of Services
                             </h3>
                         </div>
 
                         {/* Metadata Grid */}
-                        <div className="grid grid-cols-2 gap-y-6 text-sm">
-                            <div className="space-y-1">
-                                <p className="text-[10px] uppercase tracking-wider text-gray-500">
+                        <div className="grid grid-cols-2 gap-y-5 text-sm bg-[#FAF8F5] p-4 rounded-xl border border-[#E8E2D8]">
+                            <div className="space-y-0.5">
+                                <p className="text-[10px] uppercase font-bold tracking-wider text-[#78716A]">
                                     Order Reference
                                 </p>
-                                <p className="font-mono font-bold text-white">
+                                <p className="font-mono font-bold text-[#1F1B18]">
                                     #{order.id}
                                 </p>
                             </div>
-                            <div className="space-y-1 text-right">
-                                <p className="text-[10px] uppercase tracking-wider text-gray-500">
+                            <div className="space-y-0.5 text-right">
+                                <p className="text-[10px] uppercase font-bold tracking-wider text-[#78716A]">
                                     Table
                                 </p>
-                                <p className="font-bold text-white">
+                                <p className="font-bold text-[#1F1B18]">
                                     Table {order.table_id || "-"}
                                 </p>
                             </div>
-                            <div className="space-y-1">
-                                <p className="text-[10px] uppercase tracking-wider text-gray-500">
+                            <div className="space-y-0.5">
+                                <p className="text-[10px] uppercase font-bold tracking-wider text-[#78716A]">
                                     Date & Time
                                 </p>
-                                <p className="text-white">
+                                <p className="text-xs text-[#78716A] font-medium">
                                     {new Date(
                                         order.created_at,
-                                    ).toLocaleString()}
+                                    ).toLocaleString("en-IN", {
+                                        day: "numeric",
+                                        month: "short",
+                                        hour: "numeric",
+                                        minute: "2-digit",
+                                    })}
                                 </p>
                             </div>
-                            <div className="space-y-1 text-right">
-                                <p className="text-[10px] uppercase tracking-wider text-gray-500">
+                            <div className="space-y-0.5 text-right">
+                                <p className="text-[10px] uppercase font-bold tracking-wider text-[#78716A]">
                                     Status
                                 </p>
                                 <span
-                                    className={`inline-block px-2 py-0.5 text-[10px] font-bold border rounded ${
+                                    className={`inline-block px-2.5 py-0.5 text-[10px] font-bold border rounded-full ${
                                         order.is_paid
-                                            ? "border-green-500/50 text-green-400"
-                                            : "border-red-500/50 text-red-400"
+                                            ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700"
+                                            : "border-amber-500/40 bg-amber-500/10 text-amber-800"
                                     }`}
                                 >
                                     {order.is_paid ? "PAID" : "UNPAID"}
@@ -293,67 +306,63 @@ const BillPage: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="h-px bg-white/10" />
-
                         {/* Itemized List */}
-                        <div className="space-y-4">
+                        <div className="space-y-3.5">
                             {order.order_items?.map((item: any) => (
                                 <div
                                     key={item.id}
                                     className="flex items-baseline justify-between text-sm"
                                 >
                                     <div className="flex items-baseline space-x-2">
-                                        <span className="text-[#c9a96e] font-medium">
+                                        <span className="text-[#B58428] font-bold text-xs">
                                             {item.quantity}x
                                         </span>
 
-                                        <span className="text-white/90">
+                                        <span className="text-[#1F1B18] font-medium">
                                             {item.item_name}
                                         </span>
                                     </div>
 
-                                    <div className="flex-1 mx-4 border-b border-dotted border-white/10" />
+                                    <div className="flex-1 mx-3 border-b border-dotted border-[#E8E2D8]" />
 
-                                    <span className="font-medium text-white">
+                                    <span className="font-serif font-bold text-[#1F1B18]">
                                         ₹{item.price * item.quantity}
                                     </span>
                                 </div>
                             ))}
                         </div>
 
-                        <div className="h-px bg-white/10" />
+                        <div className="h-px bg-[#E8E2D8]" />
 
                         {/* Totals Section */}
-                        <div className="space-y-3">
-                            <div className="flex justify-between text-sm text-gray-400">
-                                <span>SUBTOTAL</span>
-                                <span className="text-white font-medium">
+                        <div className="space-y-2.5">
+                            <div className="flex justify-between text-sm text-[#78716A]">
+                                <span className="font-medium text-xs uppercase tracking-wider">Subtotal</span>
+                                <span className="text-[#1F1B18] font-serif font-bold">
                                     ₹{order.subtotal}
                                 </span>
                             </div>
-                            <div className="flex justify-between text-sm text-gray-400">
-                                <span>TAX (8%)</span>
-                                <span className="text-white font-medium">
-                                    ₹{order.tax}
-                                </span>
-                            </div>
-                            {/* <div className="flex justify-between text-sm text-red-400">
-                                <span>DISCOUNT</span>
-                                <span className="font-medium">-$5.00</span>
-                            </div> */}
-                            <div className="pt-4 flex justify-between items-baseline">
-                                <span className="text-xl font-serif text-[#c9a96e]">
+                            {order.tax > 0 && (
+                                <div className="flex justify-between text-sm text-[#78716A]">
+                                    <span className="font-medium text-xs uppercase tracking-wider">Tax</span>
+                                    <span className="text-[#1F1B18] font-serif font-bold">
+                                        ₹{order.tax}
+                                    </span>
+                                </div>
+                            )}
+                            <div className="pt-3 border-t border-[#E8E2D8] flex justify-between items-baseline">
+                                <span className="text-base font-serif font-bold text-[#1F1B18]">
                                     GRAND TOTAL
                                 </span>
-                                <span className="text-2xl font-serif font-bold text-[#c9a96e]">
+                                <span className="text-2xl font-serif font-bold text-[#B58428]">
                                     ₹{order.total}
                                 </span>
                             </div>
                         </div>
 
                         {/* Footer Message */}
-                        <div className="pt-8 text-center">
-                            <p className="text-xs italic text-gray-500">
+                        <div className="pt-4 text-center border-t border-dashed border-[#E8E2D8]">
+                            <p className="text-xs italic text-[#78716A] font-serif">
                                 "Thank you for dining with us"
                             </p>
                         </div>
@@ -367,30 +376,19 @@ const BillPage: React.FC = () => {
                     >
                         <button
                             onClick={downloadBill}
-                            className="flex items-center justify-center py-3 space-x-2 border rounded-xl border-white/10 bg-[#1c1b1b] hover:bg-[#252424] text-white text-sm font-medium transition-colors"
+                            className="flex items-center justify-center py-3.5 space-x-2 border rounded-xl border-[#E8E2D8] bg-white hover:bg-[#FAF8F5] text-[#1F1B18] text-sm font-bold shadow-xs transition-colors"
                         >
-                            <Download className="w-4 h-4 text-[#c9a96e]" />
+                            <Download className="w-4 h-4 text-[#B58428]" />
                             <span>Download Bill</span>
                         </button>
 
                         {!order.is_paid && (
-                            <button className="flex items-center justify-center py-3 space-x-2 border rounded-xl border-green-500/20 bg-green-500/10 hover:bg-green-500/20 text-green-400 text-sm font-medium transition-colors">
+                            <button className="flex items-center justify-center py-3.5 space-x-2 border rounded-xl border-emerald-600 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold shadow-xs transition-colors">
                                 <span>💳</span>
                                 <span>Pay Now</span>
                             </button>
                         )}
                     </div>
-
-                    {/* <div className="grid grid-cols-2 gap-3">
-                        <button className="flex items-center justify-center py-3 space-x-2 border rounded-xl border-white/10 bg-[#1c1b1b] hover:bg-[#252424] text-white text-sm font-medium transition-colors">
-                            <Mail className="w-4 h-4 text-gray-400" />
-                            <span>Email Receipt</span>
-                        </button>
-                        <button className="flex items-center justify-center py-3 space-x-2 border rounded-xl border-white/10 bg-[#1c1b1b] hover:bg-[#252424] text-white text-sm font-medium transition-colors">
-                            <Printer className="w-4 h-4 text-gray-400" />
-                            <span>Print</span>
-                        </button>
-                    </div> */}
                 </div>
             </main>
 

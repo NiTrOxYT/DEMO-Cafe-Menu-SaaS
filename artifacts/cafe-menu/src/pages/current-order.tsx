@@ -3,43 +3,43 @@ import { supabase } from "../lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Clock, ChefHat, CheckCircle, Sparkles, Receipt } from "lucide-react";
 
-const DARK = "#080706";
-const DARK_CARD = "#141210";
-const DARK_ELEVATED = "#1c1916";
-const CREAM = "#f5f0e8";
-const MUTED = "#8a8278";
-const AMBER = "#c9a96e";
-const AMBER_LIGHT = "#e8d4a8";
-const BORDER = "rgba(255,255,255,0.07)";
-const GOLD_GRADIENT = "linear-gradient(135deg, #b8924f 0%, #e8d4a8 45%, #c9a96e 100%)";
+const DARK = "#FAF8F5";
+const DARK_CARD = "#FFFFFF";
+const DARK_ELEVATED = "#F5F0E8";
+const CREAM = "#1C1815";
+const MUTED = "#78716A";
+const AMBER = "#B58428";
+const AMBER_LIGHT = "#9C6F1E";
+const BORDER = "#E8E2D8";
+const GOLD_GRADIENT = "linear-gradient(135deg, #B58428 0%, #D4A84D 45%, #9C6F1E 100%)";
 
 const STATUS_META: Record<string, { label: string; icon: React.ReactNode; color: string; bg: string; step: number }> = {
   pending: {
     label: "Order received",
     icon: <Clock size={16} />,
-    color: "#f59e0b",
-    bg: "rgba(245,158,11,0.12)",
+    color: "#D97706",
+    bg: "#FEF6E7",
     step: 1,
   },
   preparing: {
     label: "Being prepared",
     icon: <ChefHat size={16} />,
-    color: "#60a5fa",
-    bg: "rgba(96,165,250,0.12)",
+    color: "#2563EB",
+    bg: "#EFF6FF",
     step: 2,
   },
   ready: {
     label: "Ready to serve",
     icon: <Sparkles size={16} />,
-    color: AMBER,
-    bg: "rgba(201,169,110,0.15)",
+    color: "#B58428",
+    bg: "#FAF4E8",
     step: 3,
   },
   completed: {
     label: "Served",
     icon: <CheckCircle size={16} />,
-    color: "#34d399",
-    bg: "rgba(52,211,153,0.12)",
+    color: "#2E8540",
+    bg: "#EDF5EE",
     step: 4,
   },
 };
@@ -175,17 +175,17 @@ export default function CurrentOrder() {
 
       {/* Header */}
       <header
-        className="sticky top-0 z-20 flex items-center gap-4 px-5 h-16 border-b"
+        className="sticky top-0 z-20 flex items-center gap-4 px-5 h-16 border-b shadow-2xs"
         style={{
-          background: "rgba(8,7,6,0.85)",
+          background: "rgba(250,248,245,0.92)",
           backdropFilter: "blur(20px)",
           borderColor: BORDER,
         }}
       >
         <button
           onClick={() => window.history.back()}
-          className="flex items-center justify-center w-9 h-9 rounded-full transition-all hover:opacity-70"
-          style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${BORDER}` }}
+          className="flex items-center justify-center w-9 h-9 rounded-full transition-all hover:bg-muted/70"
+          style={{ background: "#FFFFFF", border: `1px solid ${BORDER}` }}
         >
           <ArrowLeft size={16} style={{ color: AMBER }} />
         </button>
@@ -199,7 +199,7 @@ export default function CurrentOrder() {
         </div>
         <div
           className="flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-bold"
-          style={{ background: meta.bg, color: meta.color, border: `1px solid ${meta.color}33` }}
+          style={{ background: meta.bg, color: meta.color, border: `1px solid ${meta.color}40` }}
         >
           {meta.icon}
           {meta.label}
@@ -212,7 +212,7 @@ export default function CurrentOrder() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="rounded-2xl p-5"
+          className="rounded-2xl p-5 shadow-xs"
           style={{ background: DARK_CARD, border: `1px solid ${BORDER}` }}
         >
           <p className="text-[10px] uppercase tracking-[0.2em] font-semibold mb-4" style={{ color: MUTED }}>
@@ -230,24 +230,24 @@ export default function CurrentOrder() {
                   <div className="flex flex-col items-center gap-2">
                     <motion.div
                       animate={{
-                        scale: active ? [1, 1.15, 1] : 1,
+                        scale: active ? [1, 1.12, 1] : 1,
                         boxShadow: active ? [`0 0 0 0px ${AMBER}40`, `0 0 0 8px ${AMBER}00`] : "none",
                       }}
                       transition={{ duration: 1.5, repeat: active ? Infinity : 0 }}
                       className="w-8 h-8 rounded-full flex items-center justify-center"
                       style={{
-                        background: done ? (active ? GOLD_GRADIENT : "rgba(201,169,110,0.25)") : "rgba(255,255,255,0.05)",
-                        border: `2px solid ${done ? AMBER : "rgba(255,255,255,0.1)"}`,
+                        background: done ? (active ? GOLD_GRADIENT : "#FAF3E6") : "#F5F1EB",
+                        border: `2px solid ${done ? AMBER : "#E8E2D8"}`,
                       }}
                     >
                       {done ? (
                         active ? (
-                          <span style={{ color: DARK, fontSize: 14 }}>{stepMeta.icon}</span>
+                          <span style={{ color: "#FFFFFF", fontSize: 14 }}>{stepMeta.icon}</span>
                         ) : (
                           <CheckCircle size={14} style={{ color: AMBER }} />
                         )
                       ) : (
-                        <span className="w-2 h-2 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} />
+                        <span className="w-2 h-2 rounded-full" style={{ background: "#D0C9BE" }} />
                       )}
                     </motion.div>
                     <span
@@ -263,7 +263,7 @@ export default function CurrentOrder() {
                       style={{
                         background: stepMeta.step < currentStep
                           ? `linear-gradient(to right, ${AMBER}, ${AMBER}88)`
-                          : "rgba(255,255,255,0.08)",
+                          : "#E8E2D8",
                       }}
                     />
                   )}
@@ -279,11 +279,11 @@ export default function CurrentOrder() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="flex items-center justify-between px-5 py-3 rounded-xl"
-            style={{ background: "rgba(201,169,110,0.08)", border: `1px solid rgba(201,169,110,0.2)` }}
+            className="flex items-center justify-between px-5 py-3 rounded-xl shadow-2xs"
+            style={{ background: "#FAF3E6", border: `1px solid #ECD7A9` }}
           >
             <span className="text-xs font-semibold uppercase tracking-[0.15em]" style={{ color: MUTED }}>Table</span>
-            <span className="font-serif font-bold" style={{ color: AMBER_LIGHT }}>{order.table_id}</span>
+            <span className="font-serif font-bold text-lg" style={{ color: AMBER_LIGHT }}>{order.table_id}</span>
           </motion.div>
         )}
 
@@ -292,7 +292,7 @@ export default function CurrentOrder() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className="rounded-2xl overflow-hidden"
+          className="rounded-2xl overflow-hidden shadow-xs"
           style={{ background: DARK_CARD, border: `1px solid ${BORDER}` }}
         >
           <div className="px-5 py-4 border-b" style={{ borderColor: BORDER }}>
@@ -313,7 +313,7 @@ export default function CurrentOrder() {
                 <div className="flex items-center gap-3">
                   <span
                     className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black"
-                    style={{ background: GOLD_GRADIENT, color: DARK }}
+                    style={{ background: GOLD_GRADIENT, color: "#FFFFFF" }}
                   >
                     {item.quantity}
                   </span>
@@ -321,7 +321,7 @@ export default function CurrentOrder() {
                     {item.item_name}
                   </span>
                 </div>
-                <span className="text-sm font-semibold flex-shrink-0" style={{ color: AMBER_LIGHT }}>
+                <span className="text-sm font-semibold font-serif flex-shrink-0" style={{ color: AMBER_LIGHT }}>
                   {formatINR(item.price * item.quantity)}
                 </span>
               </motion.div>
@@ -334,7 +334,7 @@ export default function CurrentOrder() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
-          className="rounded-2xl p-5 space-y-3"
+          className="rounded-2xl p-5 space-y-3 shadow-xs"
           style={{ background: DARK_CARD, border: `1px solid ${BORDER}` }}
         >
           <p className="text-[10px] uppercase tracking-[0.2em] font-semibold mb-4" style={{ color: MUTED }}>
@@ -342,12 +342,12 @@ export default function CurrentOrder() {
           </p>
           <div className="flex justify-between items-center text-sm">
             <span style={{ color: MUTED }}>Subtotal</span>
-            <span style={{ color: CREAM }}>{formatINR(subtotal)}</span>
+            <span style={{ color: CREAM }} className="font-medium">{formatINR(subtotal)}</span>
           </div>
           {tax > 0 && (
             <div className="flex justify-between items-center text-sm">
               <span style={{ color: MUTED }}>Tax</span>
-              <span style={{ color: CREAM }}>{formatINR(tax)}</span>
+              <span style={{ color: CREAM }} className="font-medium">{formatINR(tax)}</span>
             </div>
           )}
           <div
@@ -370,11 +370,11 @@ export default function CurrentOrder() {
         >
           <button
             onClick={() => (window.location.href = `/bill?id=${order.id}`)}
-            className="w-full py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all hover:brightness-110 active:scale-[0.98]"
+            className="w-full py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all hover:brightness-105 active:scale-[0.98]"
             style={{
               background: GOLD_GRADIENT,
-              color: DARK,
-              boxShadow: "0 8px 24px rgba(201,169,110,0.3)",
+              color: "#FFFFFF",
+              boxShadow: "0 6px 20px rgba(181,132,40,0.25)",
             }}
           >
             <Receipt size={16} />
@@ -382,9 +382,9 @@ export default function CurrentOrder() {
           </button>
           <button
             onClick={() => (window.location.href = "/")}
-            className="w-full py-3.5 rounded-xl font-semibold text-sm transition-all hover:opacity-80"
+            className="w-full py-3.5 rounded-xl font-semibold text-sm transition-all hover:bg-muted/60"
             style={{
-              background: "rgba(255,255,255,0.04)",
+              background: "#FFFFFF",
               border: `1px solid ${BORDER}`,
               color: CREAM,
             }}

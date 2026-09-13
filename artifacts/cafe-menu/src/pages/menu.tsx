@@ -35,6 +35,10 @@ import {
   Croissant,
   Soup,
   Utensils,
+  Receipt,
+  Printer,
+  Download,
+  CreditCard,
 } from "lucide-react";
 
 // --- Color System Tokens ---
@@ -686,6 +690,7 @@ export default function MenuPage() {
   const [showOffers, setShowOffers] = useState(false);
   const [showLocations, setShowLocations] = useState(false);
   const [showActiveOrderModal, setShowActiveOrderModal] = useState(false);
+  const [showBillModal, setShowBillModal] = useState(false);
   const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
   const [activeOrderData, setActiveOrderData] = useState<any>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
@@ -1799,16 +1804,26 @@ export default function MenuPage() {
                       setShowActiveOrderModal(false);
                       document.getElementById("category-scroller")?.scrollIntoView({ behavior: "smooth" });
                     }}
-                    className="w-full py-3 rounded-full bg-[#7B4E35] text-white font-medium text-xs hover:bg-[#633D28] transition-colors"
+                    className="w-full py-3 rounded-full bg-[#7B4E35] text-white font-medium text-xs hover:bg-[#633D28] transition-colors shadow-xs"
                   >
                     + Add More Items to Table
                   </button>
-                  <button
-                    onClick={() => alert(`Waiter called for Table ${tableNumber || 1}. Someone will assist you shortly!`)}
-                    className="w-full py-2.5 rounded-full bg-[#F8F5EF] border border-[#E5DDD1] text-[#29231F] font-semibold text-xs hover:bg-[#EFE7DA] transition-colors"
-                  >
-                    Call Server / Request Bill
-                  </button>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => setShowBillModal(true)}
+                      className="py-2.5 rounded-full bg-white border border-[#E5DDD1] text-[#29231F] font-bold text-xs hover:bg-[#EFE7DA] transition-colors flex items-center justify-center gap-1.5 shadow-2xs"
+                    >
+                      <Receipt size={14} className="text-[#7B4E35]" />
+                      <span>View Bill</span>
+                    </button>
+                    <button
+                      onClick={() => alert(`Server called for Table ${tableNumber || 1}. A team member will assist you shortly!`)}
+                      className="py-2.5 rounded-full bg-[#F8F5EF] border border-[#E5DDD1] text-[#29231F] font-semibold text-xs hover:bg-[#EFE7DA] transition-colors"
+                    >
+                      Call Server
+                    </button>
+                  </div>
                 </div>
               </div>
             ) : (
@@ -1848,6 +1863,132 @@ export default function MenuPage() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================== */}
+      {/* DETAILED BILL & TAX INVOICE MODAL                    */}
+      {/* ==================================================== */}
+      {showBillModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
+          onClick={() => setShowBillModal(false)}
+        >
+          <div
+            className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-[#FFFDF9] rounded-3xl border border-[#E5DDD1] shadow-2xl p-6 space-y-4 font-mono text-xs"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Receipt Top Header */}
+            <div className="text-center space-y-1 pb-3 border-b-2 border-dashed border-[#DED4C7]">
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <BotanicalLeaf className="w-5 h-5 text-[#29231F]" />
+                <h3 className="font-serif text-lg font-bold text-[#29231F] font-sans tracking-tight">
+                  {restaurantName}
+                </h3>
+              </div>
+              <p className="text-[10px] text-[#766B61] uppercase tracking-widest font-sans">
+                CAFÉ & ARTISAN KITCHEN
+              </p>
+              <p className="text-[10px] text-[#766B61]">142 Park Avenue, Central District</p>
+              <p className="text-[10px] text-[#766B61]">GSTIN: 07AAAAA0000A1Z5</p>
+            </div>
+
+            {/* Bill Info Meta */}
+            <div className="grid grid-cols-2 gap-1 py-2 text-[11px] text-[#29231F] border-b border-dashed border-[#DED4C7]">
+              <div>
+                <span className="text-[#766B61]">Table: </span>
+                <span className="font-bold">Table {tableNumber || 1}</span>
+              </div>
+              <div className="text-right">
+                <span className="text-[#766B61]">Order: </span>
+                <span className="font-bold">#{activeOrderId || "102"}</span>
+              </div>
+              <div>
+                <span className="text-[#766B61]">Date: </span>
+                <span>{new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</span>
+              </div>
+              <div className="text-right">
+                <span className="text-[#766B61]">Time: </span>
+                <span>{new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span>
+              </div>
+            </div>
+
+            {/* Itemized Table */}
+            <div className="space-y-2 py-2">
+              <div className="flex justify-between font-bold text-[11px] text-[#766B61] border-b border-[#E5DDD1] pb-1 uppercase">
+                <span>Item</span>
+                <div className="flex gap-4">
+                  <span className="w-8 text-center">Qty</span>
+                  <span className="w-14 text-right">Amount</span>
+                </div>
+              </div>
+
+              {activeOrderData?.order_items && activeOrderData.order_items.length > 0 ? (
+                activeOrderData.order_items.map((it: any, idx: number) => (
+                  <div key={idx} className="flex justify-between items-center text-[12px] text-[#29231F]">
+                    <span className="font-medium truncate max-w-[180px]">{it.item_name}</span>
+                    <div className="flex gap-4 items-center">
+                      <span className="w-8 text-center text-[#766B61]">x{it.quantity}</span>
+                      <span className="w-14 text-right font-bold">{formatINR(it.price * it.quantity)}</span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="flex justify-between items-center text-[12px] text-[#29231F]">
+                  <span className="font-medium">Specialty Food & Drinks</span>
+                  <div className="flex gap-4 items-center">
+                    <span className="w-8 text-center text-[#766B61]">x1</span>
+                    <span className="w-14 text-right font-bold">{formatINR(activeOrderData?.total || cart.total || 0)}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Financial Summary */}
+            <div className="pt-2 border-t-2 border-dashed border-[#DED4C7] space-y-1.5 text-[11px]">
+              <div className="flex justify-between text-[#766B61]">
+                <span>Item Subtotal</span>
+                <span className="font-bold text-[#29231F]">{formatINR(activeOrderData?.total ? activeOrderData.total * 0.952 : (cart.total || 0) * 0.952)}</span>
+              </div>
+              <div className="flex justify-between text-[#766B61]">
+                <span>CGST (2.5%)</span>
+                <span>{formatINR(activeOrderData?.total ? activeOrderData.total * 0.024 : (cart.total || 0) * 0.024)}</span>
+              </div>
+              <div className="flex justify-between text-[#766B61]">
+                <span>SGST (2.5%)</span>
+                <span>{formatINR(activeOrderData?.total ? activeOrderData.total * 0.024 : (cart.total || 0) * 0.024)}</span>
+              </div>
+              <div className="flex justify-between items-center pt-2 border-t border-[#E5DDD1] font-bold text-sm text-[#29231F]">
+                <span className="font-serif font-bold text-base">Grand Total</span>
+                <span className="text-base text-[#7B4E35]">{formatINR(activeOrderData?.total || cart.total || 0)}</span>
+              </div>
+            </div>
+
+            {/* Payment Tag */}
+            <div className="p-3 rounded-xl bg-[#F8F5EF] border border-[#E5DDD1] text-center space-y-0.5">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[#7B4E35]">
+                {activeOrderData?.is_paid ? "✓ PAID VIA DIGITAL ORDER" : "PAY AT COUNTER / UPI / CASH"}
+              </p>
+              <p className="text-[10px] text-[#766B61]">Thank you for dining at {restaurantName}!</p>
+            </div>
+
+            {/* Receipt Modal Actions */}
+            <div className="pt-2 space-y-2 font-sans">
+              <button
+                onClick={() => window.print()}
+                className="w-full py-2.5 rounded-full bg-[#7B4E35] text-white font-semibold text-xs hover:bg-[#633D28] transition-colors flex items-center justify-center gap-2"
+              >
+                <Printer size={14} />
+                <span>Print / Save Receipt</span>
+              </button>
+              <button
+                onClick={() => setShowBillModal(false)}
+                className="w-full py-2.5 rounded-full bg-[#F8F5EF] border border-[#E5DDD1] text-[#29231F] font-semibold text-xs hover:bg-[#EFE7DA] transition-colors"
+              >
+                Back to Current Order
+              </button>
+            </div>
           </div>
         </div>
       )}

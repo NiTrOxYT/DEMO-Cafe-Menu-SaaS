@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,300,0,0&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
@@ -54,6 +54,7 @@
 
   --font-sans: var(--app-font-sans);
   --font-serif: var(--app-font-serif);
+  --font-script: var(--app-font-script);
   --font-mono: var(--app-font-mono);
 
   --radius-sm: calc(var(--radius) - 4px);
@@ -64,45 +65,46 @@
 
 :root {
   --app-font-sans: 'Plus Jakarta Sans', 'Manrope', -apple-system, sans-serif;
-  --app-font-serif: 'EB Garamond', Georgia, serif;
+  --app-font-serif: 'Playfair Display', 'Cormorant Garamond', 'EB Garamond', Georgia, serif;
+  --app-font-script: 'Caveat', cursive;
   --app-font-mono: 'JetBrains Mono', Menlo, monospace;
-  --radius: 0.5rem;
+  --radius: 0.75rem;
 
-  /* Warm Minimalist Off-White Canvas */
-  --background: 38 22% 97%;          /* #FAF8F5 */
-  --foreground: 24 12% 11%;          /* #1F1B18 */
+  /* Warm Neutral Palette */
+  --background: 40 25% 96%;          /* #F8F5EF */
+  --foreground: 22 14% 14%;          /* #29231F */
 
-  /* Crisp White Cards & Surfaces */
-  --card: 0 0% 100%;                 /* #FFFFFF */
-  --card-foreground: 24 12% 11%;     /* #1F1B18 */
-  --card-border: 38 15% 88%;         /* #E8E2D8 */
+  /* Card Surface */
+  --card: 38 60% 99%;                /* #FFFDF9 */
+  --card-foreground: 22 14% 14%;     /* #29231F */
+  --card-border: 35 24% 86%;         /* #E5DDD1 */
 
   --popover: 0 0% 100%;
-  --popover-foreground: 24 12% 11%;
-  --popover-border: 38 15% 88%;
+  --popover-foreground: 22 30% 9%;
+  --popover-border: 35 22% 83%;
 
-  /* Primary = Deep Charcoal/Carbon */
-  --primary: 24 12% 11%;             /* #1F1B18 */
+  /* Primary = Deep Roasted Espresso */
+  --primary: 22 30% 9%;              /* #1E150F */
   --primary-foreground: 0 0% 100%;   /* #FFFFFF */
 
-  /* Secondary / Accent = Antique Brass / Artisan Gold */
-  --secondary: 38 65% 42%;           /* #B58428 */
+  /* Secondary / Accent = Antique Brass & Caramel Gold */
+  --secondary: 38 68% 43%;           /* #B88223 */
   --secondary-foreground: 0 0% 100%;
 
   /* Muted Surface & Subtle Elements */
-  --muted: 36 20% 95%;               /* #F5F1EB */
-  --muted-foreground: 28 7% 44%;      /* #78716A */
+  --muted: 36 22% 90%;               /* #EAE2D5 */
+  --muted-foreground: 28 12% 42%;     /* #73685C */
 
   /* Accent highlights */
-  --accent: 38 60% 95%;              /* #FAF3E6 */
-  --accent-foreground: 38 65% 32%;   /* #87621A */
+  --accent: 38 65% 94%;              /* #F9F2E4 */
+  --accent-foreground: 38 70% 30%;   /* #825C15 */
 
   --destructive: 0 72% 51%;          /* #DC2626 */
-  --destructive-foreground: 0 0% 100%;
+  --destructive-foreground: 0 0% 98%;
 
-  --border: 38 15% 88%;              /* #E8E2D8 */
-  --input: 38 15% 88%;
-  --ring: 38 65% 42%;                /* #B58428 */
+  --border: 35 22% 83%;              /* #DFD5C6 */
+  --input: 35 22% 83%;
+  --ring: 38 68% 43%;
 
   --sidebar: 38 22% 97%;
   --sidebar-foreground: 24 12% 11%;

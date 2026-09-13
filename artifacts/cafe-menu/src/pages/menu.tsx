@@ -48,9 +48,9 @@ const WARM_ACCENT = "#A86E4D";
 const MUTED_OLIVE = "#737D63";
 const BORDER_COLOR = "#E5DDD1";
 
-// High quality photography matching the reference
+// High quality photography matching the boutique cafe editorial reference
 const DEFAULT_HERO_LATTE =
-  "https://images.unsplash.com/photo-1541167760496-1628856ab772?auto=format&fit=crop&w=800&q=85";
+  "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1200&q=85";
 const DEFAULT_SEASONAL_DISH =
   "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=700&q=85";
 
@@ -604,28 +604,36 @@ export default function MenuPage() {
         )}
       </AnimatePresence>
 
-      <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto px-4 sm:px-6 pt-4 space-y-5">
+      <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto px-4 sm:px-6 pt-3 space-y-4 sm:space-y-5">
         {/* ==================================================== */}
-        {/* 2. HERO SECTION (Exact Match to Reference Mockup)    */}
+        {/* 2. HERO SECTION (Editorial Large Café Photograph)    */}
         {/* ==================================================== */}
-        <section className="relative overflow-hidden pt-2 pb-3">
-          <div className="grid grid-cols-12 gap-3 items-center">
+        <section className="relative overflow-hidden pt-1 pb-1">
+          {/* Subtle Decorative Botanical Leaf in Background */}
+          <div className="absolute -top-1 -right-2 w-32 h-32 opacity-25 pointer-events-none text-[#737D63]">
+            <BotanicalLeaf className="w-full h-full" color="#737D63" />
+          </div>
+          <div className="absolute bottom-2 -left-4 w-20 h-20 opacity-15 pointer-events-none text-[#A86E4D] -rotate-45">
+            <BotanicalLeaf className="w-full h-full" color="#A86E4D" />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-8 items-center">
             {/* Left Copy */}
-            <div className="col-span-7 sm:col-span-7 space-y-2.5 z-10">
+            <div className="md:col-span-7 space-y-2.5 z-10">
               <p className="text-[10px] uppercase tracking-[0.24em] font-bold text-[#766B61]">
                 GOOD FOOD • GOOD PEOPLE
               </p>
 
-              <h2 className="font-serif text-[32px] sm:text-[40px] font-bold text-[#29231F] leading-[1.04] tracking-tight">
+              <h2 className="font-serif text-[32px] sm:text-[40px] lg:text-[46px] font-bold text-[#29231F] leading-[1.05] tracking-tight">
                 More Than <br />
                 Just a Meal
               </h2>
 
-              <p className="text-[12px] sm:text-[13px] text-[#766B61] leading-relaxed max-w-[210px] sm:max-w-xs font-sans">
+              <p className="text-[12px] sm:text-[13px] text-[#766B61] leading-relaxed max-w-sm font-sans">
                 {tagline}
               </p>
 
-              <div className="pt-1">
+              <div className="pt-1 flex flex-wrap items-center gap-3.5">
                 <button
                   onClick={() => {
                     document.getElementById("category-scroller")?.scrollIntoView({ behavior: "smooth" });
@@ -635,32 +643,60 @@ export default function MenuPage() {
                   <span>Explore Menu</span>
                   <ArrowRight size={14} />
                 </button>
-              </div>
 
-              {/* Handwritten Script (Bottom Left) */}
-              <div className="font-script text-[18px] sm:text-[20px] text-[#7B4E35] -rotate-2 select-none pt-1">
-                —— Food Tastes Better Together
+                {/* Handwritten Script (Bottom Left) */}
+                <div className="font-script text-[18px] sm:text-[20px] text-[#7B4E35] -rotate-2 select-none">
+                  —— Food Tastes Better Together
+                </div>
               </div>
             </div>
 
-            {/* Right Ceramic Latte Cup & Handwritten Accent */}
-            <div className="col-span-5 sm:col-span-5 relative flex flex-col items-center justify-center">
-              {/* Handwritten Script (Top Right) */}
-              <div className="absolute -top-1 right-2 font-script text-[21px] sm:text-[24px] text-[#7B4E35] -rotate-6 select-none z-10 leading-none">
-                Good Food <br /> Good Mood
+            {/* Right/Bottom Large Integrated Editorial Café Photograph */}
+            <div className="md:col-span-5 relative mt-2 md:mt-0">
+              {/* Handwritten Script (Top Right / Above Image) */}
+              <div className="flex justify-end pr-3 -mb-2 relative z-10">
+                <span className="font-script text-[20px] sm:text-[23px] text-[#7B4E35] -rotate-6 select-none leading-none">
+                  Good Food Good Mood
+                </span>
               </div>
 
-              {/* Large High-Res Latte Cup */}
-              <div className="w-36 sm:w-52 aspect-square relative flex items-center justify-center">
+              {/* Large Integrated Editorial Photo (Aspect Ratio ~4/3, Full Width with Side Margins) */}
+              <div className="relative w-full h-[230px] sm:h-[260px] md:h-[340px] rounded-[22px] overflow-hidden border border-[#E5DDD1] shadow-[0_6px_24px_rgba(41,35,31,0.05)] bg-[#EFE7DA]">
                 <img
                   src={DEFAULT_HERO_LATTE}
-                  alt="Artisanal Latte with Rosette Art"
-                  className="w-full h-full object-contain drop-shadow-[0_16px_25px_rgba(41,35,31,0.2)]"
+                  alt="Artisan ceramic coffee cup and pastry in morning light at boutique cafe"
+                  className="w-full h-full object-cover transition-transform duration-700 hover:scale-[1.02]"
                 />
+                {/* Subtle warm overlay for background blending */}
+                <div className="absolute inset-0 bg-[#F8F5EF]/[0.05] pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#29231F]/15 via-transparent to-transparent pointer-events-none" />
               </div>
             </div>
           </div>
         </section>
+
+        {/* Search Input Bar */}
+        <div className="relative w-full pt-1">
+          <Search
+            size={15}
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-[#766B61]"
+          />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search food, coffee, desserts..."
+            className="w-full pl-10 pr-9 py-2.5 sm:py-3 rounded-full bg-[#FFFDF9] border border-[#E5DDD1] text-xs sm:text-sm text-[#29231F] placeholder:text-[#766B61]/70 focus:outline-none focus:border-[#7B4E35] shadow-2xs"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#766B61]"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
 
         {/* ==================================================== */}
         {/* 3. CATEGORY SCROLLER (Exact Match to Reference)      */}

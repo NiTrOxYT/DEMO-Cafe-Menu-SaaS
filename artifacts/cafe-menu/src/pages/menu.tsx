@@ -685,7 +685,9 @@ export default function MenuPage() {
   // Sub-Modals
   const [showOffers, setShowOffers] = useState(false);
   const [showLocations, setShowLocations] = useState(false);
+  const [showActiveOrderModal, setShowActiveOrderModal] = useState(false);
   const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
+  const [activeOrderData, setActiveOrderData] = useState<any>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   const categoryBarRef = useRef<HTMLDivElement>(null);
@@ -726,11 +728,12 @@ export default function MenuPage() {
           }));
 
           await supabase.from("order_items").insert(orderItems);
+          const updatedTotal = existingOrder.total + cart.total;
           await supabase
             .from("orders")
             .update({
               subtotal: existingOrder.subtotal + cart.total,
-              total: existingOrder.total + cart.total,
+              total: updatedTotal,
               status: ["preparing", "ready", "completed"].includes(existingOrder.status)
                 ? "pending"
                 : existingOrder.status,
@@ -738,6 +741,12 @@ export default function MenuPage() {
               latest_added_items: cart.items.map((item) => `${item.quantity}x ${item.name}`),
             })
             .eq("id", existingOrderId);
+
+          setActiveOrderData({
+            ...existingOrder,
+            total: updatedTotal,
+            status: "pending",
+          });
 
           cart.clear();
           setCartOpen(false);
@@ -773,6 +782,7 @@ export default function MenuPage() {
 
       localStorage.setItem(`activeOrderId_${tableNumber}`, order.id.toString());
       setActiveOrderId(order.id.toString());
+      setActiveOrderData(order);
 
       const orderItems = cart.items.map((item) => ({
         order_id: order.id,
@@ -797,21 +807,29 @@ export default function MenuPage() {
       const orderId = localStorage.getItem(`activeOrderId_${tableNumber}`);
       if (!orderId) return;
 
-      const { data } = await supabase
-        .from("orders")
-        .select("*")
-        .eq("id", orderId)
-        .single();
+      try {
+        const { data } = await supabase
+          .from("orders")
+          .select("*, order_items(*)")
+          .eq("id", orderId)
+          .single();
 
-      if (!data || data.status === "completed" || data.is_paid === true) {
-        localStorage.removeItem(`activeOrderId_${tableNumber}`);
-        setActiveOrderId(null);
-        return;
+        if (!data || data.status === "completed" || data.is_paid === true) {
+          localStorage.removeItem(`activeOrderId_${tableNumber}`);
+          setActiveOrderId(null);
+          setActiveOrderData(null);
+          return;
+        }
+        setActiveOrderId(orderId);
+        setActiveOrderData(data);
+      } catch (e) {
+        console.error("Failed to load active order", e);
       }
-      setActiveOrderId(orderId);
     };
 
     checkActiveOrder();
+    const interval = setInterval(checkActiveOrder, 10000);
+    return () => clearInterval(interval);
   }, [tableNumber]);
 
   const rawItems = (menuItems && menuItems.length > 0)
@@ -893,13 +911,23 @@ export default function MenuPage() {
             )}
           </button>
 
-          {/* Hamburger Menu Icon */}
+          {/* Current Order Button */}
           <button
-            onClick={() => setShowOffers(true)}
-            className="w-10 h-10 rounded-full bg-[#FFFDF9] border border-[#E5DDD1] flex items-center justify-center text-[#29231F] shadow-2xs hover:bg-[#EFE7DA] transition-colors"
-            aria-label="Menu Information"
+            onClick={() => {
+              if (activeOrderId || (cart.items.length === 0 && !activeOrderId)) {
+                setShowActiveOrderModal(true);
+              } else {
+                setCartOpen(true);
+              }
+            }}
+            className="relative px-3 py-2 rounded-xl bg-[#FFFDF9] border border-[#E5DDD1] flex items-center gap-1.5 text-[#29231F] shadow-2xs hover:bg-[#EFE7DA] transition-colors text-xs font-semibold"
+            aria-label="Current Order"
           >
-            <MenuIcon size={17} />
+            <Clock size={15} className="text-[#7B4E35]" />
+            <span className="text-[11px] font-semibold text-[#29231F]">Order</span>
+            {activeOrderId && (
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            )}
           </button>
         </div>
       </header>
@@ -1670,6 +1698,156 @@ export default function MenuPage() {
                 Close
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================== */}
+      {/* CURRENT ACTIVE ORDER MODAL                           */}
+      {/* ==================================================== */}
+      {showActiveOrderModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
+          onClick={() => setShowActiveOrderModal(false)}
+        >
+          <div
+            className="w-full max-w-md max-h-[85vh] overflow-y-auto bg-[#FFFDF9] rounded-3xl border border-[#E5DDD1] shadow-2xl p-5 sm:p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-[#E5DDD1]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-full bg-[#EFE7DA] flex items-center justify-center text-[#7B4E35]">
+                  <Clock size={18} />
+                </div>
+                <div>
+                  <h3 className="font-serif text-xl font-bold text-[#29231F]">Current Order</h3>
+                  <p className="text-[11px] text-[#766B61]">Table {tableNumber || 1} • {restaurantName}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowActiveOrderModal(false)}
+                className="w-8 h-8 rounded-full bg-[#F8F5EF] border border-[#E5DDD1] flex items-center justify-center text-[#29231F] hover:bg-[#EFE7DA]"
+              >
+                <X size={15} />
+              </button>
+            </div>
+
+            {/* If there is an active order in kitchen */}
+            {activeOrderId ? (
+              <div className="space-y-4 pt-1">
+                {/* Status Card */}
+                <div className="p-4 rounded-2xl bg-[#F8F5EF] border border-[#E5DDD1] space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-[10px] uppercase font-bold text-[#766B61] tracking-wider">Order #{activeOrderId}</p>
+                      <h4 className="font-serif text-lg font-bold text-[#29231F]">
+                        {activeOrderData?.status === "preparing"
+                          ? "👨‍🍳 Kitchen is Preparing"
+                          : activeOrderData?.status === "ready"
+                          ? "✨ Order is Ready!"
+                          : "⏳ Order Received"}
+                      </h4>
+                    </div>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase bg-amber-100 text-amber-900 border border-amber-200">
+                      <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+                      {activeOrderData?.status || "In Kitchen"}
+                    </span>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[11px] text-[#766B61]">
+                      <span>Estimated Time</span>
+                      <span className="font-bold text-[#29231F]">~10-15 mins</span>
+                    </div>
+                    <div className="w-full h-2 bg-[#E5DDD1] rounded-full overflow-hidden">
+                      <div className="h-full bg-[#7B4E35] rounded-full w-2/3 animate-pulse" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Items Ordered List */}
+                <div className="space-y-2">
+                  <p className="text-xs font-bold text-[#29231F] uppercase tracking-wider">Items on Table</p>
+                  <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
+                    {activeOrderData?.order_items && activeOrderData.order_items.length > 0 ? (
+                      activeOrderData.order_items.map((it: any, idx: number) => (
+                        <div key={idx} className="flex justify-between items-center p-2.5 rounded-xl bg-[#F8F5EF] text-xs">
+                          <span className="font-medium text-[#29231F]">{it.quantity}x {it.item_name}</span>
+                          <span className="font-bold text-[#7B4E35]">{formatINR(it.price * it.quantity)}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-2.5 rounded-xl bg-[#F8F5EF] text-xs text-[#766B61]">
+                        Order items sent to kitchen display
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Total */}
+                <div className="flex justify-between items-center pt-3 border-t border-[#E5DDD1] font-bold text-base text-[#29231F]">
+                  <span>Total Amount</span>
+                  <span>{formatINR(activeOrderData?.total || cart.total || 0)}</span>
+                </div>
+
+                {/* Actions */}
+                <div className="space-y-2 pt-2">
+                  <button
+                    onClick={() => {
+                      setShowActiveOrderModal(false);
+                      document.getElementById("category-scroller")?.scrollIntoView({ behavior: "smooth" });
+                    }}
+                    className="w-full py-3 rounded-full bg-[#7B4E35] text-white font-medium text-xs hover:bg-[#633D28] transition-colors"
+                  >
+                    + Add More Items to Table
+                  </button>
+                  <button
+                    onClick={() => alert(`Waiter called for Table ${tableNumber || 1}. Someone will assist you shortly!`)}
+                    className="w-full py-2.5 rounded-full bg-[#F8F5EF] border border-[#E5DDD1] text-[#29231F] font-semibold text-xs hover:bg-[#EFE7DA] transition-colors"
+                  >
+                    Call Server / Request Bill
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* No active order currently placed */
+              <div className="py-8 text-center space-y-3">
+                <div className="w-14 h-14 rounded-full bg-[#EFE7DA] flex items-center justify-center mx-auto text-[#7B4E35]">
+                  <ShoppingBag size={24} />
+                </div>
+                <div>
+                  <h4 className="font-serif text-lg font-bold text-[#29231F]">No Active Order</h4>
+                  <p className="text-xs text-[#766B61] mt-1 max-w-xs mx-auto">
+                    You haven't placed an order for Table {tableNumber || 1} yet.
+                  </p>
+                </div>
+                <div className="pt-2">
+                  {cart.count > 0 ? (
+                    <button
+                      onClick={() => {
+                        setShowActiveOrderModal(false);
+                        setCartOpen(true);
+                      }}
+                      className="px-6 py-2.5 rounded-full bg-[#7B4E35] text-white font-semibold text-xs hover:bg-[#633D28]"
+                    >
+                      View Cart ({cart.count} items)
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setShowActiveOrderModal(false);
+                        document.getElementById("category-scroller")?.scrollIntoView({ behavior: "smooth" });
+                      }}
+                      className="px-6 py-2.5 rounded-full bg-[#7B4E35] text-white font-semibold text-xs hover:bg-[#633D28]"
+                    >
+                      Explore Menu & Order
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

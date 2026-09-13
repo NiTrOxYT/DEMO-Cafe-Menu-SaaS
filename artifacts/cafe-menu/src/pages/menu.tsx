@@ -686,8 +686,17 @@ export default function MenuPage() {
   const [showOffers, setShowOffers] = useState(false);
   const [showLocations, setShowLocations] = useState(false);
   const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   const categoryBarRef = useRef<HTMLDivElement>(null);
+
+  const copyPromoCode = (code: string) => {
+    if (navigator?.clipboard) {
+      navigator.clipboard.writeText(code);
+    }
+    setCopiedCode(code);
+    setTimeout(() => setCopiedCode(null), 2500);
+  };
 
   const toggleFavorite = (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -1445,6 +1454,220 @@ export default function MenuPage() {
                 className="px-5 py-2.5 rounded-full bg-[#7B4E35] text-white text-xs font-semibold"
               >
                 Add to Order
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================== */}
+      {/* OFFERS & DEALS MODAL                                 */}
+      {/* ==================================================== */}
+      {showOffers && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
+          onClick={() => setShowOffers(false)}
+        >
+          <div
+            className="w-full max-w-md max-h-[85vh] overflow-y-auto bg-[#FFFDF9] rounded-3xl border border-[#E5DDD1] shadow-2xl p-5 sm:p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-[#E5DDD1]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-full bg-[#EFE7DA] flex items-center justify-center text-[#7B4E35]">
+                  <Percent size={18} />
+                </div>
+                <div>
+                  <h3 className="font-serif text-xl font-bold text-[#29231F]">Offers & Combos</h3>
+                  <p className="text-[11px] text-[#766B61]">Exclusive discounts at {restaurantName}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowOffers(false)}
+                className="w-8 h-8 rounded-full bg-[#F8F5EF] border border-[#E5DDD1] flex items-center justify-center text-[#29231F] hover:bg-[#EFE7DA]"
+              >
+                <X size={15} />
+              </button>
+            </div>
+
+            {/* Offer Cards List */}
+            <div className="space-y-3 pt-1">
+              {[
+                {
+                  code: "MORNING20",
+                  title: "20% OFF Breakfast Combo",
+                  desc: "Order any handcrafted specialty coffee with a croissant or avocado toast before 11:30 AM.",
+                  badge: "Daily until 11:30 AM",
+                  bgBadge: "bg-[#E8BA60] text-[#29231F]",
+                },
+                {
+                  code: "GOLDENBREW",
+                  title: "Buy 2 Coffees, Get 1 Pastry",
+                  desc: "Order any 2 signature espresso or cold brew drinks and receive a complimentary artisan pastry.",
+                  badge: "All-Day Special",
+                  bgBadge: "bg-[#DFBA79] text-[#29231F]",
+                },
+                {
+                  code: "FLAT75",
+                  title: "Flat ₹75 OFF on QR Orders",
+                  desc: "Enjoy ₹75 instant savings on orders above ₹300 placed directly from your table.",
+                  badge: "Min Order ₹300",
+                  bgBadge: "bg-[#A7B89B] text-[#1E2819]",
+                },
+                {
+                  code: "HAPPYHOUR",
+                  title: "15% OFF Desserts & Coolers",
+                  desc: "Relax during afternoon hours with 15% discount on all cakes, tarts, and botanical coolers.",
+                  badge: "4:00 PM – 7:00 PM",
+                  bgBadge: "bg-[#EFE7DA] text-[#7B4E35]",
+                },
+              ].map((offer) => (
+                <div
+                  key={offer.code}
+                  className="p-4 rounded-2xl bg-[#F8F5EF] border border-[#E5DDD1] space-y-2 hover:border-[#7B4E35]/40 transition-colors"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${offer.bgBadge}`}>
+                      {offer.badge}
+                    </span>
+                    <button
+                      onClick={() => copyPromoCode(offer.code)}
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-[#7B4E35] bg-white px-2.5 py-1 rounded-full border border-[#E5DDD1] hover:bg-[#EFE7DA] transition-colors"
+                    >
+                      {copiedCode === offer.code ? (
+                        <>
+                          <Check size={12} className="text-emerald-600" />
+                          <span className="text-emerald-700">Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>{offer.code}</span>
+                          <span className="text-[9px] text-[#766B61]">(Copy)</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <div>
+                    <h4 className="font-serif font-bold text-[15px] text-[#29231F]">{offer.title}</h4>
+                    <p className="text-xs text-[#766B61] mt-0.5 leading-relaxed font-sans">{offer.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="pt-2 text-center">
+              <button
+                onClick={() => setShowOffers(false)}
+                className="w-full py-3 rounded-full bg-[#7B4E35] text-white font-medium text-xs hover:bg-[#633D28] transition-colors shadow-xs"
+              >
+                Back to Menu
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================== */}
+      {/* LOCATIONS & HOURS MODAL                              */}
+      {/* ==================================================== */}
+      {showLocations && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
+          onClick={() => setShowLocations(false)}
+        >
+          <div
+            className="w-full max-w-md max-h-[85vh] overflow-y-auto bg-[#FFFDF9] rounded-3xl border border-[#E5DDD1] shadow-2xl p-5 sm:p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-[#E5DDD1]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-full bg-[#EFE7DA] flex items-center justify-center text-[#737D63]">
+                  <MapPin size={18} />
+                </div>
+                <div>
+                  <h3 className="font-serif text-xl font-bold text-[#29231F]">Our Locations</h3>
+                  <p className="text-[11px] text-[#766B61]">Visit our specialty cafés</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowLocations(false)}
+                className="w-8 h-8 rounded-full bg-[#F8F5EF] border border-[#E5DDD1] flex items-center justify-center text-[#29231F] hover:bg-[#EFE7DA]"
+              >
+                <X size={15} />
+              </button>
+            </div>
+
+            {/* Location Cards */}
+            <div className="space-y-3 pt-1">
+              {[
+                {
+                  title: "The Golden Brew — Flagship Roastery",
+                  area: "Connaught Place, Central District",
+                  address: "142 Park Avenue, Near Central Fountain",
+                  hours: "Daily • 7:30 AM – 11:00 PM",
+                  phone: "+91 98765 43210",
+                  amenities: "Pet Friendly • Outdoor Patio • Pour-Over Bar • Free WiFi",
+                },
+                {
+                  title: "The Golden Brew — Artisan Studio",
+                  area: "Golf Course Road",
+                  address: "Shop 8, Ground Floor, Horizon Galleria",
+                  hours: "Mon – Sun • 8:00 AM – 10:30 PM",
+                  phone: "+91 98765 43211",
+                  amenities: "Quiet Work Zone • Bakery Counter • Valet Parking",
+                },
+              ].map((loc, idx) => (
+                <div
+                  key={idx}
+                  className="p-4 rounded-2xl bg-[#F8F5EF] border border-[#E5DDD1] space-y-2.5"
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="font-serif font-bold text-[15px] text-[#29231F]">{loc.title}</h4>
+                      <p className="text-[11px] font-semibold text-[#7B4E35]">{loc.area}</p>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide bg-[#A7B89B] text-[#1E2819]">
+                      Open Now
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-[#766B61] leading-relaxed font-sans">{loc.address}</p>
+
+                  <div className="flex items-center gap-2 text-xs text-[#29231F] font-medium pt-0.5">
+                    <Clock size={13} className="text-[#7B4E35]" />
+                    <span>{loc.hours}</span>
+                  </div>
+
+                  <div className="text-[10px] text-[#766B61] bg-white px-2.5 py-1.5 rounded-lg border border-[#E5DDD1]">
+                    {loc.amenities}
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1">
+                    <a
+                      href={`tel:${loc.phone.replace(/\s+/g, "")}`}
+                      className="flex-1 py-2 rounded-xl bg-white border border-[#E5DDD1] text-center text-xs font-semibold text-[#29231F] hover:bg-[#EFE7DA] transition-colors"
+                    >
+                      Call Café
+                    </a>
+                    <button
+                      onClick={() => alert(`Opening navigation for ${loc.title}`)}
+                      className="flex-1 py-2 rounded-xl bg-[#7B4E35] text-white text-center text-xs font-semibold hover:bg-[#633D28] transition-colors"
+                    >
+                      Get Directions
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="pt-2 text-center">
+              <button
+                onClick={() => setShowLocations(false)}
+                className="w-full py-3 rounded-full bg-[#29231F] text-white font-medium text-xs hover:bg-black transition-colors"
+              >
+                Close
               </button>
             </div>
           </div>

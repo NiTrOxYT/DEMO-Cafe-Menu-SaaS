@@ -75,6 +75,329 @@ const FALLBACK_CATEGORY_IMAGES: Record<string, string> = {
     "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=800&q=80",
 };
 
+const DEFAULT_FALLBACK_MENU_ITEMS: MenuItem[] = [
+  // 1. Coffee
+  {
+    id: 101,
+    name: "Cappuccino",
+    description: "Rich espresso with velvety steamed milk and rosetta art.",
+    price: 150,
+    imageUrl: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=800&q=80",
+    categoryId: 1,
+    categoryName: "Coffee",
+    available: true,
+    sortOrder: 1,
+    isVeg: true,
+    isBestseller: true,
+    isSpicy: false,
+    badge: "BESTSELLER",
+  },
+  {
+    id: 102,
+    name: "Espresso Macchiato",
+    description: "Double shot espresso with a dollop of silky microfoam.",
+    price: 130,
+    imageUrl: "https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?auto=format&fit=crop&w=800&q=80",
+    categoryId: 1,
+    categoryName: "Coffee",
+    available: true,
+    sortOrder: 2,
+    isVeg: true,
+    isBestseller: false,
+    isSpicy: false,
+    badge: "CHEF'S PICK",
+  },
+  {
+    id: 103,
+    name: "Vanilla Flat White",
+    description: "Smooth ristretto with silky microfoam and Madagascar vanilla.",
+    price: 180,
+    imageUrl: "https://images.unsplash.com/photo-1577968897966-3d4325b36b61?auto=format&fit=crop&w=800&q=80",
+    categoryId: 1,
+    categoryName: "Coffee",
+    available: true,
+    sortOrder: 3,
+    isVeg: true,
+    isBestseller: false,
+    isSpicy: false,
+    badge: "NEW",
+  },
+  {
+    id: 104,
+    name: "Iced Spanish Latte",
+    description: "Espresso with condensed milk poured over crystal ice cubes.",
+    price: 210,
+    imageUrl: "https://images.unsplash.com/photo-1517256064527-09c73fc73e38?auto=format&fit=crop&w=800&q=80",
+    categoryId: 1,
+    categoryName: "Coffee",
+    available: true,
+    sortOrder: 4,
+    isVeg: true,
+    isBestseller: true,
+    isSpicy: false,
+    badge: "BESTSELLER",
+  },
+
+  // 2. Breakfast
+  {
+    id: 201,
+    name: "Avocado Toast",
+    description: "Sourdough, fresh smashed avocado, poached egg, chilli flakes.",
+    price: 320,
+    imageUrl: "https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&w=800&q=80",
+    categoryId: 2,
+    categoryName: "Breakfast",
+    available: true,
+    sortOrder: 1,
+    isVeg: false,
+    isBestseller: false,
+    isSpicy: true,
+    badge: "CHEF'S PICK",
+  },
+  {
+    id: 202,
+    name: "Almond Butter Croissant",
+    description: "Flaky butter croissant filled with almond frangipane cream.",
+    price: 190,
+    imageUrl: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=800&q=80",
+    categoryId: 2,
+    categoryName: "Breakfast",
+    available: true,
+    sortOrder: 2,
+    isVeg: true,
+    isBestseller: true,
+    isSpicy: false,
+    badge: "BESTSELLER",
+  },
+  {
+    id: 203,
+    name: "Truffle Scrambled Eggs",
+    description: "Farm fresh eggs, white truffle oil, chives on toasted brioche.",
+    price: 290,
+    imageUrl: "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?auto=format&fit=crop&w=800&q=80",
+    categoryId: 2,
+    categoryName: "Breakfast",
+    available: true,
+    sortOrder: 3,
+    isVeg: false,
+    isBestseller: false,
+    isSpicy: false,
+    badge: "NEW",
+  },
+  {
+    id: 204,
+    name: "Acai Berry Bowl",
+    description: "Organic acai, artisan granola, chia seeds, fresh blueberries & kiwi.",
+    price: 340,
+    imageUrl: "https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?auto=format&fit=crop&w=800&q=80",
+    categoryId: 2,
+    categoryName: "Breakfast",
+    available: true,
+    sortOrder: 4,
+    isVeg: true,
+    isBestseller: false,
+    isSpicy: false,
+    badge: "CHEF'S PICK",
+  },
+
+  // 3. Starters
+  {
+    id: 301,
+    name: "Truffle Parmesan Fries",
+    description: "Hand-cut crispy potatoes, aromatic white truffle oil, shaved parmesan.",
+    price: 240,
+    imageUrl: "https://images.unsplash.com/photo-1576107232684-1279f3908594?auto=format&fit=crop&w=800&q=80",
+    categoryId: 3,
+    categoryName: "Starters",
+    available: true,
+    sortOrder: 1,
+    isVeg: true,
+    isBestseller: true,
+    isSpicy: false,
+    badge: "BESTSELLER",
+  },
+  {
+    id: 302,
+    name: "Burrata Caprese Salad",
+    description: "Heirloom tomatoes, fresh Italian burrata, basil pesto, balsamic glaze.",
+    price: 360,
+    imageUrl: "https://images.unsplash.com/photo-1592417817098-8f3d6910985b?auto=format&fit=crop&w=800&q=80",
+    categoryId: 3,
+    categoryName: "Starters",
+    available: true,
+    sortOrder: 2,
+    isVeg: true,
+    isBestseller: false,
+    isSpicy: false,
+    badge: "CHEF'S PICK",
+  },
+  {
+    id: 303,
+    name: "Crispy Calamari",
+    description: "Tender calamari rings with garlic aioli, charred lemon, and herbs.",
+    price: 380,
+    imageUrl: "https://images.unsplash.com/photo-1604909052743-94e838986d24?auto=format&fit=crop&w=800&q=80",
+    categoryId: 3,
+    categoryName: "Starters",
+    available: true,
+    sortOrder: 3,
+    isVeg: false,
+    isBestseller: false,
+    isSpicy: false,
+    badge: "NEW",
+  },
+
+  // 4. Main Course
+  {
+    id: 401,
+    name: "Wild Mushroom Risotto",
+    description: "Creamy carnaroli rice, sauteed porcini, white wine, parmesan crisp.",
+    price: 420,
+    imageUrl: "https://images.unsplash.com/photo-1633964913295-ceb43826e7c9?auto=format&fit=crop&w=800&q=80",
+    categoryId: 4,
+    categoryName: "Main Course",
+    available: true,
+    sortOrder: 1,
+    isVeg: true,
+    isBestseller: false,
+    isSpicy: false,
+    badge: "CHEF'S PICK",
+  },
+  {
+    id: 402,
+    name: "Artisanal Sourdough Margherita",
+    description: "Slow-fermented crust, San Marzano tomatoes, fresh buffalo mozzarella, basil.",
+    price: 450,
+    imageUrl: "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?auto=format&fit=crop&w=800&q=80",
+    categoryId: 4,
+    categoryName: "Main Course",
+    available: true,
+    sortOrder: 2,
+    isVeg: true,
+    isBestseller: true,
+    isSpicy: false,
+    badge: "BESTSELLER",
+  },
+  {
+    id: 403,
+    name: "Grilled Herb Chicken Bowl",
+    description: "Herb-marinated chicken breast, quinoa, roasted zucchini, lemon tahini dressing.",
+    price: 410,
+    imageUrl: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80",
+    categoryId: 4,
+    categoryName: "Main Course",
+    available: true,
+    sortOrder: 3,
+    isVeg: false,
+    isBestseller: false,
+    isSpicy: false,
+    badge: "NEW",
+  },
+
+  // 5. Desserts
+  {
+    id: 501,
+    name: "Chocolate Truffle",
+    description: "Rich. Decadent. Unforgettable. Dark Belgian chocolate ganache.",
+    price: 260,
+    imageUrl: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=80",
+    categoryId: 5,
+    categoryName: "Desserts",
+    available: true,
+    sortOrder: 1,
+    isVeg: true,
+    isBestseller: false,
+    isSpicy: false,
+    badge: "NEW",
+  },
+  {
+    id: 502,
+    name: "Classic Italian Tiramisu",
+    description: "Savoiardi ladyfingers soaked in espresso, mascarpone mousse, Dutch cocoa.",
+    price: 290,
+    imageUrl: "https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?auto=format&fit=crop&w=800&q=80",
+    categoryId: 5,
+    categoryName: "Desserts",
+    available: true,
+    sortOrder: 2,
+    isVeg: true,
+    isBestseller: true,
+    isSpicy: false,
+    badge: "BESTSELLER",
+  },
+  {
+    id: 503,
+    name: "Basque Burnt Cheesecake",
+    description: "Creamy caramelized crust cheesecake served with warm raspberry coulis.",
+    price: 310,
+    imageUrl: "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&w=800&q=80",
+    categoryId: 5,
+    categoryName: "Desserts",
+    available: true,
+    sortOrder: 3,
+    isVeg: true,
+    isBestseller: false,
+    isSpicy: false,
+    badge: "CHEF'S PICK",
+  },
+
+  // 6. Beverages
+  {
+    id: 601,
+    name: "Iced Matcha Latte",
+    description: "Uji ceremonial grade green tea matcha with organic oat milk.",
+    price: 230,
+    imageUrl: "https://images.unsplash.com/photo-1536256263959-770b48d82b0a?auto=format&fit=crop&w=800&q=80",
+    categoryId: 6,
+    categoryName: "Beverages",
+    available: true,
+    sortOrder: 1,
+    isVeg: true,
+    isBestseller: true,
+    isSpicy: false,
+    badge: "BESTSELLER",
+  },
+  {
+    id: 602,
+    name: "Passionfruit Sparkling Cooler",
+    description: "Fresh passionfruit pulp, sparkling soda, mint sprigs, lime.",
+    price: 180,
+    imageUrl: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=800&q=80",
+    categoryId: 6,
+    categoryName: "Beverages",
+    available: true,
+    sortOrder: 2,
+    isVeg: true,
+    isBestseller: false,
+    isSpicy: false,
+    badge: "NEW",
+  },
+  {
+    id: 603,
+    name: "Cold Pressed Green Detox",
+    description: "Cucumber, green apple, celery, spinach, ginger, lime.",
+    price: 200,
+    imageUrl: "https://images.unsplash.com/photo-1613478223719-2ab802602423?auto=format&fit=crop&w=800&q=80",
+    categoryId: 6,
+    categoryName: "Beverages",
+    available: true,
+    sortOrder: 3,
+    isVeg: true,
+    isBestseller: false,
+    isSpicy: false,
+    badge: "CHEF'S PICK",
+  },
+];
+
+const DEFAULT_FALLBACK_CATEGORIES = [
+  { id: 1, name: "Coffee", sortOrder: 1 },
+  { id: 2, name: "Breakfast", sortOrder: 2 },
+  { id: 3, name: "Starters", sortOrder: 3 },
+  { id: 4, name: "Main Course", sortOrder: 4 },
+  { id: 5, name: "Desserts", sortOrder: 5 },
+  { id: 6, name: "Beverages", sortOrder: 6 },
+];
+
 function formatINR(amount: number) {
   return `₹${Math.round(amount)}`;
 }
@@ -482,8 +805,18 @@ export default function MenuPage() {
     checkActiveOrder();
   }, [tableNumber]);
 
+  const rawItems = (menuItems && menuItems.length > 0)
+    ? (menuItems as MenuItem[])
+    : DEFAULT_FALLBACK_MENU_ITEMS;
+
+  const rawCategories = (categories && categories.length > 0)
+    ? categories
+    : DEFAULT_FALLBACK_CATEGORIES;
+
+  const sortedCategories = [...rawCategories].sort((a, b) => a.sortOrder - b.sortOrder);
+
   // Filtered menu items
-  const filtered = (menuItems as MenuItem[]).filter((item) => {
+  const filtered = rawItems.filter((item) => {
     if (!item.available) return false;
     if (selectedCategory !== null && item.categoryId !== selectedCategory)
       return false;
@@ -499,22 +832,12 @@ export default function MenuPage() {
     return true;
   });
 
-  const sortedCategories = [...categories].sort((a, b) => a.sortOrder - b.sortOrder);
-  const bestsellers = (menuItems as MenuItem[]).filter((i) => i.available);
+  const bestsellers = rawItems.filter((i) => i.available && (i.isBestseller || i.badge === "BESTSELLER" || i.badge === "CHEF'S PICK"));
 
   // Category pill list including static mock fallback matching reference image
   const displayCategories = [
     { id: null, name: "All", icon: "all" },
-    ...(sortedCategories.length > 0
-      ? sortedCategories.map((c) => ({ id: c.id, name: c.name, icon: c.name.toLowerCase() }))
-      : [
-          { id: 1, name: "Coffee", icon: "coffee" },
-          { id: 2, name: "Breakfast", icon: "breakfast" },
-          { id: 3, name: "Starters", icon: "starters" },
-          { id: 4, name: "Main Course", icon: "main" },
-          { id: 5, name: "Desserts", icon: "desserts" },
-          { id: 6, name: "Beverages", icon: "beverages" },
-        ]),
+    ...sortedCategories.map((c) => ({ id: c.id, name: c.name, icon: c.name.toLowerCase() })),
   ];
 
   return (
@@ -746,101 +1069,215 @@ export default function MenuPage() {
         </section>
 
         {/* ==================================================== */}
-        {/* 4. CHEF'S PICKS (Exact 2-3 Column Grid / Cards)     */}
+        {/* 4. CHEF'S PICKS & FULL MENU CATEGORY SECTIONS        */}
         {/* ==================================================== */}
-        <section className="space-y-3 pt-1">
-          <div className="flex items-center justify-between">
-            <h2 className="font-serif text-[22px] sm:text-[26px] font-bold text-[#29231F]">
-              Chef's Picks
-            </h2>
-            <button
-              onClick={() => setSelectedCategory(null)}
-              className="inline-flex items-center gap-1 text-xs font-semibold text-[#7B4E35] hover:underline"
-            >
-              <span>View All</span>
-              <ArrowRight size={13} />
-            </button>
-          </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-            {filtered.slice(0, 6).map((item) => (
-              <FoodCard
-                key={item.id}
-                item={item}
-                cartQty={cart.items.find((i) => i.id === item.id)?.quantity ?? 0}
-                onAdd={() => cart.add(item)}
-                onRemove={() => cart.remove(item.id)}
-                onClick={() => setSelectedItem(item)}
-                isFavorite={favorites.includes(item.id)}
-                onToggleFavorite={(e) => toggleFavorite(item.id, e)}
-              />
-            ))}
-          </div>
-        </section>
-
-        {/* ==================================================== */}
-        {/* 5. SEASONAL SPECIALS BANNER (Exact Match)            */}
-        {/* ==================================================== */}
-        {selectedCategory === null && !searchQuery && (
-          <section className="relative overflow-hidden rounded-2xl bg-[#2A3828] text-white p-5 sm:p-6 shadow-md my-2">
-            <div className="relative z-10 grid grid-cols-12 gap-3 items-center">
-              <div className="col-span-7 space-y-1.5">
-                <h3 className="font-serif text-[20px] sm:text-[24px] font-bold text-white leading-tight">
-                  Seasonal Specials
-                </h3>
-                <p className="text-[9px] uppercase tracking-[0.2em] text-[#D0DEC8] font-bold">
-                  HANDPICKED FLAVOURS FOR A LIMITED TIME
-                </p>
-                <div className="pt-2">
-                  <button
-                    onClick={() => {
-                      const dessert = categories.find((c) => c.name.toLowerCase().includes("dessert"));
-                      if (dessert) setSelectedCategory(dessert.id);
-                    }}
-                    className="px-4 py-2 rounded-full bg-[#F8F5EF] text-[#29231F] font-semibold text-[11px] hover:bg-[#EFE7DA] transition-colors inline-flex items-center gap-1.5 shadow-sm"
-                  >
-                    <span>Discover Now</span>
-                    <ArrowRight size={12} />
-                  </button>
-                </div>
-              </div>
-
-              <div className="col-span-5 relative flex items-center justify-end">
-                {/* Handwritten script */}
-                <div className="absolute -top-3.5 right-0 font-script text-[17px] sm:text-[20px] text-[#E5F0DF] -rotate-3 select-none">
-                  Fresh Seasonal Local
-                </div>
-                <img
-                  src={DEFAULT_SEASONAL_DISH}
-                  alt="Seasonal Bowl Special"
-                  className="w-24 sm:w-32 h-24 sm:h-32 object-cover rounded-full border border-white/30 shadow-lg"
-                />
-              </div>
+        {/* SEARCH RESULTS VIEW (When search is active) */}
+        {searchQuery.trim() !== "" && (
+          <section className="space-y-3 pt-2">
+            <div className="flex items-center justify-between">
+              <h2 className="font-serif text-[22px] font-bold text-[#29231F]">
+                Search Results ({filtered.length})
+              </h2>
             </div>
+            {filtered.length === 0 ? (
+              <div className="py-12 text-center text-[#766B61] bg-[#FFFDF9] rounded-2xl border border-[#E5DDD1] p-6">
+                <p className="text-sm font-medium">No menu items found matching "{searchQuery}"</p>
+                <p className="text-xs mt-1 text-[#766B61]/80">Try searching for cappuccino, toast, salad, or dessert</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+                {filtered.map((item) => (
+                  <FoodCard
+                    key={item.id}
+                    item={item}
+                    cartQty={cart.items.find((i) => i.id === item.id)?.quantity ?? 0}
+                    onAdd={() => cart.add(item)}
+                    onRemove={() => cart.remove(item.id)}
+                    onClick={() => setSelectedItem(item)}
+                    isFavorite={favorites.includes(item.id)}
+                    onToggleFavorite={(e) => toggleFavorite(item.id, e)}
+                  />
+                ))}
+              </div>
+            )}
           </section>
         )}
 
-        {/* Additional Category Section if selected or full list */}
-        {selectedCategory !== null && (
+        {/* SINGLE CATEGORY VIEW (When a specific category pill is clicked) */}
+        {selectedCategory !== null && !searchQuery.trim() && (
           <section className="space-y-3 pt-2">
-            <h2 className="font-serif text-[20px] font-bold text-[#29231F]">
-              {categories.find((c) => c.id === selectedCategory)?.name ?? "Items"}
-            </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-              {filtered.map((item) => (
-                <FoodCard
-                  key={item.id}
-                  item={item}
-                  cartQty={cart.items.find((i) => i.id === item.id)?.quantity ?? 0}
-                  onAdd={() => cart.add(item)}
-                  onRemove={() => cart.remove(item.id)}
-                  onClick={() => setSelectedItem(item)}
-                  isFavorite={favorites.includes(item.id)}
-                  onToggleFavorite={(e) => toggleFavorite(item.id, e)}
-                />
-              ))}
+            <div className="flex items-center justify-between">
+              <h2 className="font-serif text-[22px] sm:text-[26px] font-bold text-[#29231F]">
+                {sortedCategories.find((c) => c.id === selectedCategory)?.name ??
+                  displayCategories.find((c) => c.id === selectedCategory)?.name ??
+                  "Menu Items"}
+              </h2>
+              <span className="text-xs text-[#766B61] font-medium">
+                {filtered.length} {filtered.length === 1 ? "item" : "items"}
+              </span>
             </div>
+            {filtered.length === 0 ? (
+              <div className="py-10 text-center text-[#766B61] bg-[#FFFDF9] rounded-2xl border border-[#E5DDD1] p-6">
+                <p className="text-sm font-medium">No items available under this category with current filters</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+                {filtered.map((item) => (
+                  <FoodCard
+                    key={item.id}
+                    item={item}
+                    cartQty={cart.items.find((i) => i.id === item.id)?.quantity ?? 0}
+                    onAdd={() => cart.add(item)}
+                    onRemove={() => cart.remove(item.id)}
+                    onClick={() => setSelectedItem(item)}
+                    isFavorite={favorites.includes(item.id)}
+                    onToggleFavorite={(e) => toggleFavorite(item.id, e)}
+                  />
+                ))}
+              </div>
+            )}
           </section>
+        )}
+
+        {/* ALL MENU VIEW (Default view showing Chef's Picks + Seasonal Banner + ALL Categories) */}
+        {selectedCategory === null && !searchQuery.trim() && (
+          <>
+            {/* 1. Chef's Picks Section */}
+            <section className="space-y-3 pt-1">
+              <div className="flex items-center justify-between">
+                <h2 className="font-serif text-[22px] sm:text-[26px] font-bold text-[#29231F]">
+                  Chef's Picks
+                </h2>
+                <button
+                  onClick={() => setSelectedCategory(null)}
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-[#7B4E35] hover:underline"
+                >
+                  <span>View All</span>
+                  <ArrowRight size={13} />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+                {(bestsellers.length > 0 ? bestsellers.slice(0, 6) : filtered.slice(0, 6)).map((item) => (
+                  <FoodCard
+                    key={item.id}
+                    item={item}
+                    cartQty={cart.items.find((i) => i.id === item.id)?.quantity ?? 0}
+                    onAdd={() => cart.add(item)}
+                    onRemove={() => cart.remove(item.id)}
+                    onClick={() => setSelectedItem(item)}
+                    isFavorite={favorites.includes(item.id)}
+                    onToggleFavorite={(e) => toggleFavorite(item.id, e)}
+                  />
+                ))}
+              </div>
+            </section>
+
+            {/* 2. Seasonal Specials Banner */}
+            <section className="relative overflow-hidden rounded-2xl bg-[#2A3828] text-white p-5 sm:p-6 shadow-md my-2">
+              <div className="relative z-10 grid grid-cols-12 gap-3 items-center">
+                <div className="col-span-7 space-y-1.5">
+                  <h3 className="font-serif text-[20px] sm:text-[24px] font-bold text-white leading-tight">
+                    Seasonal Specials
+                  </h3>
+                  <p className="text-[9px] uppercase tracking-[0.2em] text-[#D0DEC8] font-bold">
+                    HANDPICKED FLAVOURS FOR A LIMITED TIME
+                  </p>
+                  <div className="pt-2">
+                    <button
+                      onClick={() => {
+                        const dessert = sortedCategories.find((c) => c.name.toLowerCase().includes("dessert"));
+                        if (dessert) setSelectedCategory(dessert.id);
+                      }}
+                      className="px-4 py-2 rounded-full bg-[#F8F5EF] text-[#29231F] font-semibold text-[11px] hover:bg-[#EFE7DA] transition-colors inline-flex items-center gap-1.5 shadow-sm"
+                    >
+                      <span>Discover Now</span>
+                      <ArrowRight size={12} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="col-span-5 relative flex items-center justify-end">
+                  <div className="absolute -top-3.5 right-0 font-script text-[17px] sm:text-[20px] text-[#E5F0DF] -rotate-3 select-none">
+                    Fresh Seasonal Local
+                  </div>
+                  <img
+                    src={DEFAULT_SEASONAL_DISH}
+                    alt="Seasonal Bowl Special"
+                    className="w-24 sm:w-32 h-24 sm:h-32 object-cover rounded-full border border-white/30 shadow-lg"
+                  />
+                </div>
+              </div>
+            </section>
+
+            {/* 3. Render Each Category Section With All Its Items */}
+            {sortedCategories.length > 0 ? (
+              sortedCategories.map((cat) => {
+                const catItems = filtered.filter((i) => i.categoryId === cat.id);
+                if (catItems.length === 0) return null;
+                return (
+                  <section key={cat.id} className="space-y-3 pt-2">
+                    <div className="flex items-center justify-between border-b border-[#E5DDD1] pb-2">
+                      <div className="flex items-center gap-2">
+                        <div className="text-[#7B4E35]">
+                          {getCategoryIcon(cat.name, 18)}
+                        </div>
+                        <h2 className="font-serif text-[20px] sm:text-[24px] font-bold text-[#29231F]">
+                          {cat.name}
+                        </h2>
+                      </div>
+                      <button
+                        onClick={() => setSelectedCategory(cat.id)}
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-[#7B4E35] hover:underline"
+                      >
+                        <span>View ({catItems.length})</span>
+                        <ArrowRight size={12} />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+                      {catItems.map((item) => (
+                        <FoodCard
+                          key={item.id}
+                          item={item}
+                          cartQty={cart.items.find((i) => i.id === item.id)?.quantity ?? 0}
+                          onAdd={() => cart.add(item)}
+                          onRemove={() => cart.remove(item.id)}
+                          onClick={() => setSelectedItem(item)}
+                          isFavorite={favorites.includes(item.id)}
+                          onToggleFavorite={(e) => toggleFavorite(item.id, e)}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                );
+              })
+            ) : (
+              /* If no categories grouped yet, show full list of all items */
+              <section className="space-y-3 pt-2">
+                <div className="flex items-center justify-between border-b border-[#E5DDD1] pb-2">
+                  <h2 className="font-serif text-[20px] sm:text-[24px] font-bold text-[#29231F]">
+                    All Menu Items ({filtered.length})
+                  </h2>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+                  {filtered.map((item) => (
+                    <FoodCard
+                      key={item.id}
+                      item={item}
+                      cartQty={cart.items.find((i) => i.id === item.id)?.quantity ?? 0}
+                      onAdd={() => cart.add(item)}
+                      onRemove={() => cart.remove(item.id)}
+                      onClick={() => setSelectedItem(item)}
+                      isFavorite={favorites.includes(item.id)}
+                      onToggleFavorite={(e) => toggleFavorite(item.id, e)}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+          </>
         )}
       </div>
 

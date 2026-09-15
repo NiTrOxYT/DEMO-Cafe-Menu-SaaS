@@ -40,6 +40,10 @@ import {
   Download,
   CreditCard,
   Tag,
+  Volume2,
+  VolumeX,
+  Play,
+  Pause,
 } from "lucide-react";
 
 // --- Color System Tokens ---
@@ -668,6 +672,107 @@ function FoodCard({
 }
 
 // ==========================================
+// AMBIENT CAFE VIDEO SHOWCASE (High-End Loop)
+// ==========================================
+function CafeVideoShowcase() {
+  const [isMuted, setIsMuted] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const toggleSound = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (videoRef.current) {
+      videoRef.current.muted = !videoRef.current.muted;
+      setIsMuted(videoRef.current.muted);
+    }
+  };
+
+  const togglePlay = () => {
+    if (videoRef.current) {
+      if (videoRef.current.paused) {
+        videoRef.current.play();
+        setIsPlaying(true);
+      } else {
+        videoRef.current.pause();
+        setIsPlaying(false);
+      }
+    }
+  };
+
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      className="relative overflow-hidden rounded-[22px] sm:rounded-[28px] border border-[#E5DDD1] bg-[#1A1513] shadow-[0_10px_30px_rgba(41,35,31,0.08)] group cursor-pointer"
+      onClick={togglePlay}
+    >
+      {/* Video Looper */}
+      <div className="relative w-full h-[200px] sm:h-[250px] md:h-[290px] overflow-hidden">
+        <video
+          ref={videoRef}
+          src="/mp4.mp4"
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+          className="w-full h-full object-cover object-center scale-[1.01] transition-transform duration-700 ease-out group-hover:scale-105"
+        />
+
+        {/* Ambient Dark, Warm & Radial Overlays for Luxury Contrast */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#161210]/95 via-[#161210]/35 to-[#161210]/30 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#161210]/60 via-transparent to-[#161210]/60 pointer-events-none" />
+
+        {/* Top Badges & Sound Toggle */}
+        <div className="absolute top-3.5 sm:top-4 left-3.5 sm:left-4 right-3.5 sm:right-4 flex items-center justify-between z-10">
+          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-white shadow-xs">
+            <span className="w-2 h-2 rounded-full bg-[#E5C158] animate-pulse" />
+            <span className="text-[9px] sm:text-[10px] font-semibold tracking-[0.22em] uppercase text-white/95">
+              THE ARTISAN RITUAL
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* Play/Pause state indicator if paused */}
+            {!isPlaying && (
+              <span className="px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-[10px] text-white/90 font-medium">
+                Paused
+              </span>
+            )}
+            <button
+              onClick={toggleSound}
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-black/40 backdrop-blur-md border border-white/20 flex items-center justify-center text-white/90 hover:text-white hover:bg-black/65 transition-all btn-smooth-press shadow-xs"
+              aria-label={isMuted ? "Unmute video" : "Mute video"}
+            >
+              {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+            </button>
+          </div>
+        </div>
+
+        {/* Bottom Editorial Typography & Script */}
+        <div className="absolute bottom-3.5 sm:bottom-4 left-4 sm:left-5 right-4 sm:right-5 z-10 flex items-end justify-between">
+          <div className="space-y-1 max-w-[85%] sm:max-w-[70%]">
+            <p className="text-[9.5px] sm:text-[10.5px] uppercase tracking-[0.24em] font-bold text-[#E2D2C0]">
+              SLOW-BREWED PERFECTION
+            </p>
+            <h3 className="font-serif text-[18px] sm:text-[22px] md:text-[25px] font-bold text-[#FFFDF9] leading-[1.1] drop-shadow-sm">
+              Fresh Brews & Culinary Art
+            </h3>
+          </div>
+
+          <div className="hidden sm:block text-right pb-0.5">
+            <p className="font-script text-[18px] sm:text-[20px] text-[#E8DAC8] -rotate-2 select-none drop-shadow-xs">
+              Every Sip Counts
+            </p>
+          </div>
+        </div>
+      </div>
+    </motion.section>
+  );
+}
+
+// ==========================================
 // MAIN CUSTOMER-FACING QR MENU COMPONENT
 // ==========================================
 export default function MenuPage() {
@@ -1213,10 +1318,13 @@ export default function MenuPage() {
           </section>
         )}
 
-        {/* ALL MENU VIEW (Default view showing Chef's Picks + Seasonal Banner + ALL Categories) */}
+        {/* ALL MENU VIEW (Default view showing Ambient Video + Chef's Picks + Seasonal Banner + ALL Categories) */}
         {selectedCategory === null && !searchQuery.trim() && (
           <>
-            {/* 1. Chef's Picks Section */}
+            {/* 1. Ambient Cafe Video Showcase (Loop) */}
+            <CafeVideoShowcase />
+
+            {/* 2. Chef's Picks Section */}
             <section className="space-y-3 pt-1">
               <div className="flex items-center justify-between">
                 <h2 className="font-serif text-[22px] sm:text-[26px] font-bold text-[#29231F]">

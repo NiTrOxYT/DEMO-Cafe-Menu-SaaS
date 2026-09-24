@@ -14,7 +14,15 @@ import CurrentOrder from "@/pages/current-order";
 import RewardsDashboard from "@/pages/rewards-dashboard";
 import BillPage from "@/pages/bill";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      gcTime: 1000 * 60 * 15,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function Router() {
   return (

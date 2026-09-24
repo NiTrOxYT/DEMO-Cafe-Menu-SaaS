@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
 import { supabase } from "@/lib/supabase";
 import {
   useListMenuItems,
@@ -408,17 +408,25 @@ function formatINR(amount: number) {
 }
 
 function getImageSrc(imageUrl: string | undefined | null, name?: string): string {
-  if (imageUrl) {
-    if (imageUrl.startsWith("/objects/")) return `/api/storage${imageUrl}`;
-    return imageUrl;
-  }
-  if (name) {
+  let url = imageUrl;
+  if (!url && name) {
     const key = name.toLowerCase();
     for (const [k, v] of Object.entries(FALLBACK_CATEGORY_IMAGES)) {
-      if (key.includes(k)) return v;
+      if (key.includes(k)) {
+        url = v;
+        break;
+      }
     }
   }
-  return "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=800&q=80";
+  if (!url) {
+    url = "https://images.unsplash.com/photo-1509042239860-f550ce710b93";
+  }
+  if (url.startsWith("/objects/")) return `/api/storage${url}`;
+  if (url.includes("images.unsplash.com")) {
+    const base = url.split("?")[0];
+    return `${base}?auto=format&fit=crop&w=420&q=75`;
+  }
+  return url;
 }
 
 // --- Botanical Leaf SVG Decoration ---
@@ -513,9 +521,9 @@ function useCart() {
 }
 
 // ==========================================
-// FOOD CARD (Exact Match to Reference Design)
+// FOOD CARD (Optimized & Memoized)
 // ==========================================
-function FoodCard({
+const FoodCard = memo(function FoodCard({
   item,
   cartQty,
   onAdd,
@@ -547,12 +555,9 @@ function FoodCard({
   }
 
   return (
-    <motion.div
-      whileHover={{ y: -3 }}
-      whileTap={{ scale: 0.97 }}
-      transition={{ type: "spring", stiffness: 400, damping: 25 }}
+    <div
       onClick={onClick}
-      className="group flex flex-col bg-[#FFFDF9] rounded-2xl border border-[#E5DDD1] overflow-hidden shadow-[0_2px_10px_rgba(41,35,31,0.03)] hover:shadow-[0_8px_20px_rgba(41,35,31,0.07)] transition-all duration-300 cursor-pointer min-w-0 btn-smooth-press"
+      className="group flex flex-col bg-[#FFFDF9] rounded-2xl border border-[#E5DDD1] overflow-hidden shadow-[0_2px_8px_rgba(41,35,31,0.03)] hover:shadow-[0_6px_16px_rgba(41,35,31,0.06)] cursor-pointer min-w-0 card-smooth-press"
     >
       {/* Top Image Container */}
       <div className="relative aspect-[1/0.88] w-full overflow-hidden bg-[#EFE7DA]">
@@ -560,24 +565,25 @@ function FoodCard({
           src={imgSrc}
           alt={item.name}
           loading="lazy"
-          className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500 ease-out"
+          decoding="async"
+          className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300 ease-out"
         />
 
         {/* Badge (Top Left) */}
         {badgeLabel && (
-          <div className="absolute top-2 left-2 z-10">
+          <div className="absolute top-2 left-2 z-10 pointer-events-none">
             {badgeLabel === "BESTSELLER" && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide bg-[#E8BA60] text-[#29231F] shadow-xs">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide bg-[#E8BA60] text-[#29231F] shadow-2xs">
                 ★ BESTSELLER
               </span>
             )}
             {badgeLabel === "CHEF'S PICK" && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide bg-[#DFBA79] text-[#29231F] shadow-xs">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide bg-[#DFBA79] text-[#29231F] shadow-2xs">
                 ♛ CHEF'S PICK
               </span>
             )}
             {badgeLabel === "NEW" && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide bg-[#A7B89B] text-[#1E2819] shadow-xs">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide bg-[#A7B89B] text-[#1E2819] shadow-2xs">
                 🌿 NEW
               </span>
             )}
@@ -585,18 +591,17 @@ function FoodCard({
         )}
 
         {/* Favorite Heart (Top Right) */}
-        <motion.button
+        <button
           type="button"
-          whileTap={{ scale: 0.8 }}
           onClick={onToggleFavorite}
-          className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/20 backdrop-blur-xs flex items-center justify-center text-white hover:text-[#D84040] transition-colors z-10"
+          className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/25 backdrop-blur-xs flex items-center justify-center text-white hover:text-[#D84040] transition-colors z-10 btn-smooth-press-sm"
           aria-label="Favorite"
         >
           <Heart size={14} fill={isFavorite ? "#D84040" : "none"} strokeWidth={2} />
-        </motion.button>
+        </button>
 
         {!item.available && (
-          <div className="absolute inset-0 bg-[#F8F5EF]/85 backdrop-blur-xs flex items-center justify-center z-10">
+          <div className="absolute inset-0 bg-[#F8F5EF]/85 backdrop-blur-xs flex items-center justify-center z-10 pointer-events-none">
             <span className="text-[10px] uppercase font-semibold text-[#766B61] bg-white px-2.5 py-1 rounded-full border border-[#E5DDD1]">
               Sold Out
             </span>
@@ -627,45 +632,42 @@ function FoodCard({
           <div onClick={(e) => e.stopPropagation()}>
             {item.available && (
               cartQty === 0 ? (
-                <motion.button
+                <button
                   type="button"
-                  whileTap={{ scale: 0.85 }}
                   onClick={onAdd}
-                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#7B4E35] text-white flex items-center justify-center hover:bg-[#633D28] transition-colors shadow-xs"
+                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#7B4E35] text-white flex items-center justify-center hover:bg-[#633D28] transition-colors shadow-2xs btn-smooth-press"
                   aria-label={`Add ${item.name}`}
                 >
                   <Plus size={15} />
-                </motion.button>
+                </button>
               ) : (
-                <div className="flex items-center gap-1.5 bg-[#EFE7DA] border border-[#D8CEBF] rounded-full px-1.5 py-0.5 shadow-xs">
-                  <motion.button
+                <div className="flex items-center gap-1.5 bg-[#EFE7DA] border border-[#D8CEBF] rounded-full px-1.5 py-0.5 shadow-2xs">
+                  <button
                     type="button"
-                    whileTap={{ scale: 0.8 }}
                     onClick={onRemove}
-                    className="w-5 h-5 rounded-full flex items-center justify-center text-[#7B4E35]"
+                    className="w-5 h-5 rounded-full flex items-center justify-center text-[#7B4E35] btn-smooth-press-sm"
                   >
                     <Minus size={11} />
-                  </motion.button>
+                  </button>
                   <span className="text-xs font-bold text-[#29231F] min-w-3 text-center">
                     {cartQty}
                   </span>
-                  <motion.button
+                  <button
                     type="button"
-                    whileTap={{ scale: 0.8 }}
                     onClick={onAdd}
-                    className="w-5 h-5 rounded-full flex items-center justify-center text-[#7B4E35]"
+                    className="w-5 h-5 rounded-full flex items-center justify-center text-[#7B4E35] btn-smooth-press-sm"
                   >
                     <Plus size={11} />
-                  </motion.button>
+                  </button>
                 </div>
               )
             )}
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
-}
+});
 
 // ==========================================
 // MAIN CUSTOMER-FACING QR MENU COMPONENT
@@ -675,7 +677,10 @@ export default function MenuPage() {
   const { data: categories = [] } = useListCategories();
   const { data: settings } = useGetSettings();
 
-  const tableNumber = new URLSearchParams(window.location.search).get("table");
+  const tableNumber = useMemo(() => {
+    if (typeof window === "undefined") return "1";
+    return new URLSearchParams(window.location.search).get("table") || "1";
+  }, []);
 
   const restaurantName = settings?.restaurantName ?? "The Golden Brew";
   const tagline = settings?.tagline ?? "Fresh ingredients. Thoughtful recipes. A better you, every day.";
@@ -718,7 +723,7 @@ export default function MenuPage() {
     }
   }, []);
 
-  const copyPromoCode = (code: string) => {
+  const copyPromoCode = useCallback((code: string) => {
     try {
       if (typeof navigator !== "undefined" && navigator?.clipboard?.writeText) {
         navigator.clipboard.writeText(code).catch(() => {});
@@ -726,14 +731,24 @@ export default function MenuPage() {
     } catch (_) {}
     setCopiedCode(code);
     setTimeout(() => setCopiedCode(null), 2500);
-  };
+  }, []);
 
-  const toggleFavorite = (id: number, e: React.MouseEvent) => {
+  const toggleFavorite = useCallback((id: number, e: React.MouseEvent) => {
     e.stopPropagation();
     setFavorites((prev) =>
       prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
     );
-  };
+  }, []);
+
+  const favoritesSet = useMemo(() => new Set(favorites), [favorites]);
+
+  const cartQtyMap = useMemo(() => {
+    const map = new Map<number, number>();
+    for (const item of cart.items) {
+      map.set(item.id, item.quantity);
+    }
+    return map;
+  }, [cart.items]);
 
   const handlePlaceOrder = async () => {
     if (cart.items.length === 0) return;
@@ -856,44 +871,65 @@ export default function MenuPage() {
     };
 
     checkActiveOrder();
-    const interval = setInterval(checkActiveOrder, 10000);
+    const interval = setInterval(checkActiveOrder, 15000);
     return () => clearInterval(interval);
   }, [tableNumber]);
 
-  const rawItems = (menuItems && menuItems.length > 0)
-    ? (menuItems as MenuItem[])
-    : DEFAULT_FALLBACK_MENU_ITEMS;
+  const rawItems = useMemo(() => {
+    return (menuItems && menuItems.length > 0)
+      ? (menuItems as MenuItem[])
+      : DEFAULT_FALLBACK_MENU_ITEMS;
+  }, [menuItems]);
 
-  const rawCategories = (categories && categories.length > 0)
-    ? categories
-    : DEFAULT_FALLBACK_CATEGORIES;
+  const rawCategories = useMemo(() => {
+    return (categories && categories.length > 0)
+      ? categories
+      : DEFAULT_FALLBACK_CATEGORIES;
+  }, [categories]);
 
-  const sortedCategories = [...rawCategories].sort((a, b) => a.sortOrder - b.sortOrder);
+  const sortedCategories = useMemo(() => {
+    return [...rawCategories].sort((a, b) => a.sortOrder - b.sortOrder);
+  }, [rawCategories]);
 
   // Filtered menu items
-  const filtered = rawItems.filter((item) => {
-    if (!item.available) return false;
-    if (selectedCategory !== null && item.categoryId !== selectedCategory)
-      return false;
-    if (vegFilter === "veg" && !item.isVeg) return false;
-    if (vegFilter === "nonveg" && item.isVeg) return false;
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      return (
-        item.name.toLowerCase().includes(q) ||
-        (item.description ?? "").toLowerCase().includes(q)
-      );
-    }
-    return true;
-  });
+  const filtered = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return rawItems.filter((item) => {
+      if (!item.available) return false;
+      if (selectedCategory !== null && item.categoryId !== selectedCategory)
+        return false;
+      if (vegFilter === "veg" && !item.isVeg) return false;
+      if (vegFilter === "nonveg" && item.isVeg) return false;
+      if (q) {
+        return (
+          item.name.toLowerCase().includes(q) ||
+          (item.description ?? "").toLowerCase().includes(q)
+        );
+      }
+      return true;
+    });
+  }, [rawItems, selectedCategory, vegFilter, searchQuery]);
 
-  const bestsellers = rawItems.filter((i) => i.available && (i.isBestseller || i.badge === "BESTSELLER" || i.badge === "CHEF'S PICK"));
+  const bestsellers = useMemo(() => {
+    return rawItems.filter((i) => i.available && (i.isBestseller || i.badge === "BESTSELLER" || i.badge === "CHEF'S PICK"));
+  }, [rawItems]);
+
+  // Group items by category for instant O(1) section rendering
+  const categoryItemsMap = useMemo(() => {
+    const map = new Map<number, MenuItem[]>();
+    for (const item of filtered) {
+      const list = map.get(item.categoryId) || [];
+      list.push(item);
+      map.set(item.categoryId, list);
+    }
+    return map;
+  }, [filtered]);
 
   // Category pill list including static mock fallback matching reference image
-  const displayCategories = [
+  const displayCategories = useMemo(() => [
     { id: null, name: "All", icon: "all" },
     ...sortedCategories.map((c) => ({ id: c.id, name: c.name, icon: c.name.toLowerCase() })),
-  ];
+  ], [sortedCategories]);
 
   return (
     <div className="min-h-screen bg-[#F8F5EF] text-[#29231F] font-sans antialiased selection:bg-[#EFE7DA] selection:text-[#7B4E35] pb-24">
@@ -919,17 +955,16 @@ export default function MenuPage() {
           {/* Search Toggle */}
           <button
             onClick={() => setSearchOpen(!searchOpen)}
-            className="w-10 h-10 rounded-full bg-[#FFFDF9] border border-[#E5DDD1] flex items-center justify-center text-[#29231F] shadow-2xs hover:bg-[#EFE7DA] transition-colors"
+            className="w-10 h-10 rounded-full bg-[#FFFDF9] border border-[#E5DDD1] flex items-center justify-center text-[#29231F] shadow-2xs hover:bg-[#EFE7DA] btn-smooth-press"
             aria-label="Search food and drinks"
           >
             <Search size={16} />
           </button>
 
           {/* Cart Button with Count Badge */}
-          <motion.button
-            whileTap={{ scale: 0.92 }}
+          <button
             onClick={() => setCartOpen(true)}
-            className="relative w-10 h-10 rounded-xl bg-[#FFFDF9] border border-[#E5DDD1] flex items-center justify-center text-[#29231F] shadow-2xs hover:bg-[#EFE7DA] transition-colors btn-smooth-press"
+            className="relative w-10 h-10 rounded-xl bg-[#FFFDF9] border border-[#E5DDD1] flex items-center justify-center text-[#29231F] shadow-2xs hover:bg-[#EFE7DA] btn-smooth-press"
             aria-label="Shopping Cart"
           >
             <ShoppingBag size={17} />
@@ -938,11 +973,10 @@ export default function MenuPage() {
                 {cart.count}
               </span>
             )}
-          </motion.button>
+          </button>
 
           {/* Current Order Button */}
-          <motion.button
-            whileTap={{ scale: 0.92 }}
+          <button
             onClick={() => {
               if (activeOrderId || (cart.items.length === 0 && !activeOrderId)) {
                 setShowActiveOrderModal(true);
@@ -950,7 +984,7 @@ export default function MenuPage() {
                 setCartOpen(true);
               }
             }}
-            className="relative px-3 py-2 rounded-xl bg-[#FFFDF9] border border-[#E5DDD1] flex items-center gap-1.5 text-[#29231F] shadow-2xs hover:bg-[#EFE7DA] transition-colors text-xs font-semibold btn-smooth-press"
+            className="relative px-3 py-2 rounded-xl bg-[#FFFDF9] border border-[#E5DDD1] flex items-center gap-1.5 text-[#29231F] shadow-2xs hover:bg-[#EFE7DA] text-xs font-semibold btn-smooth-press"
             aria-label="Current Order"
           >
             <Clock size={15} className="text-[#7B4E35]" />
@@ -958,7 +992,7 @@ export default function MenuPage() {
             {activeOrderId && (
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             )}
-          </motion.button>
+          </button>
         </div>
       </header>
 
@@ -969,6 +1003,7 @@ export default function MenuPage() {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.15 }}
             className="overflow-hidden px-4 py-2.5 bg-[#FFFDF9] border-b border-[#E5DDD1]"
           >
             <div className="relative max-w-md mx-auto">
@@ -984,7 +1019,7 @@ export default function MenuPage() {
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#766B61]"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#766B61] btn-smooth-press-sm"
                 >
                   <X size={13} />
                 </button>
@@ -998,12 +1033,14 @@ export default function MenuPage() {
         {/* ==================================================== */}
         {/* 2. HERO BANNER SECTION (Exact Match to Reference)    */}
         {/* ==================================================== */}
-        <section className="relative overflow-hidden rounded-[22px] md:rounded-[28px] border border-[#DED4C7] bg-[#F7F3EB] shadow-[0_8px_30px_rgba(70,48,34,0.06)] min-h-[300px] sm:min-h-[340px] md:min-h-[380px] flex items-center">
+        <section className="relative overflow-hidden rounded-[22px] md:rounded-[28px] border border-[#DED4C7] bg-[#F7F3EB] shadow-[0_4px_20px_rgba(70,48,34,0.05)] min-h-[300px] sm:min-h-[340px] md:min-h-[380px] flex items-center">
           {/* Background Banner Image from public/banner.png */}
           <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
             <img
               src="/banner.png"
               alt="The Golden Brew Cafe Banner"
+              loading="eager"
+              decoding="async"
               className="w-full h-full object-cover object-right sm:object-center"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = "/hero-cafe-banner.jpg";
@@ -1033,17 +1070,15 @@ export default function MenuPage() {
 
             {/* Explore Menu Button */}
             <div className="pt-0.5">
-              <motion.button
-                whileTap={{ scale: 0.94 }}
-                whileHover={{ scale: 1.02 }}
+              <button
                 onClick={() => {
                   document.getElementById("category-scroller")?.scrollIntoView({ behavior: "smooth" });
                 }}
-                className="px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-[#54321E] text-white font-semibold text-xs sm:text-sm inline-flex items-center gap-2 hover:bg-[#3D2314] transition-colors shadow-md btn-smooth-press"
+                className="px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-[#54321E] text-white font-semibold text-xs sm:text-sm inline-flex items-center gap-2 hover:bg-[#3D2314] shadow-sm btn-smooth-press"
               >
                 <span>Explore Menu</span>
                 <ArrowRight size={13} />
-              </motion.button>
+              </button>
             </div>
 
             {/* Script below button */}
@@ -1070,13 +1105,12 @@ export default function MenuPage() {
             className="w-full pl-10 pr-9 py-2.5 sm:py-3 rounded-full bg-[#FFFDF9] border border-[#E5DDD1] text-xs sm:text-sm text-[#29231F] placeholder:text-[#766B61]/70 focus:outline-none focus:border-[#7B4E35] shadow-2xs"
           />
           {searchQuery && (
-            <motion.button
-              whileTap={{ scale: 0.85 }}
+            <button
               onClick={() => setSearchQuery("")}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#766B61]"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#766B61] btn-smooth-press-sm"
             >
               <X size={14} />
-            </motion.button>
+            </button>
           )}
         </div>
 
@@ -1091,14 +1125,12 @@ export default function MenuPage() {
             {displayCategories.map((cat, idx) => {
               const isSelected = selectedCategory === cat.id;
               return (
-                <motion.button
+                <button
                   key={cat.name + idx}
-                  whileTap={{ scale: 0.92 }}
-                  whileHover={{ y: -2 }}
                   onClick={() => setSelectedCategory(cat.id)}
-                  className={`flex flex-col items-center justify-center min-w-[72px] sm:min-w-[80px] h-[74px] sm:h-[80px] rounded-2xl p-2 transition-all flex-shrink-0 btn-smooth-press ${
+                  className={`flex flex-col items-center justify-center min-w-[72px] sm:min-w-[80px] h-[74px] sm:h-[80px] rounded-2xl p-2 flex-shrink-0 btn-smooth-press ${
                     isSelected
-                      ? "bg-[#7B4E35] text-white shadow-sm"
+                      ? "bg-[#7B4E35] text-white shadow-xs"
                       : "bg-[#FFFDF9] text-[#29231F] border border-[#E5DDD1] hover:bg-[#EFE7DA]"
                   }`}
                 >
@@ -1108,7 +1140,7 @@ export default function MenuPage() {
                   <span className="text-[11px] sm:text-[12px] font-semibold tracking-tight">
                     {cat.name}
                   </span>
-                </motion.button>
+                </button>
               );
             })}
           </div>
@@ -1123,19 +1155,18 @@ export default function MenuPage() {
               const isSelected = vegFilter === f.id;
               const Icon = f.icon;
               return (
-                <motion.button
+                <button
                   key={f.id}
-                  whileTap={{ scale: 0.92 }}
                   onClick={() => setVegFilter(f.id as any)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all btn-smooth-press ${
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 btn-smooth-press ${
                     isSelected
-                      ? "bg-[#7B4E35] text-white shadow-xs"
+                      ? "bg-[#7B4E35] text-white shadow-2xs"
                       : "bg-[#FFFDF9] text-[#766B61] border border-[#E5DDD1] hover:bg-[#EFE7DA]"
                   }`}
                 >
                   {Icon && <Icon size={12} className={f.id === "veg" ? "text-emerald-600" : f.id === "nonveg" ? "text-rose-500" : ""} />}
                   <span>{f.label}</span>
-                </motion.button>
+                </button>
               );
             })}
           </div>
@@ -1164,11 +1195,11 @@ export default function MenuPage() {
                   <FoodCard
                     key={item.id}
                     item={item}
-                    cartQty={cart.items.find((i) => i.id === item.id)?.quantity ?? 0}
+                    cartQty={cartQtyMap.get(item.id) ?? 0}
                     onAdd={() => cart.add(item)}
                     onRemove={() => cart.remove(item.id)}
                     onClick={() => setSelectedItem(item)}
-                    isFavorite={favorites.includes(item.id)}
+                    isFavorite={favoritesSet.has(item.id)}
                     onToggleFavorite={(e) => toggleFavorite(item.id, e)}
                   />
                 ))}
@@ -1200,11 +1231,11 @@ export default function MenuPage() {
                   <FoodCard
                     key={item.id}
                     item={item}
-                    cartQty={cart.items.find((i) => i.id === item.id)?.quantity ?? 0}
+                    cartQty={cartQtyMap.get(item.id) ?? 0}
                     onAdd={() => cart.add(item)}
                     onRemove={() => cart.remove(item.id)}
                     onClick={() => setSelectedItem(item)}
-                    isFavorite={favorites.includes(item.id)}
+                    isFavorite={favoritesSet.has(item.id)}
                     onToggleFavorite={(e) => toggleFavorite(item.id, e)}
                   />
                 ))}
@@ -1236,11 +1267,11 @@ export default function MenuPage() {
                   <FoodCard
                     key={item.id}
                     item={item}
-                    cartQty={cart.items.find((i) => i.id === item.id)?.quantity ?? 0}
+                    cartQty={cartQtyMap.get(item.id) ?? 0}
                     onAdd={() => cart.add(item)}
                     onRemove={() => cart.remove(item.id)}
                     onClick={() => setSelectedItem(item)}
-                    isFavorite={favorites.includes(item.id)}
+                    isFavorite={favoritesSet.has(item.id)}
                     onToggleFavorite={(e) => toggleFavorite(item.id, e)}
                   />
                 ))}
@@ -1263,7 +1294,7 @@ export default function MenuPage() {
                         const dessert = sortedCategories.find((c) => c.name.toLowerCase().includes("dessert"));
                         if (dessert) setSelectedCategory(dessert.id);
                       }}
-                      className="px-4 py-2 rounded-full bg-[#F8F5EF] text-[#29231F] font-semibold text-[11px] hover:bg-[#EFE7DA] transition-colors inline-flex items-center gap-1.5 shadow-sm"
+                      className="px-4 py-2 rounded-full bg-[#F8F5EF] text-[#29231F] font-semibold text-[11px] hover:bg-[#EFE7DA] transition-colors inline-flex items-center gap-1.5 shadow-2xs btn-smooth-press"
                     >
                       <span>Discover Now</span>
                       <ArrowRight size={12} />
@@ -1278,7 +1309,9 @@ export default function MenuPage() {
                   <img
                     src={DEFAULT_SEASONAL_DISH}
                     alt="Seasonal Bowl Special"
-                    className="w-24 sm:w-32 h-24 sm:h-32 object-cover rounded-full border border-white/30 shadow-lg"
+                    loading="lazy"
+                    decoding="async"
+                    className="w-24 sm:w-32 h-24 sm:h-32 object-cover rounded-full border border-white/30 shadow-md"
                   />
                 </div>
               </div>
@@ -1287,10 +1320,10 @@ export default function MenuPage() {
             {/* 3. Render Each Category Section With All Its Items */}
             {sortedCategories.length > 0 ? (
               sortedCategories.map((cat) => {
-                const catItems = filtered.filter((i) => i.categoryId === cat.id);
+                const catItems = categoryItemsMap.get(cat.id) || [];
                 if (catItems.length === 0) return null;
                 return (
-                  <section key={cat.id} className="space-y-3 pt-2">
+                  <section key={cat.id} className="space-y-3 pt-2 content-auto">
                     <div className="flex items-center justify-between border-b border-[#E5DDD1] pb-2">
                       <div className="flex items-center gap-2">
                         <div className="text-[#7B4E35]">
@@ -1314,11 +1347,11 @@ export default function MenuPage() {
                         <FoodCard
                           key={item.id}
                           item={item}
-                          cartQty={cart.items.find((i) => i.id === item.id)?.quantity ?? 0}
+                          cartQty={cartQtyMap.get(item.id) ?? 0}
                           onAdd={() => cart.add(item)}
                           onRemove={() => cart.remove(item.id)}
                           onClick={() => setSelectedItem(item)}
-                          isFavorite={favorites.includes(item.id)}
+                          isFavorite={favoritesSet.has(item.id)}
                           onToggleFavorite={(e) => toggleFavorite(item.id, e)}
                         />
                       ))}
@@ -1328,7 +1361,7 @@ export default function MenuPage() {
               })
             ) : (
               /* If no categories grouped yet, show full list of all items */
-              <section className="space-y-3 pt-2">
+              <section className="space-y-3 pt-2 content-auto">
                 <div className="flex items-center justify-between border-b border-[#E5DDD1] pb-2">
                   <h2 className="font-serif text-[20px] sm:text-[24px] font-bold text-[#29231F]">
                     All Menu Items ({filtered.length})
@@ -1339,11 +1372,11 @@ export default function MenuPage() {
                     <FoodCard
                       key={item.id}
                       item={item}
-                      cartQty={cart.items.find((i) => i.id === item.id)?.quantity ?? 0}
+                      cartQty={cartQtyMap.get(item.id) ?? 0}
                       onAdd={() => cart.add(item)}
                       onRemove={() => cart.remove(item.id)}
                       onClick={() => setSelectedItem(item)}
-                      isFavorite={favorites.includes(item.id)}
+                      isFavorite={favoritesSet.has(item.id)}
                       onToggleFavorite={(e) => toggleFavorite(item.id, e)}
                     />
                   ))}
@@ -1374,7 +1407,7 @@ export default function MenuPage() {
                 setActiveNav(tab.id as any);
                 tab.action();
               }}
-              className="flex flex-col items-center justify-center py-0.5 px-2 relative"
+              className="flex flex-col items-center justify-center py-0.5 px-2 relative btn-smooth-press"
             >
               <Icon
                 size={19}
@@ -1398,14 +1431,12 @@ export default function MenuPage() {
 
       {/* Floating Active Order Quick Bar */}
       {cart.count > 0 && !cartOpen && (
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
+        <div
           className="fixed bottom-16 left-4 right-4 z-40 max-w-md mx-auto"
         >
           <div
             onClick={() => setCartOpen(true)}
-            className="flex items-center justify-between p-3.5 rounded-2xl bg-[#29231F] text-white shadow-xl cursor-pointer hover:bg-[#1E150F] transition-colors"
+            className="flex items-center justify-between p-3.5 rounded-2xl bg-[#29231F] text-white shadow-xl cursor-pointer hover:bg-[#1E150F] btn-smooth-press"
           >
             <div className="flex items-center gap-2.5">
               <div className="w-7 h-7 rounded-full bg-[#7B4E35] flex items-center justify-center text-white text-xs font-bold">
@@ -1421,7 +1452,7 @@ export default function MenuPage() {
               <ArrowRight size={14} className="text-[#D4A84D]" />
             </div>
           </div>
-        </motion.div>
+        </div>
       )}
 
       {/* Cart Drawer */}

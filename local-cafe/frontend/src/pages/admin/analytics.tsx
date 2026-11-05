@@ -1,0 +1,706 @@
+import { useEffect, useMemo, useState } from "react";
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import {
+  Activity,
+  ArrowUpRight,
+  BadgeIndianRupee,
+  Clock3,
+  Crown,
+  Loader2,
+  RefreshCw,
+  ShoppingBag,
+  Sparkles,
+  Table2,
+  Timer,
+  Utensils,
+  Users,
+  X,
+} from "lucide-react";
+import { joinAdminRoom, onOrderCreated, onOrderUpdated, onOrderStatusChanged } from "@/lib/socket";
+import { Button } from "@/components/ui/button";
+
+import {
+  RangeKey,
+  Order,
+  Category,
+  MenuItem,
+  AnalyticsResult,
+} from "@/lib/analytics/types";
+import { AnalyticsService } from "@/lib/analytics/service";
+import { getOrderDate } from "@/lib/analytics/date-utils";
+import { getOrderTotal } from "@/lib/analytics/revenue";
+
+const STATUS_COLORS: Record<string, string> = {
+  pending: "#D97706",
+  preparing: "#2563EB",
+  ready: "#059669",
+  completed: "#B58428",
+  cancelled: "#DC2626",
+};
+
+const RANGE_LABELS: Record<RangeKey, string> = {
+  today: "Today",
+  yesterday: "Yesterday",
+  "7d": "7D",
+  "30d": "30D",
+  thisMonth: "This Month",
+  prevMonth: "Previous Month",
+  all: "All",
+};
+
+const ANALYTICS_READ_TIMEOUT_MS = 6000;
+
+function getTableLabel(order: Order) {
+  return String(order.table_id ?? order.tableNumber ?? "Walk-in");
+}
+
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function formatCompact(value: number) {
+  return new Intl.NumberFormat("en-IN", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(value);
+}
+
+function EmptyState() {
+  return (
+    <div className="border border-dashed border-border bg-card/70 rounded-lg px-6 py-14 text-center">
+      <Sparkles className="mx-auto h-8 w-8 text-secondary" />
+      <h3 className="mt-3 text-lg font-serif font-semibold">
+        No orders in this window
+      </h3>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Analytics will populate automatically as orders come in.
+      </p>
+    </div>
+  );
+}
+
+export default function AnalyticsPage() {
+  const [report, setReport] = useState<AnalyticsResult | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [range, setRange] = useState<RangeKey>("7d");
+
+  useEffect(() => {
+    loadData(range);
+  }, [range]);
+
+  useEffect(() => {
+    joinAdminRoom();
+    const unsub1 = onOrderCreated(() => loadData(range));
+    const unsub2 = onOrderUpdated(() => loadData(range));
+    const unsub3 = onOrderStatusChanged(() => loadData(range));
+
+    return () => {
+      unsub1();
+      unsub2();
+      unsub3();
+    };
+  }, [range]);
+
+  async function loadData(currentRange: RangeKey = range) {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await AnalyticsService.getReport(currentRange);
+      setReport(data);
+    } catch (err: any) {
+      console.error("Failed to load analytics:", err);
+      setError(err?.message || "Failed to load analytics data.");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error && !report) {
+    return (
+      <div className="border border-destructive/30 bg-destructive/10 rounded-lg p-6 text-center space-y-3">
+        <p className="text-sm text-destructive font-medium">{error}</p>
+        <Button variant="outline" size="sm" onClick={() => loadData(range)}>
+          <RefreshCw className="mr-2 h-4 w-4" />
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
+  if (!report) {
+    return <EmptyState />;
+  }
+
+  const analytics = report;
+  const revenueDelta = report.revenueDelta;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-secondary">
+            Live performance room
+          </p>
+          <h2 className="mt-1 text-3xl font-serif font-bold text-foreground">
+            Analytics
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Revenue, demand, table velocity, and menu performance from live
+            order data.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="flex rounded-xl border border-border/80 bg-card p-1 shadow-2xs">
+            {(Object.keys(RANGE_LABELS) as RangeKey[]).map((key) => (
+              <button
+                key={key}
+                onClick={() => setRange(key)}
+                className={`h-8 min-w-12 rounded-lg px-3 text-xs font-semibold transition-all ${
+                  range === key
+                    ? "bg-[#FAF3E6] text-[#8E6314] border border-[#ECD7A9] shadow-2xs font-bold"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                }`}
+              >
+                {RANGE_LABELS[key]}
+              </button>
+            ))}
+          </div>
+          <Button variant="outline" size="sm" onClick={() => loadData(range)} className="border-border/80 hover:bg-[#FAF8F5]">
+            <RefreshCw className="mr-2 h-4 w-4 text-[#8E6314]" />
+            Refresh
+          </Button>
+        </div>
+      </div>
+
+      {analytics.scopedOrders.length === 0 ? (
+        <EmptyState />
+      ) : (
+        <>
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <MetricTile
+              icon={<BadgeIndianRupee className="h-5 w-5" />}
+              label="Gross revenue"
+              value={formatCurrency(analytics.grossRevenue)}
+              detail={`${formatCurrency(analytics.todayRevenue)} today`}
+            />
+            <MetricTile
+              icon={<ShoppingBag className="h-5 w-5" />}
+              label="Orders"
+              value={analytics.scopedOrders.length.toString()}
+              detail={`${analytics.activeOrders.length} still active`}
+            />
+            <MetricTile
+              icon={<ArrowUpRight className="h-5 w-5" />}
+              label="Average order"
+              value={formatCurrency(analytics.avgOrder)}
+              detail={`${analytics.avgItems.toFixed(1)} items per order`}
+            />
+            <MetricTile
+              icon={<Activity className="h-5 w-5" />}
+              label="Completion rate"
+              value={`${Math.round(analytics.completionRate)}%`}
+              detail={`${analytics.completedOrders.length} completed tickets`}
+            />
+          </section>
+
+          {/* Customer & Detailed Revenue Metrics */}
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <MetricTile
+              icon={<Users className="h-5 w-5" />}
+              label="Total Customers"
+              value={analytics.customers.totalCustomers.toString()}
+              detail={`${analytics.customers.newCustomers} new vs ${analytics.customers.returningCustomers} returning`}
+            />
+            <MetricTile
+              icon={<RefreshCw className="h-5 w-5" />}
+              label="Repeat Purchase Rate"
+              value={`${analytics.customers.repeatPurchaseRate.toFixed(1)}%`}
+              detail="Guests with >1 orders in range"
+            />
+            <MetricTile
+              icon={<BadgeIndianRupee className="h-5 w-5" />}
+              label="Paid Revenue"
+              value={formatCurrency(analytics.paidRevenue)}
+              detail={`${formatCurrency(analytics.pendingRevenue)} pending`}
+            />
+            <MetricTile
+              icon={<X className="h-5 w-5" />}
+              label="Cancelled Value"
+              value={formatCurrency(analytics.cancelledValue)}
+              detail="Excluded from active revenue"
+            />
+          </section>
+
+          <section className="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
+            <div className="rounded-xl border border-border/80 bg-card p-5 shadow-xs">
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <h3 className="font-serif text-xl font-bold text-foreground">
+                    Revenue trend
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Daily sales and order count for the selected window.
+                  </p>
+                </div>
+                <span
+                  className={`rounded-full px-2.5 py-1 text-xs font-bold border ${
+                    revenueDelta >= 0
+                      ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30"
+                      : "bg-rose-500/10 text-rose-700 border-rose-500/30"
+                  }`}
+                >
+                  {revenueDelta >= 0 ? "+" : ""}
+                  {Math.round(revenueDelta)}% today
+                </span>
+              </div>
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={analytics.dayTrend}>
+                    <defs>
+                      <linearGradient
+                        id="revenueFill"
+                        x1="0"
+                        x2="0"
+                        y1="0"
+                        y2="1"
+                      >
+                        <stop offset="5%" stopColor="#B58428" stopOpacity={0.28} />
+                        <stop offset="95%" stopColor="#B58428" stopOpacity={0.02} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid stroke="#E8E2D8" strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="label"
+                      tickLine={false}
+                      axisLine={false}
+                      tick={{ fill: "#78716A", fontSize: 12 }}
+                    />
+                    <YAxis
+                      tickFormatter={(value) => `₹${formatCompact(Number(value))}`}
+                      tickLine={false}
+                      axisLine={false}
+                      tick={{ fill: "#78716A", fontSize: 12 }}
+                    />
+                    <Tooltip
+                      formatter={(value, name) =>
+                        name === "revenue"
+                          ? [formatCurrency(Number(value)), "Revenue"]
+                          : [value, "Orders"]
+                      }
+                      contentStyle={{
+                        borderRadius: 12,
+                        border: "1px solid #E8E2D8",
+                        backgroundColor: "#FFFFFF",
+                        boxShadow: "0 12px 36px rgba(31,27,24,0.08)",
+                      }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="revenue"
+                      stroke="#B58428"
+                      strokeWidth={2.5}
+                      fill="url(#revenueFill)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+              <InsightTile
+                icon={<Crown className="h-5 w-5" />}
+                label="Hero item"
+                value={analytics.topItem?.name || "No item yet"}
+                detail={
+                  analytics.topItem
+                    ? `${formatCurrency(analytics.topItem.revenue)} from ${
+                        analytics.topItem.quantity
+                      } sold`
+                    : "Waiting for item sales"
+                }
+              />
+              <InsightTile
+                icon={<Clock3 className="h-5 w-5" />}
+                label="Peak demand"
+                value={analytics.peakHour}
+                detail="Busiest order hour in this range"
+              />
+              <InsightTile
+                icon={<Table2 className="h-5 w-5" />}
+                label="Best table"
+                value={
+                  analytics.topTables[0]
+                    ? `Table ${analytics.topTables[0].table}`
+                    : "No table yet"
+                }
+                detail={
+                  analytics.topTables[0]
+                    ? `${formatCurrency(analytics.topTables[0].revenue)} across ${
+                        analytics.topTables[0].orders
+                      } orders`
+                    : "Waiting for table activity"
+                }
+              />
+            </div>
+          </section>
+
+          <section className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+            <Panel title="Status mix" subtitle="Current order pipeline.">
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={analytics.statusMix}
+                      dataKey="value"
+                      nameKey="name"
+                      innerRadius={58}
+                      outerRadius={92}
+                      paddingAngle={4}
+                    >
+                      {analytics.statusMix.map((entry) => (
+                        <Cell
+                          key={entry.key}
+                          fill={STATUS_COLORS[entry.key] || "#78716c"}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value) => [value, "Orders"]}
+                      contentStyle={{
+                        borderRadius: 8,
+                        border: "1px solid #d6d3d1",
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {analytics.statusMix.map((status) => (
+                  <div
+                    key={status.key}
+                    className="flex items-center justify-between rounded-md bg-background px-3 py-2 text-xs"
+                  >
+                    <span className="flex items-center gap-2 text-muted-foreground">
+                      <span
+                        className="h-2 w-2 rounded-full"
+                        style={{
+                          backgroundColor:
+                            STATUS_COLORS[status.key] || "#78716c",
+                        }}
+                      />
+                      {status.name}
+                    </span>
+                    <span className="font-bold">{status.value}</span>
+                  </div>
+                ))}
+              </div>
+            </Panel>
+
+            <Panel title="Demand by hour" subtitle="Recent service rhythm.">
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={analytics.hourlyDemand}>
+                    <CartesianGrid stroke="#d6d3d1" strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="hour"
+                      tickLine={false}
+                      axisLine={false}
+                      tick={{ fill: "#57534e", fontSize: 12 }}
+                    />
+                    <YAxis
+                      allowDecimals={false}
+                      tickLine={false}
+                      axisLine={false}
+                      tick={{ fill: "#57534e", fontSize: 12 }}
+                    />
+                    <Tooltip
+                      formatter={(value) => [value, "Orders"]}
+                      contentStyle={{
+                        borderRadius: 8,
+                        border: "1px solid #d6d3d1",
+                      }}
+                    />
+                    <Bar dataKey="orders" fill="#b45309" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </Panel>
+
+            <Panel title="Top tables" subtitle="Revenue concentration.">
+              <div className="space-y-3">
+                {analytics.topTables.map((table, index) => {
+                  const max = analytics.topTables[0]?.revenue || 1;
+                  return (
+                    <RankRow
+                      key={table.table}
+                      rank={index + 1}
+                      name={`Table ${table.table}`}
+                      value={formatCurrency(table.revenue)}
+                      detail={`${table.orders} orders`}
+                      percent={(table.revenue / max) * 100}
+                    />
+                  );
+                })}
+              </div>
+            </Panel>
+
+            <Panel title="Category share" subtitle="Sales contribution.">
+              <div className="space-y-3">
+                {analytics.categories.map((cat, index) => {
+                  return (
+                    <RankRow
+                      key={cat.name}
+                      rank={index + 1}
+                      name={cat.name}
+                      value={formatCurrency(cat.revenue)}
+                      detail={`${cat.ordersCount} orders (${cat.percent}%)`}
+                      percent={cat.percent}
+                    />
+                  );
+                })}
+              </div>
+            </Panel>
+          </section>
+
+          <section className="grid gap-4 lg:grid-cols-2">
+            <Panel
+              title="Menu winners by revenue"
+              subtitle="Items generating the most sales."
+            >
+              <div className="space-y-3">
+                {analytics.revenueItems.map((item, index) => {
+                  const max = analytics.revenueItems[0]?.revenue || 1;
+                  return (
+                    <RankRow
+                      key={item.name}
+                      rank={index + 1}
+                      name={item.name}
+                      value={formatCurrency(item.revenue)}
+                      detail={`${item.quantity} sold in ${item.orders} orders`}
+                      percent={(item.revenue / max) * 100}
+                    />
+                  );
+                })}
+              </div>
+            </Panel>
+
+            <Panel
+              title="Most reordered items"
+              subtitle="Quantity leaders that customers keep choosing."
+            >
+              <div className="space-y-3">
+                {analytics.quantityItems.map((item, index) => {
+                  const max = analytics.quantityItems[0]?.quantity || 1;
+                  return (
+                    <RankRow
+                      key={item.name}
+                      rank={index + 1}
+                      name={item.name}
+                      value={`${item.quantity} sold`}
+                      detail={formatCurrency(item.revenue)}
+                      percent={(item.quantity / max) * 100}
+                    />
+                  );
+                })}
+              </div>
+            </Panel>
+          </section>
+
+          <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h3 className="font-serif text-xl font-semibold">
+                  High-value tickets
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Biggest orders in the selected range.
+                </p>
+              </div>
+              <Timer className="h-5 w-5 text-secondary" />
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[620px] text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                    <th className="py-3 font-semibold">Order</th>
+                    <th className="py-3 font-semibold">Table</th>
+                    <th className="py-3 font-semibold">Time</th>
+                    <th className="py-3 font-semibold">Status</th>
+                    <th className="py-3 text-right font-semibold">Value</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {analytics.highValueOrders.map((order) => (
+                    <tr key={order.id} className="border-b border-border/60">
+                      <td className="py-3 font-bold">#{order.id}</td>
+                      <td className="py-3 text-muted-foreground">
+                        Table {getTableLabel(order)}
+                      </td>
+                      <td className="py-3 text-muted-foreground">
+                        {getOrderDate(order).toLocaleString("en-IN", {
+                          day: "numeric",
+                          month: "short",
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })}
+                      </td>
+                      <td className="py-3">
+                        <span className="rounded-full bg-background px-2.5 py-1 text-xs font-bold capitalize">
+                          {order.status || "unknown"}
+                        </span>
+                      </td>
+                      <td className="py-3 text-right font-bold">
+                        {formatCurrency(getOrderTotal(order))}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </>
+      )}
+    </div>
+  );
+}
+
+function MetricTile({
+  icon,
+  label,
+  value,
+  detail,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  detail: string;
+}) {
+  return (
+    <div className="rounded-xl border border-border/80 bg-card p-5 shadow-xs hover:border-[#ECD7A9] transition-all relative overflow-hidden group">
+      <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[#B58428]/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+      <div className="flex items-start justify-between gap-3">
+        <div className="rounded-lg bg-[#FAF3E6] border border-[#ECD7A9] p-2.5 text-[#8E6314] shadow-2xs">
+          {icon}
+        </div>
+        <Utensils className="h-4 w-4 text-muted-foreground/40" />
+      </div>
+      <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+        {label}
+      </p>
+      <p className="mt-1 text-2xl font-bold font-serif text-foreground tracking-tight">{value}</p>
+      <p className="mt-1 text-xs text-muted-foreground font-medium">{detail}</p>
+    </div>
+  );
+}
+
+function InsightTile({
+  icon,
+  label,
+  value,
+  detail,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  detail: string;
+}) {
+  return (
+    <div className="rounded-xl border border-border/80 bg-card p-5 shadow-xs">
+      <div className="flex items-center gap-3">
+        <div className="rounded-lg bg-[#FAF3E6] border border-[#ECD7A9] text-[#8E6314] p-2.5 shadow-2xs">
+          {icon}
+        </div>
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+            {label}
+          </p>
+          <p className="mt-0.5 text-lg font-serif font-bold text-foreground">{value}</p>
+        </div>
+      </div>
+      <p className="mt-4 text-xs text-muted-foreground leading-relaxed">{detail}</p>
+    </div>
+  );
+}
+
+function Panel({
+  title,
+  subtitle,
+  children,
+}: {
+  title: string;
+  subtitle: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-border/80 bg-card p-5 shadow-xs">
+      <div className="mb-4">
+        <h3 className="font-serif text-xl font-bold text-foreground">{title}</h3>
+        <p className="text-xs text-muted-foreground">{subtitle}</p>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function RankRow({
+  rank,
+  name,
+  value,
+  detail,
+  percent,
+}: {
+  rank: number;
+  name: string;
+  value: string;
+  detail: string;
+  percent: number;
+}) {
+  return (
+    <div className="rounded-lg bg-muted/40 border border-border/60 p-3.5 transition-colors hover:bg-muted/70">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#FAF3E6] border border-[#ECD7A9] text-[10px] font-bold text-[#8E6314]">
+              {rank}
+            </span>
+            <p className="truncate font-semibold text-sm text-foreground">{name}</p>
+          </div>
+          <p className="mt-1 pl-7 text-xs text-muted-foreground font-medium">{detail}</p>
+        </div>
+        <p className="shrink-0 text-sm font-bold font-serif text-foreground">{value}</p>
+      </div>
+      <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-border/50">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-[#B58428] to-[#D4A84D]"
+          style={{ width: `${Math.max(8, Math.min(100, percent))}%` }}
+        />
+      </div>
+    </div>
+  );
+}

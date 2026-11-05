@@ -726,9 +726,9 @@ export default function MenuPage() {
   const copyPromoCode = useCallback((code: string) => {
     try {
       if (typeof navigator !== "undefined" && navigator?.clipboard?.writeText) {
-        navigator.clipboard.writeText(code).catch(() => {});
+        navigator.clipboard.writeText(code).catch(() => { });
       }
-    } catch (_) {}
+    } catch (_) { }
     setCopiedCode(code);
     setTimeout(() => setCopiedCode(null), 2500);
   }, []);
@@ -1128,11 +1128,10 @@ export default function MenuPage() {
                 <button
                   key={cat.name + idx}
                   onClick={() => setSelectedCategory(cat.id)}
-                  className={`flex flex-col items-center justify-center min-w-[72px] sm:min-w-[80px] h-[74px] sm:h-[80px] rounded-2xl p-2 flex-shrink-0 btn-smooth-press ${
-                    isSelected
+                  className={`flex flex-col items-center justify-center min-w-[72px] sm:min-w-[80px] h-[74px] sm:h-[80px] rounded-2xl p-2 flex-shrink-0 btn-smooth-press ${isSelected
                       ? "bg-[#7B4E35] text-white shadow-xs"
                       : "bg-[#FFFDF9] text-[#29231F] border border-[#E5DDD1] hover:bg-[#EFE7DA]"
-                  }`}
+                    }`}
                 >
                   <div className="mb-1.5 opacity-90">
                     {getCategoryIcon(cat.name, 19)}
@@ -1158,11 +1157,10 @@ export default function MenuPage() {
                 <button
                   key={f.id}
                   onClick={() => setVegFilter(f.id as any)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 btn-smooth-press ${
-                    isSelected
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 btn-smooth-press ${isSelected
                       ? "bg-[#7B4E35] text-white shadow-2xs"
                       : "bg-[#FFFDF9] text-[#766B61] border border-[#E5DDD1] hover:bg-[#EFE7DA]"
-                  }`}
+                    }`}
                 >
                   {Icon && <Icon size={12} className={f.id === "veg" ? "text-emerald-600" : f.id === "nonveg" ? "text-rose-500" : ""} />}
                   <span>{f.label}</span>
@@ -1415,9 +1413,8 @@ export default function MenuPage() {
                 strokeWidth={isActive ? 2.2 : 1.8}
               />
               <span
-                className={`text-[10px] mt-0.5 ${
-                  isActive ? "font-bold text-[#7B4E35]" : "text-[#766B61]"
-                }`}
+                className={`text-[10px] mt-0.5 ${isActive ? "font-bold text-[#7B4E35]" : "text-[#766B61]"
+                  }`}
               >
                 {tab.label}
               </span>
@@ -1631,34 +1628,34 @@ export default function MenuPage() {
                     </div>
                   </div>
 
-                    <p className="text-xs text-[#766B61] leading-relaxed font-sans">{offer.desc}</p>
+                  <p className="text-xs text-[#766B61] leading-relaxed font-sans">{offer.desc}</p>
 
-                    <div className="flex items-center justify-between pt-1 border-t border-[#E5DDD1]/70">
-                      <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-[#7B4E35] bg-white px-2.5 py-1 rounded-lg border border-[#E5DDD1]">
-                        <Tag size={12} />
-                        <span>{offer.code}</span>
-                      </div>
-                      <button
-                        onClick={() => copyPromoCode(offer.code)}
-                        className="px-4 py-1.5 rounded-full bg-[#7B4E35] text-white font-semibold text-xs hover:bg-[#633D28] transition-colors btn-smooth-press"
-                      >
-                        {copiedCode === offer.code ? "✓ Copied!" : "Apply Code"}
-                      </button>
+                  <div className="flex items-center justify-between pt-1 border-t border-[#E5DDD1]/70">
+                    <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-[#7B4E35] bg-white px-2.5 py-1 rounded-lg border border-[#E5DDD1]">
+                      <Tag size={12} />
+                      <span>{offer.code}</span>
                     </div>
+                    <button
+                      onClick={() => copyPromoCode(offer.code)}
+                      className="px-4 py-1.5 rounded-full bg-[#7B4E35] text-white font-semibold text-xs hover:bg-[#633D28] transition-colors btn-smooth-press"
+                    >
+                      {copiedCode === offer.code ? "✓ Copied!" : "Apply Code"}
+                    </button>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
+            </div>
 
-              <div className="pt-2 text-center">
-                <button
-                  onClick={() => setShowOffers(false)}
-                  className="w-full py-3 rounded-full bg-[#29231F] text-white font-medium text-xs hover:bg-black transition-colors btn-smooth-press"
-                >
-                  Close Offers
-                </button>
-              </div>
+            <div className="pt-2 text-center">
+              <button
+                onClick={() => setShowOffers(false)}
+                className="w-full py-3 rounded-full bg-[#29231F] text-white font-medium text-xs hover:bg-black transition-colors btn-smooth-press"
+              >
+                Close Offers
+              </button>
             </div>
           </div>
+        </div>
       )}
 
       {/* ==================================================== */}
@@ -1810,8 +1807,8 @@ export default function MenuPage() {
                         {activeOrderData?.status === "preparing"
                           ? "👨‍🍳 Kitchen is Preparing"
                           : activeOrderData?.status === "ready"
-                          ? "✨ Order is Ready!"
-                          : "⏳ Order Received"}
+                            ? "✨ Order is Ready!"
+                            : "⏳ Order Received"}
                       </h4>
                     </div>
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase bg-amber-100 text-amber-900 border border-amber-200">
@@ -1881,7 +1878,7 @@ export default function MenuPage() {
                       onClick={() => alert(`Server called for Table ${tableNumber || 1}. A team member will assist you shortly!`)}
                       className="py-2.5 rounded-full bg-[#F8F5EF] border border-[#E5DDD1] text-[#29231F] font-semibold text-xs hover:bg-[#EFE7DA] transition-colors btn-smooth-press"
                     >
-                      Call Server
+                      Call Waiter
                     </button>
                   </div>
                 </div>

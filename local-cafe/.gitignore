@@ -1,0 +1,19 @@
+# Environment and secrets
+.env
+.env.local
+
+# Node modules & build artifacts
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Uploads directory when running locally without Docker
+uploads/
+*.dump
+*.tar.gz
+
+# OS specific
+.DS_Store
+Thumbs.db
+

@@ -1,0 +1,24 @@
+import { Router, Request, Response } from "express";
+import { query } from "../db/index.js";
+
+const router = Router();
+
+router.get("/health", async (_req: Request, res: Response) => {
+  try {
+    await query("SELECT 1");
+    res.json({
+      status: "healthy",
+      database: "connected",
+      timestamp: new Date().toISOString(),
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      status: "degraded",
+      database: "disconnected",
+      error: err.message,
+    });
+  }
+});
+
+export default router;
+

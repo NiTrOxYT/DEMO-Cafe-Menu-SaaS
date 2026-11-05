@@ -1,0 +1,64 @@
+import { Switch, Route, Router as WouterRouter } from "wouter";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import NotFound from "@/pages/not-found";
+import Menu from "@/pages/menu";
+import AnalyticsPage from "./pages/admin/analytics";
+import AdminLogin from "@/pages/admin/login";
+import AdminDashboard from "@/pages/admin/dashboard";
+import OrdersPage from "@/pages/admin/orders";
+import SettingsPage from "@/pages/admin/settings";
+import QRPage from "@/pages/admin/qr";
+import RewardsPage from "@/pages/rewards";
+import CurrentOrder from "@/pages/current-order";
+import RewardsDashboard from "@/pages/rewards-dashboard";
+import BillPage from "@/pages/bill";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      gcTime: 1000 * 60 * 15,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+function Router() {
+  return (
+    <Switch>
+      <Route path="/" component={Menu} />
+      <Route path="/qr-menu" component={Menu} />
+      <Route path="/offers" component={Menu} />
+      <Route path="/locations" component={Menu} />
+      <Route path="/admin/login" component={AdminLogin} />
+      <Route path="/admin" component={AdminDashboard} />
+      <Route path="/admin/orders" component={OrdersPage} />
+      <Route path="/admin/settings" component={SettingsPage} />
+      <Route path="/admin/qr" component={QRPage} />
+      <Route path="/admin/analytics" component={AnalyticsPage} />
+      <Route path="/current-order" component={CurrentOrder} />
+      <Route path="/rewards" component={RewardsPage} />
+      <Route path="/rewards-dashboard" component={RewardsDashboard} />
+      <Route path="/bill" component={BillPage} />
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <WouterRouter>
+          <Router />
+        </WouterRouter>
+        <Toaster />
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
+
+export default App;
+

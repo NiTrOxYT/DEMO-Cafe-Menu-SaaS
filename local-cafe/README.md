@@ -214,7 +214,7 @@ docker compose ps
 The application starts with a clean database containing **zero copied production records**.
 
 1. **Access the Onboarding Wizard**:
-   * Open a web browser and navigate to your public domain: `https://menu.yourcafe.com/admin/login` (or locally at `http://localhost/admin/login`).
+   * Open a web browser and navigate to your public domain: `https://menu.yourcafe.com/admin/login` (or locally at `http://localhost:8080/admin/login`).
    * The system detects that no administrator accounts exist and enters **First-Run Setup Mode**.
 2. **Create Master Administrator**:
    * Enter your Café Name (e.g., *The Golden Brew*).

@@ -44,6 +44,7 @@ import {
   RefreshCw,
   ShoppingBag,
   Sparkles,
+  Percent,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -89,6 +90,7 @@ import {
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import OrdersPage from "./orders";
+import OffersPage from "./offers";
 import QRPage from "./qr";
 import AnalyticsPage from "./analytics";
 import SettingsPage from "./settings";
@@ -233,7 +235,7 @@ function ImageUploadField({
   );
 }
 
-type NavTab = "overview" | "menu" | "orders" | "analytics" | "qr" | "settings";
+type NavTab = "overview" | "menu" | "orders" | "offers" | "analytics" | "qr" | "settings";
 
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
@@ -573,6 +575,7 @@ export default function AdminDashboard() {
     { tab: "overview", label: "Overview", icon: <LayoutDashboard size={16} /> },
     { tab: "menu", label: "Menu", icon: <UtensilsCrossed size={16} /> },
     { tab: "orders", label: "Orders", icon: <ClipboardList size={16} /> },
+    { tab: "offers", label: "Offers & Combos", icon: <Percent size={16} /> },
     {
       tab: "analytics",
       label: "Analytics",
@@ -1338,6 +1341,7 @@ export default function AdminDashboard() {
         )}
 
         {activeTab === "orders" && <OrdersPage />}
+        {activeTab === "offers" && <OffersPage />}
         {activeTab === "analytics" && <AnalyticsPage />}
         {activeTab === "qr" && <QRPage />}
         {activeTab === "settings" && <SettingsPage />}

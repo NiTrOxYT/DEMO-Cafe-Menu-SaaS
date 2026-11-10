@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getOrder } from "@/lib/api";
-import { joinOrderRoom, onOrderUpdated, onOrderStatusChanged } from "@/lib/socket";
+import { joinOrderRoom, onOrderUpdated, onOrderStatusChanged, onSocketConnect, onSessionFinished } from "@/lib/socket";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Clock, ChefHat, CheckCircle, Sparkles, Receipt } from "lucide-react";
 
@@ -22,34 +22,49 @@ const STATUS_META: Record<string, { label: string; icon: React.ReactNode; color:
     bg: "#FEF6E7",
     step: 1,
   },
+  accepted: {
+    label: "Accepted by staff",
+    icon: <CheckCircle size={16} />,
+    color: "#4F46E5",
+    bg: "#EEF2FF",
+    step: 2,
+  },
   preparing: {
     label: "Being prepared",
     icon: <ChefHat size={16} />,
     color: "#2563EB",
     bg: "#EFF6FF",
-    step: 2,
+    step: 3,
   },
   ready: {
     label: "Ready to serve",
     icon: <Sparkles size={16} />,
     color: "#B58428",
     bg: "#FAF4E8",
-    step: 3,
+    step: 4,
+  },
+  served: {
+    label: "Served at table",
+    icon: <CheckCircle size={16} />,
+    color: "#0D9488",
+    bg: "#F0FDFA",
+    step: 5,
   },
   completed: {
-    label: "Served",
+    label: "Served & Completed",
     icon: <CheckCircle size={16} />,
     color: "#2E8540",
     bg: "#EDF5EE",
-    step: 4,
+    step: 5,
   },
 };
 
 const STEPS = [
   { key: "pending", label: "Received" },
+  { key: "accepted", label: "Accepted" },
   { key: "preparing", label: "Preparing" },
   { key: "ready", label: "Ready" },
-  { key: "completed", label: "Served" },
+  { key: "served", label: "Served" },
 ];
 
 function formatINR(amount: number) {
@@ -60,30 +75,25 @@ export default function CurrentOrder() {
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchLatestOrder();
-
-    const tableNumber = new URLSearchParams(window.location.search).get("table");
-    const orderId = localStorage.getItem(`activeOrderId_${tableNumber}`);
-    const token = localStorage.getItem(`orderAccessToken_${orderId}`) || "";
-
-    if (orderId && token) {
-      joinOrderRoom(Number(orderId), token);
+  const getOrderContext = () => {
+    if (typeof window === "undefined") {
+      return { tableNumber: "1", orderId: null, token: "", guestToken: "" };
     }
+    const params = new URLSearchParams(window.location.search);
+    const tableParam = params.get("table");
+    const orderParam = params.get("orderId") || params.get("order");
 
-    const unsub1 = onOrderUpdated(() => fetchLatestOrder());
-    const unsub2 = onOrderStatusChanged(() => fetchLatestOrder());
+    const tableNumber = tableParam || "1";
+    const storedOrderId = localStorage.getItem(`activeOrderId_${tableNumber}`) || localStorage.getItem("lastKnownOrderId");
+    const orderId = orderParam || storedOrderId;
+    const token = orderId ? (localStorage.getItem(`orderAccessToken_${orderId}`) || "") : "";
+    const guestToken = localStorage.getItem(`table_guest_token_${tableNumber}`) || "";
 
-    return () => {
-      unsub1();
-      unsub2();
-    };
-  }, []);
+    return { tableNumber, orderId: orderId ? Number(orderId) : null, token, guestToken };
+  };
 
   async function fetchLatestOrder() {
-    const tableNumber = new URLSearchParams(window.location.search).get("table");
-    const orderId = localStorage.getItem(`activeOrderId_${tableNumber}`);
-    const token = orderId ? (localStorage.getItem(`orderAccessToken_${orderId}`) || "") : "";
+    const { tableNumber, orderId, token, guestToken } = getOrderContext();
 
     if (!orderId) {
       setOrder(null);
@@ -92,7 +102,7 @@ export default function CurrentOrder() {
     }
 
     try {
-      const data = await getOrder(Number(orderId), token);
+      const data = await getOrder(orderId, token, guestToken);
       if (!data || data.is_paid || data.is_active === false) {
         localStorage.removeItem(`activeOrderId_${tableNumber}`);
         setOrder(null);
@@ -106,6 +116,77 @@ export default function CurrentOrder() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    fetchLatestOrder();
+
+    const { orderId, token } = getOrderContext();
+    if (orderId) {
+      joinOrderRoom(orderId, token);
+    }
+
+    // Immediately update order state when status change arrives via WebSocket
+    const unsubStatus = onOrderStatusChanged((payload) => {
+      const { tableNumber, orderId: activeId } = getOrderContext();
+      if (activeId && payload.id === activeId) {
+        if (!payload.is_active || payload.is_paid) {
+          localStorage.removeItem(`activeOrderId_${tableNumber}`);
+          setOrder(null);
+        } else {
+          // Instant optimistic local update
+          setOrder((prev: any) =>
+            prev
+              ? {
+                  ...prev,
+                  status: payload.status,
+                  is_active: payload.is_active,
+                  is_paid: payload.is_paid,
+                }
+              : prev
+          );
+          // Background fetch to ensure full line items and bill details stay in sync
+          fetchLatestOrder();
+        }
+      }
+    });
+
+    const unsubUpdated = onOrderUpdated((updatedOrder) => {
+      const { tableNumber, orderId: activeId } = getOrderContext();
+      if (activeId && updatedOrder.id === activeId) {
+        if (!updatedOrder.is_active || updatedOrder.is_paid) {
+          localStorage.removeItem(`activeOrderId_${tableNumber}`);
+          setOrder(null);
+        } else {
+          setOrder(updatedOrder);
+        }
+      }
+    });
+
+    // On reconnect, re-join order room and fetch freshest status from backend
+    const unsubConnect = onSocketConnect(() => {
+      const current = getOrderContext();
+      if (current.orderId) {
+        joinOrderRoom(current.orderId, current.token);
+      }
+      fetchLatestOrder();
+    });
+
+    const unsubSessionFinished = onSessionFinished(({ tableNumber: finishedTable }) => {
+      const current = getOrderContext();
+      if (current.tableNumber === finishedTable) {
+        localStorage.removeItem(`activeOrderId_${current.tableNumber}`);
+        localStorage.removeItem(`table_guest_token_${current.tableNumber}`);
+        setOrder(null);
+      }
+    });
+
+    return () => {
+      unsubStatus();
+      unsubUpdated();
+      unsubConnect();
+      unsubSessionFinished();
+    };
+  }, []);
 
   if (loading) {
     return (

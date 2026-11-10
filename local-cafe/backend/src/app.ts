@@ -11,6 +11,8 @@ import analyticsRoutes from "./routes/analytics.js";
 import settingsRoutes from "./routes/settings.js";
 import storageRoutes from "./routes/storage.js";
 import healthRoutes from "./routes/health.js";
+import sessionsRoutes from "./routes/sessions.js";
+import offersRoutes from "./routes/offers.js";
 import { UPLOAD_DIR } from "./lib/storage.js";
 
 export function createApp() {
@@ -40,7 +42,9 @@ export function createApp() {
   // Mount API routes
   app.use("/api/auth", authRoutes);
   app.use("/api", menuRoutes);
+  app.use("/api", offersRoutes);
   app.use("/api", ordersRoutes);
+  app.use("/api", sessionsRoutes);
   app.use("/api/rewards", rewardsRoutes);
   app.use("/api", analyticsRoutes);
   app.use("/api", settingsRoutes);

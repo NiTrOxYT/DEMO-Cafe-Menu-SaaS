@@ -1,3 +1,14 @@
-<svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-<rect width="180" height="180" rx="36" fill="#FF3C00"/>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="112" fill="#1E150F"/>
+  <rect x="16" y="16" width="480" height="480" rx="96" stroke="#D4A84D" stroke-width="6" stroke-opacity="0.3"/>
+  <!-- Steam lines -->
+  <path d="M190 140C180 165 200 185 190 210" stroke="#D4A84D" stroke-width="16" stroke-linecap="round"/>
+  <path d="M256 125C246 155 266 180 256 210" stroke="#D4A84D" stroke-width="16" stroke-linecap="round"/>
+  <path d="M322 140C312 165 332 185 322 210" stroke="#D4A84D" stroke-width="16" stroke-linecap="round"/>
+  <!-- Coffee Cup Body -->
+  <path d="M140 240H372V330C372 374.183 336.183 410 292 410H220C175.817 410 140 374.183 140 330V240Z" fill="#FAF8F5"/>
+  <!-- Coffee Cup Handle -->
+  <path d="M370 260H400C422.091 260 440 277.909 440 300C440 322.091 422.091 340 400 340H365" stroke="#FAF8F5" stroke-width="24" stroke-linecap="round"/>
+  <!-- Saucer Base -->
+  <rect x="110" y="430" width="292" height="20" rx="10" fill="#D4A84D"/>
 </svg>

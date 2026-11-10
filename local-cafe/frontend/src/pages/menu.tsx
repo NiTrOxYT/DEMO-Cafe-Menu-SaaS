@@ -1,11 +1,35 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
-import { createOrder, appendOrder, getOrder } from "@/lib/api";
+import {
+  createOrder,
+  getOrder,
+  getTableSession,
+  createTableSession,
+  joinTableSession,
+  getSessionOrders,
+  cancelOrder,
+  getOffers,
+  evaluateOffers,
+  TableSession,
+  Order,
+  Offer,
+} from "@/lib/api";
 import {
   useListMenuItems,
   useListCategories,
   useGetSettings,
   useCreateOrder,
 } from "@/lib/api";
+import {
+  joinOrderRoom,
+  joinSessionRoom,
+  leaveSessionRoom,
+  onOrderStatusChanged,
+  onOrderUpdated,
+  onOrderCreated,
+  onSessionFinished,
+  onSessionUpdated,
+  onSocketConnect,
+} from "@/lib/socket";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
@@ -32,6 +56,7 @@ import {
   MessageCircle,
   Clock,
   Check,
+  CheckCircle,
   Croissant,
   Soup,
   Utensils,
@@ -40,6 +65,10 @@ import {
   Download,
   CreditCard,
   Tag,
+  AlertCircle,
+  RefreshCw,
+  Users,
+  QrCode,
 } from "lucide-react";
 
 // --- Color System Tokens ---
@@ -79,329 +108,6 @@ const FALLBACK_CATEGORY_IMAGES: Record<string, string> = {
   beverages:
     "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=800&q=80",
 };
-
-const DEFAULT_FALLBACK_MENU_ITEMS: MenuItem[] = [
-  // 1. Coffee
-  {
-    id: 101,
-    name: "Cappuccino",
-    description: "Rich espresso with velvety steamed milk and rosetta art.",
-    price: 150,
-    imageUrl: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=800&q=80",
-    categoryId: 1,
-    categoryName: "Coffee",
-    available: true,
-    sortOrder: 1,
-    isVeg: true,
-    isBestseller: true,
-    isSpicy: false,
-    badge: "BESTSELLER",
-  },
-  {
-    id: 102,
-    name: "Espresso Macchiato",
-    description: "Double shot espresso with a dollop of silky microfoam.",
-    price: 130,
-    imageUrl: "https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?auto=format&fit=crop&w=800&q=80",
-    categoryId: 1,
-    categoryName: "Coffee",
-    available: true,
-    sortOrder: 2,
-    isVeg: true,
-    isBestseller: false,
-    isSpicy: false,
-    badge: "CHEF'S PICK",
-  },
-  {
-    id: 103,
-    name: "Vanilla Flat White",
-    description: "Smooth ristretto with silky microfoam and Madagascar vanilla.",
-    price: 180,
-    imageUrl: "https://images.unsplash.com/photo-1577968897966-3d4325b36b61?auto=format&fit=crop&w=800&q=80",
-    categoryId: 1,
-    categoryName: "Coffee",
-    available: true,
-    sortOrder: 3,
-    isVeg: true,
-    isBestseller: false,
-    isSpicy: false,
-    badge: "NEW",
-  },
-  {
-    id: 104,
-    name: "Iced Spanish Latte",
-    description: "Espresso with condensed milk poured over crystal ice cubes.",
-    price: 210,
-    imageUrl: "https://images.unsplash.com/photo-1517256064527-09c73fc73e38?auto=format&fit=crop&w=800&q=80",
-    categoryId: 1,
-    categoryName: "Coffee",
-    available: true,
-    sortOrder: 4,
-    isVeg: true,
-    isBestseller: true,
-    isSpicy: false,
-    badge: "BESTSELLER",
-  },
-
-  // 2. Breakfast
-  {
-    id: 201,
-    name: "Avocado Toast",
-    description: "Sourdough, fresh smashed avocado, poached egg, chilli flakes.",
-    price: 320,
-    imageUrl: "https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&w=800&q=80",
-    categoryId: 2,
-    categoryName: "Breakfast",
-    available: true,
-    sortOrder: 1,
-    isVeg: false,
-    isBestseller: false,
-    isSpicy: true,
-    badge: "CHEF'S PICK",
-  },
-  {
-    id: 202,
-    name: "Almond Butter Croissant",
-    description: "Flaky butter croissant filled with almond frangipane cream.",
-    price: 190,
-    imageUrl: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=800&q=80",
-    categoryId: 2,
-    categoryName: "Breakfast",
-    available: true,
-    sortOrder: 2,
-    isVeg: true,
-    isBestseller: true,
-    isSpicy: false,
-    badge: "BESTSELLER",
-  },
-  {
-    id: 203,
-    name: "Truffle Scrambled Eggs",
-    description: "Farm fresh eggs, white truffle oil, chives on toasted brioche.",
-    price: 290,
-    imageUrl: "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?auto=format&fit=crop&w=800&q=80",
-    categoryId: 2,
-    categoryName: "Breakfast",
-    available: true,
-    sortOrder: 3,
-    isVeg: false,
-    isBestseller: false,
-    isSpicy: false,
-    badge: "NEW",
-  },
-  {
-    id: 204,
-    name: "Acai Berry Bowl",
-    description: "Organic acai, artisan granola, chia seeds, fresh blueberries & kiwi.",
-    price: 340,
-    imageUrl: "https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?auto=format&fit=crop&w=800&q=80",
-    categoryId: 2,
-    categoryName: "Breakfast",
-    available: true,
-    sortOrder: 4,
-    isVeg: true,
-    isBestseller: false,
-    isSpicy: false,
-    badge: "CHEF'S PICK",
-  },
-
-  // 3. Starters
-  {
-    id: 301,
-    name: "Truffle Parmesan Fries",
-    description: "Hand-cut crispy potatoes, aromatic white truffle oil, shaved parmesan.",
-    price: 240,
-    imageUrl: "https://images.unsplash.com/photo-1576107232684-1279f3908594?auto=format&fit=crop&w=800&q=80",
-    categoryId: 3,
-    categoryName: "Starters",
-    available: true,
-    sortOrder: 1,
-    isVeg: true,
-    isBestseller: true,
-    isSpicy: false,
-    badge: "BESTSELLER",
-  },
-  {
-    id: 302,
-    name: "Burrata Caprese Salad",
-    description: "Heirloom tomatoes, fresh Italian burrata, basil pesto, balsamic glaze.",
-    price: 360,
-    imageUrl: "https://images.unsplash.com/photo-1592417817098-8f3d6910985b?auto=format&fit=crop&w=800&q=80",
-    categoryId: 3,
-    categoryName: "Starters",
-    available: true,
-    sortOrder: 2,
-    isVeg: true,
-    isBestseller: false,
-    isSpicy: false,
-    badge: "CHEF'S PICK",
-  },
-  {
-    id: 303,
-    name: "Crispy Calamari",
-    description: "Tender calamari rings with garlic aioli, charred lemon, and herbs.",
-    price: 380,
-    imageUrl: "https://images.unsplash.com/photo-1604909052743-94e838986d24?auto=format&fit=crop&w=800&q=80",
-    categoryId: 3,
-    categoryName: "Starters",
-    available: true,
-    sortOrder: 3,
-    isVeg: false,
-    isBestseller: false,
-    isSpicy: false,
-    badge: "NEW",
-  },
-
-  // 4. Main Course
-  {
-    id: 401,
-    name: "Wild Mushroom Risotto",
-    description: "Creamy carnaroli rice, sauteed porcini, white wine, parmesan crisp.",
-    price: 420,
-    imageUrl: "https://images.unsplash.com/photo-1633964913295-ceb43826e7c9?auto=format&fit=crop&w=800&q=80",
-    categoryId: 4,
-    categoryName: "Main Course",
-    available: true,
-    sortOrder: 1,
-    isVeg: true,
-    isBestseller: false,
-    isSpicy: false,
-    badge: "CHEF'S PICK",
-  },
-  {
-    id: 402,
-    name: "Artisanal Sourdough Margherita",
-    description: "Slow-fermented crust, San Marzano tomatoes, fresh buffalo mozzarella, basil.",
-    price: 450,
-    imageUrl: "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?auto=format&fit=crop&w=800&q=80",
-    categoryId: 4,
-    categoryName: "Main Course",
-    available: true,
-    sortOrder: 2,
-    isVeg: true,
-    isBestseller: true,
-    isSpicy: false,
-    badge: "BESTSELLER",
-  },
-  {
-    id: 403,
-    name: "Grilled Herb Chicken Bowl",
-    description: "Herb-marinated chicken breast, quinoa, roasted zucchini, lemon tahini dressing.",
-    price: 410,
-    imageUrl: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80",
-    categoryId: 4,
-    categoryName: "Main Course",
-    available: true,
-    sortOrder: 3,
-    isVeg: false,
-    isBestseller: false,
-    isSpicy: false,
-    badge: "NEW",
-  },
-
-  // 5. Desserts
-  {
-    id: 501,
-    name: "Chocolate Truffle",
-    description: "Rich. Decadent. Unforgettable. Dark Belgian chocolate ganache.",
-    price: 260,
-    imageUrl: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=80",
-    categoryId: 5,
-    categoryName: "Desserts",
-    available: true,
-    sortOrder: 1,
-    isVeg: true,
-    isBestseller: false,
-    isSpicy: false,
-    badge: "NEW",
-  },
-  {
-    id: 502,
-    name: "Classic Italian Tiramisu",
-    description: "Savoiardi ladyfingers soaked in espresso, mascarpone mousse, Dutch cocoa.",
-    price: 290,
-    imageUrl: "https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?auto=format&fit=crop&w=800&q=80",
-    categoryId: 5,
-    categoryName: "Desserts",
-    available: true,
-    sortOrder: 2,
-    isVeg: true,
-    isBestseller: true,
-    isSpicy: false,
-    badge: "BESTSELLER",
-  },
-  {
-    id: 503,
-    name: "Basque Burnt Cheesecake",
-    description: "Creamy caramelized crust cheesecake served with warm raspberry coulis.",
-    price: 310,
-    imageUrl: "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&w=800&q=80",
-    categoryId: 5,
-    categoryName: "Desserts",
-    available: true,
-    sortOrder: 3,
-    isVeg: true,
-    isBestseller: false,
-    isSpicy: false,
-    badge: "CHEF'S PICK",
-  },
-
-  // 6. Beverages
-  {
-    id: 601,
-    name: "Iced Matcha Latte",
-    description: "Uji ceremonial grade green tea matcha with organic oat milk.",
-    price: 230,
-    imageUrl: "https://images.unsplash.com/photo-1536256263959-770b48d82b0a?auto=format&fit=crop&w=800&q=80",
-    categoryId: 6,
-    categoryName: "Beverages",
-    available: true,
-    sortOrder: 1,
-    isVeg: true,
-    isBestseller: true,
-    isSpicy: false,
-    badge: "BESTSELLER",
-  },
-  {
-    id: 602,
-    name: "Passionfruit Sparkling Cooler",
-    description: "Fresh passionfruit pulp, sparkling soda, mint sprigs, lime.",
-    price: 180,
-    imageUrl: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=800&q=80",
-    categoryId: 6,
-    categoryName: "Beverages",
-    available: true,
-    sortOrder: 2,
-    isVeg: true,
-    isBestseller: false,
-    isSpicy: false,
-    badge: "NEW",
-  },
-  {
-    id: 603,
-    name: "Cold Pressed Green Detox",
-    description: "Cucumber, green apple, celery, spinach, ginger, lime.",
-    price: 200,
-    imageUrl: "https://images.unsplash.com/photo-1613478223719-2ab802602423?auto=format&fit=crop&w=800&q=80",
-    categoryId: 6,
-    categoryName: "Beverages",
-    available: true,
-    sortOrder: 3,
-    isVeg: true,
-    isBestseller: false,
-    isSpicy: false,
-    badge: "CHEF'S PICK",
-  },
-];
-
-const DEFAULT_FALLBACK_CATEGORIES = [
-  { id: 1, name: "Coffee", sortOrder: 1 },
-  { id: 2, name: "Breakfast", sortOrder: 2 },
-  { id: 3, name: "Starters", sortOrder: 3 },
-  { id: 4, name: "Main Course", sortOrder: 4 },
-  { id: 5, name: "Desserts", sortOrder: 5 },
-  { id: 6, name: "Beverages", sortOrder: 6 },
-];
 
 function formatINR(amount: number) {
   return `₹${Math.round(amount)}`;
@@ -672,15 +378,52 @@ const FoodCard = memo(function FoodCard({
 // ==========================================
 // MAIN CUSTOMER-FACING QR MENU COMPONENT
 // ==========================================
+interface PendingCheckout {
+  key: string;
+  signature: string;
+  createdAt: number;
+}
+
+function computeCheckoutSignature(
+  tableNumber: string | number | undefined,
+  items: any[],
+  notes: string,
+  offerId?: number | null
+): string {
+  const sortedItems = [...items]
+    .map((i) => ({ id: i.id, qty: i.quantity, price: Number(i.price) }))
+    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  return JSON.stringify({
+    table: String(tableNumber || "1"),
+    items: sortedItems,
+    notes: notes.trim(),
+    offerId: offerId || null,
+  });
+}
+
 export default function MenuPage() {
-  const { data: menuItems = [] } = useListMenuItems(undefined);
-  const { data: categories = [] } = useListCategories();
+  const {
+    data: menuItems = [],
+    isLoading: isMenuLoading,
+    isError: isMenuError,
+    refetch: refetchMenu,
+  } = useListMenuItems(undefined);
+  const {
+    data: categories = [],
+    isLoading: isCategoriesLoading,
+    isError: isCategoriesError,
+    refetch: refetchCategories,
+  } = useListCategories();
   const { data: settings } = useGetSettings();
 
-  const tableNumber = useMemo(() => {
-    if (typeof window === "undefined") return "1";
-    return new URLSearchParams(window.location.search).get("table") || "1";
+  const tableParam = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    const t = new URLSearchParams(window.location.search).get("table");
+    return t && t.trim() ? t.trim() : null;
   }, []);
+
+  const hasTable = Boolean(tableParam);
+  const tableNumber = tableParam || "";
 
   const restaurantName = settings?.restaurantName ?? "The Golden Brew";
   const tagline = settings?.tagline ?? "Fresh ingredients. Thoughtful recipes. A better you, every day.";
@@ -697,16 +440,47 @@ export default function MenuPage() {
   const [cartOpen, setCartOpen] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [favorites, setFavorites] = useState<number[]>([]);
-  const [activeNav, setActiveNav] = useState<"home" | "menu" | "offers" | "locations" | "profile">("home");
+  const [activeNav, setActiveNav] = useState<"home" | "menu" | "offers">("home");
 
   // Sub-Modals
   const [showOffers, setShowOffers] = useState(false);
   const [showLocations, setShowLocations] = useState(false);
   const [showActiveOrderModal, setShowActiveOrderModal] = useState(false);
   const [showBillModal, setShowBillModal] = useState(false);
+  const [showNoTableModal, setShowNoTableModal] = useState(false);
+  const [manualTableInput, setManualTableInput] = useState("");
   const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
   const [activeOrderData, setActiveOrderData] = useState<any>(null);
-  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+
+  // Table Session State
+  const [sessionStatus, setSessionStatus] = useState<"loading" | "needs_party_size" | "active" | "full" | "finished" | "none">(
+    hasTable ? "loading" : "none"
+  );
+  const [sessionData, setSessionData] = useState<TableSession | null>(null);
+  const [sessionMember, setSessionMember] = useState<{ id: number; isFirstGuest: boolean; guestName?: string } | null>(null);
+  const [sessionMembersCount, setSessionMembersCount] = useState<number>(1);
+  const [sessionOrders, setSessionOrders] = useState<Order[]>([]);
+  const [cancellingOrderId, setCancellingOrderId] = useState<number | null>(null);
+  const [selectedPartySize, setSelectedPartySize] = useState<number>(2);
+  const [isJoiningSession, setIsJoiningSession] = useState<boolean>(false);
+  const [orderNotes, setOrderNotes] = useState<string>("");
+  const [isPlacingOrder, setIsPlacingOrder] = useState<boolean>(false);
+  const isSubmittingOrderRef = useRef<boolean>(false);
+  const pendingCheckoutRef = useRef<PendingCheckout | null>(null);
+
+  // Restore any unresolved pending checkout from sessionStorage on mount / tableNumber change
+  useEffect(() => {
+    if (typeof window !== "undefined" && tableNumber) {
+      try {
+        const stored = sessionStorage.getItem(`pending_checkout_${tableNumber}`);
+        if (stored) {
+          pendingCheckoutRef.current = JSON.parse(stored);
+        }
+      } catch (e) {
+        console.error("Failed to parse pending checkout from sessionStorage", e);
+      }
+    }
+  }, [tableNumber]);
 
   const categoryBarRef = useRef<HTMLDivElement>(null);
 
@@ -723,15 +497,93 @@ export default function MenuPage() {
     }
   }, []);
 
-  const copyPromoCode = useCallback((code: string) => {
+  // Offers & Combos State (Automatic Evaluation)
+  const [offersList, setOffersList] = useState<Offer[]>([]);
+  const [offersLoading, setOffersLoading] = useState(false);
+  const [appliedOffer, setAppliedOffer] = useState<{
+    id?: number;
+    title: string;
+    discountAmount: number;
+    offerType?: string;
+  } | null>(null);
+  const [evaluatingOffers, setEvaluatingOffers] = useState(false);
+
+  const fetchOffers = useCallback(async () => {
     try {
-      if (typeof navigator !== "undefined" && navigator?.clipboard?.writeText) {
-        navigator.clipboard.writeText(code).catch(() => { });
-      }
-    } catch (_) { }
-    setCopiedCode(code);
-    setTimeout(() => setCopiedCode(null), 2500);
+      setOffersLoading(true);
+      const data = await getOffers(false);
+      setOffersList(data);
+    } catch (e) {
+      console.error("Failed to load offers", e);
+    } finally {
+      setOffersLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchOffers();
+  }, [fetchOffers]);
+
+  // Automatically recalculate eligible offer whenever cart items or subtotal change
+  useEffect(() => {
+    if (cart.items.length === 0 || cart.total <= 0) {
+      setAppliedOffer(null);
+      return;
+    }
+
+    let isMounted = true;
+    setEvaluatingOffers(true);
+
+    const cartItemsPayload = cart.items.map((i) => ({
+      menuItemId: i.id,
+      name: i.name,
+      quantity: i.quantity,
+      price: i.price,
+    }));
+
+    evaluateOffers(cart.total, cartItemsPayload)
+      .then((res) => {
+        if (!isMounted) return;
+        if (res?.bestOffer && res.discountAmount > 0) {
+          setAppliedOffer({
+            id: res.bestOffer.id,
+            title: res.bestOffer.title,
+            discountAmount: res.discountAmount,
+            offerType: res.bestOffer.offerType,
+          });
+        } else {
+          setAppliedOffer(null);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to evaluate offers", err);
+        if (isMounted) setAppliedOffer(null);
+      })
+      .finally(() => {
+        if (isMounted) setEvaluatingOffers(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [cart.items, cart.total]);
+
+  const handleAddComboToCart = (offer: Offer) => {
+    if (Array.isArray(offer.comboItems) && offer.comboItems.length > 0) {
+      for (const ci of offer.comboItems) {
+        const menuItem = menuItems.find((m) => m.id === ci.menuItemId) || {
+          id: ci.menuItemId || 999000 + Math.floor(Math.random() * 1000),
+          name: ci.name,
+          price: offer.comboPrice ? Math.round(Number(offer.comboPrice) / offer.comboItems.length) : 100,
+        };
+        for (let q = 0; q < (ci.quantity || 1); q++) {
+          cart.add(menuItem as any);
+        }
+      }
+      setShowOffers(false);
+      setCartOpen(true);
+    }
+  };
 
   const toggleFavorite = useCallback((id: number, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -750,33 +602,177 @@ export default function MenuPage() {
     return map;
   }, [cart.items]);
 
-  const handlePlaceOrder = async () => {
-    if (cart.items.length === 0) return;
+  const fetchSessionOrders = useCallback(async (sessionId: number, token?: string) => {
+    const guestToken = token || localStorage.getItem(`table_guest_token_${tableNumber}`) || "";
+    try {
+      const orders = await getSessionOrders(sessionId, guestToken);
+      setSessionOrders(orders);
+      const active = orders.filter((o) => o.status !== "cancelled" && o.status !== "completed");
+      if (active.length > 0) {
+        setActiveOrderId(active[active.length - 1].id.toString());
+        setActiveOrderData(active[active.length - 1]);
+      } else if (orders.length > 0) {
+        setActiveOrderId(orders[orders.length - 1].id.toString());
+        setActiveOrderData(orders[orders.length - 1]);
+      } else {
+        setActiveOrderId(null);
+        setActiveOrderData(null);
+      }
+    } catch (err) {
+      console.error("Failed to load session orders", err);
+    }
+  }, [tableNumber]);
+
+  const initSession = useCallback(async () => {
+    if (!hasTable || !tableNumber) {
+      setSessionStatus("none");
+      return;
+    }
+    setSessionStatus("loading");
+    const storedToken = localStorage.getItem(`table_guest_token_${tableNumber}`) || "";
 
     try {
-      const existingOrderId = localStorage.getItem(`activeOrderId_${tableNumber}`);
-      if (existingOrderId) {
-        const token = localStorage.getItem(`orderAccessToken_${existingOrderId}`) || "";
-        const updatedOrder = await appendOrder(
-          Number(existingOrderId),
-          cart.items.map((item) => ({
-            menuItemId: item.id,
-            name: item.name,
-            quantity: item.quantity,
-            price: item.price,
-          })),
-          token
-        );
+      const res = await getTableSession(tableNumber, storedToken);
 
-        setActiveOrderData(updatedOrder);
-        cart.clear();
-        setCartOpen(false);
-        setOrderPlaced(true);
-        setTimeout(() => setOrderPlaced(false), 4000);
+      // Case 1: No active session exists for this table -> first guest sets party size
+      if (!res.active) {
+        localStorage.removeItem(`table_guest_token_${tableNumber}`);
+        setSessionData(null);
+        setSessionMember(null);
+        setSessionOrders([]);
+        setSessionStatus("needs_party_size");
         return;
       }
 
-      // Create new order via local Express API
+      // Case 2: Active session exists and guest is already a member
+      if (res.isMember && res.session) {
+        setSessionData(res.session);
+        setSessionMember(res.member || null);
+        setSessionMembersCount(res.membersCount || 1);
+        setSessionStatus("active");
+        joinSessionRoom(res.session.id, storedToken);
+        fetchSessionOrders(res.session.id, storedToken);
+        return;
+      }
+
+      // Case 3: Active session exists, but current device doesn't have a valid member token yet
+      if (res.session) {
+        if (res.isFull) {
+          setSessionData(res.session);
+          setSessionMembersCount(res.membersCount || res.session.partySize);
+          setSessionStatus("full");
+          return;
+        }
+
+        // Join existing session without asking party size
+        try {
+          const joinRes = await joinTableSession(tableNumber, storedToken);
+          localStorage.setItem(`table_guest_token_${tableNumber}`, joinRes.guestToken);
+          setSessionData(joinRes.session);
+          setSessionMember(joinRes.member);
+          setSessionMembersCount(joinRes.membersCount);
+          setSessionStatus("active");
+          joinSessionRoom(joinRes.session.id, joinRes.guestToken);
+          fetchSessionOrders(joinRes.session.id, joinRes.guestToken);
+        } catch (joinErr: any) {
+          if (joinErr?.message?.includes("full") || joinErr?.code === "SESSION_FULL") {
+            setSessionData(res.session);
+            setSessionStatus("full");
+          } else {
+            setSessionStatus("active");
+          }
+        }
+      }
+    } catch (err: any) {
+      console.error("Failed to check table session", err);
+      setSessionStatus("active");
+    }
+  }, [hasTable, tableNumber, fetchSessionOrders]);
+
+  const handleConfirmPartySize = async (size?: number) => {
+    const chosenSize = size ?? selectedPartySize;
+    if (!chosenSize || chosenSize < 1 || chosenSize > 4 || isJoiningSession) return;
+    try {
+      setIsJoiningSession(true);
+      setSessionStatus("loading");
+      const createRes = await createTableSession(tableNumber, chosenSize);
+      localStorage.setItem(`table_guest_token_${tableNumber}`, createRes.guestToken);
+      setSessionData(createRes.session);
+      setSessionMember(createRes.member);
+      setSessionMembersCount(1);
+      setSessionStatus("active");
+      joinSessionRoom(createRes.session.id, createRes.guestToken);
+      fetchSessionOrders(createRes.session.id, createRes.guestToken);
+    } catch (err: any) {
+      // If session was created concurrently, re-init to join it
+      initSession();
+    } finally {
+      setIsJoiningSession(false);
+    }
+  };
+
+  const handleCancelOrder = async (orderId: number) => {
+    if (!window.confirm("Are you sure you want to cancel your order?")) return;
+    try {
+      setCancellingOrderId(orderId);
+      const guestToken = localStorage.getItem(`table_guest_token_${tableNumber}`) || "";
+      await cancelOrder(orderId, guestToken);
+      if (sessionData?.id) {
+        fetchSessionOrders(sessionData.id, guestToken);
+      }
+    } catch (err: any) {
+      alert(err.message || "Failed to cancel order");
+    } finally {
+      setCancellingOrderId(null);
+    }
+  };
+
+  const handlePlaceOrder = async () => {
+    if (!hasTable || !tableNumber) {
+      setShowNoTableModal(true);
+      return;
+    }
+
+    // Synchronous submit lock blocks accidental double-taps immediately
+    if (isSubmittingOrderRef.current || cart.items.length === 0) return;
+    isSubmittingOrderRef.current = true;
+    setIsPlacingOrder(true);
+
+    try {
+      const guestToken = localStorage.getItem(`table_guest_token_${tableNumber}`) || "";
+      const currentSignature = computeCheckoutSignature(
+        tableNumber,
+        cart.items,
+        orderNotes,
+        appliedOffer?.id
+      );
+
+      // Check if there is an unresolved pending checkout for the exact same payload
+      let idempotencyKey: string;
+      const pending = pendingCheckoutRef.current;
+
+      if (pending && pending.signature === currentSignature) {
+        // Retry of unresolved checkout attempt: reuse the exact same submission key
+        idempotencyKey = pending.key;
+      } else {
+        // New checkout submission or cart modified: generate fresh key
+        idempotencyKey = `idemp_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+        const newPending: PendingCheckout = {
+          key: idempotencyKey,
+          signature: currentSignature,
+          createdAt: Date.now(),
+        };
+        pendingCheckoutRef.current = newPending;
+        if (typeof window !== "undefined") {
+          try {
+            sessionStorage.setItem(`pending_checkout_${tableNumber}`, JSON.stringify(newPending));
+          } catch (e) {}
+        }
+      }
+
+      const calculatedFinalTotal = Math.max(0, Math.round((cart.total - (appliedOffer?.discountAmount || 0)) * 100) / 100);
+
+      // Every separate Place Order submission creates a new, independent order
       const order = await createOrder({
         tableNumber: tableNumber || 1,
         tableId: Number(tableNumber || 1),
@@ -786,69 +782,158 @@ export default function MenuPage() {
           quantity: item.quantity,
           price: item.price,
         })),
+        notes: orderNotes.trim() || undefined,
         subtotal: cart.total,
+        discount: appliedOffer?.discountAmount || 0,
+        offerId: appliedOffer?.id || undefined,
         tax: 0,
-        total: cart.total,
-      });
+        total: calculatedFinalTotal,
+      }, guestToken, idempotencyKey);
+
+      // Confirmed success: clear pending attempt so subsequent orders receive a new key
+      pendingCheckoutRef.current = null;
+      if (typeof window !== "undefined") {
+        try {
+          sessionStorage.removeItem(`pending_checkout_${tableNumber}`);
+        } catch (e) {}
+      }
 
       if (order?.orderAccessToken) {
         localStorage.setItem(`orderAccessToken_${order.id}`, order.orderAccessToken);
+        joinOrderRoom(order.id, order.orderAccessToken);
       }
       localStorage.setItem(`activeOrderId_${tableNumber}`, order.id.toString());
+      localStorage.setItem("lastKnownOrderId", order.id.toString());
       setActiveOrderId(order.id.toString());
       setActiveOrderData(order);
 
+      if (sessionData?.id) {
+        fetchSessionOrders(sessionData.id, guestToken);
+      }
+
       cart.clear();
+      setAppliedOffer(null);
       setCartOpen(false);
+      setOrderNotes("");
       setOrderPlaced(true);
       setTimeout(() => setOrderPlaced(false), 4000);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      // Retain pendingCheckoutRef and sessionStorage intact on error/lost response for retry
+      alert(err.message || "Failed to place order. Please try again.");
+    } finally {
+      // Synchronous submit lock resets in finally to allow retrying or new submissions
+      isSubmittingOrderRef.current = false;
+      setIsPlacingOrder(false);
     }
   };
 
   useEffect(() => {
-    const checkActiveOrder = async () => {
-      const orderId = localStorage.getItem(`activeOrderId_${tableNumber}`);
-      if (!orderId) return;
+    if (!hasTable || !tableNumber) {
+      setSessionStatus("none");
+      return;
+    }
 
-      try {
-        const token = localStorage.getItem(`orderAccessToken_${orderId}`) || "";
-        const data = await getOrder(Number(orderId), token);
+    initSession();
 
-        if (!data || data.status === "completed" || data.is_paid === true) {
-          localStorage.removeItem(`activeOrderId_${tableNumber}`);
-          setActiveOrderId(null);
-          setActiveOrderData(null);
-          return;
-        }
-        setActiveOrderId(orderId);
-        setActiveOrderData(data);
-      } catch (e) {
-        console.error("Failed to load active order", e);
+    // Listen for session finished by admin
+    const unsubSessionFinished = onSessionFinished(({ sessionId, tableNumber: finishedTable }) => {
+      if ((sessionData && sessionData.id === sessionId) || tableNumber === finishedTable) {
+        setSessionStatus("finished");
+        localStorage.removeItem(`table_guest_token_${tableNumber}`);
+        localStorage.removeItem(`activeOrderId_${tableNumber}`);
+        setActiveOrderId(null);
+        setActiveOrderData(null);
+        setSessionOrders([]);
       }
+    });
+
+    // Listen for member count updates
+    const unsubSessionUpdated = onSessionUpdated((updatedSession) => {
+      if (sessionData && sessionData.id === updatedSession.id) {
+        setSessionMembersCount(updatedSession.membersCount);
+      }
+    });
+
+    // Realtime order creation
+    const unsubOrderCreated = onOrderCreated((order) => {
+      if (sessionData?.id && (order.session_id === sessionData.id || order.table_number === tableNumber)) {
+        const guestToken = localStorage.getItem(`table_guest_token_${tableNumber}`) || "";
+        fetchSessionOrders(sessionData.id, guestToken);
+      }
+    });
+
+    // Realtime order update
+    const unsubOrderUpdated = onOrderUpdated((order) => {
+      if (sessionData?.id && (order.session_id === sessionData.id || order.table_number === tableNumber)) {
+        const guestToken = localStorage.getItem(`table_guest_token_${tableNumber}`) || "";
+        fetchSessionOrders(sessionData.id, guestToken);
+      }
+    });
+
+    // Realtime order status change
+    const unsubStatus = onOrderStatusChanged((payload) => {
+      setSessionOrders((prev) =>
+        prev.map((o) =>
+          o.id === payload.id
+            ? {
+                ...o,
+                status: payload.status as any,
+                is_active: payload.is_active,
+                is_paid: payload.is_paid,
+              }
+            : o
+        )
+      );
+      if (sessionData?.id && (payload.session_id === sessionData.id || sessionOrders.some(o => o.id === payload.id))) {
+        const guestToken = localStorage.getItem(`table_guest_token_${tableNumber}`) || "";
+        fetchSessionOrders(sessionData.id, guestToken);
+      }
+    });
+
+    const unsubConnect = onSocketConnect(() => {
+      const guestToken = localStorage.getItem(`table_guest_token_${tableNumber}`) || "";
+      if (sessionData?.id && guestToken) {
+        joinSessionRoom(sessionData.id, guestToken);
+        fetchSessionOrders(sessionData.id, guestToken);
+      }
+    });
+
+    const interval = setInterval(() => {
+      if (sessionData?.id) {
+        const guestToken = localStorage.getItem(`table_guest_token_${tableNumber}`) || "";
+        fetchSessionOrders(sessionData.id, guestToken);
+      }
+    }, 20000);
+
+    return () => {
+      clearInterval(interval);
+      unsubSessionFinished();
+      unsubSessionUpdated();
+      unsubOrderCreated();
+      unsubOrderUpdated();
+      unsubStatus();
+      unsubConnect();
     };
-
-    checkActiveOrder();
-    const interval = setInterval(checkActiveOrder, 15000);
-    return () => clearInterval(interval);
-  }, [tableNumber]);
-
-  const rawItems = useMemo(() => {
-    return (menuItems && menuItems.length > 0)
-      ? (menuItems as MenuItem[])
-      : DEFAULT_FALLBACK_MENU_ITEMS;
-  }, [menuItems]);
+  }, [hasTable, tableNumber, sessionData?.id, initSession, fetchSessionOrders]);
 
   const rawCategories = useMemo(() => {
-    return (categories && categories.length > 0)
-      ? categories
-      : DEFAULT_FALLBACK_CATEGORIES;
+    return Array.isArray(categories) ? categories : [];
   }, [categories]);
 
   const sortedCategories = useMemo(() => {
-    return [...rawCategories].sort((a, b) => a.sortOrder - b.sortOrder);
+    return [...rawCategories].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
   }, [rawCategories]);
+
+  const validCategoryIds = useMemo(() => {
+    return new Set(rawCategories.map((c) => c.id));
+  }, [rawCategories]);
+
+  const rawItems = useMemo(() => {
+    if (!Array.isArray(menuItems)) return [];
+    // Only items mapped to an active/valid category
+    return (menuItems as MenuItem[]).filter((item) => validCategoryIds.has(item.categoryId));
+  }, [menuItems, validCategoryIds]);
 
   // Filtered menu items
   const filtered = useMemo(() => {
@@ -891,11 +976,11 @@ export default function MenuPage() {
   ], [sortedCategories]);
 
   return (
-    <div className="min-h-screen bg-[#F8F5EF] text-[#29231F] font-sans antialiased selection:bg-[#EFE7DA] selection:text-[#7B4E35] pb-24">
+    <div className="min-h-[100dvh] bg-[#F8F5EF] text-[#29231F] font-sans antialiased selection:bg-[#EFE7DA] selection:text-[#7B4E35] pb-[max(6.5rem,calc(5.5rem+env(safe-area-inset-bottom)))]">
       {/* ==================================================== */}
       {/* 1. TOP HEADER (Exact Match to Reference Mockup)       */}
       {/* ==================================================== */}
-      <header className="sticky top-0 z-40 bg-[#F8F5EF]/95 backdrop-blur-md px-4 sm:px-6 py-3.5 flex items-center justify-between border-b border-[#E5DDD1]">
+      <header className="sticky top-0 z-40 bg-[#F8F5EF]/95 backdrop-blur-md px-3 sm:px-6 pt-[max(0.625rem,env(safe-area-inset-top))] pb-3 flex items-center justify-between border-b border-[#E5DDD1]">
         {/* Left Café Logo */}
         <div className="flex items-center gap-2.5">
           <BotanicalLeaf className="w-6 h-6 text-[#29231F]" />
@@ -903,9 +988,24 @@ export default function MenuPage() {
             <h1 className="font-serif text-[17px] sm:text-[19px] font-bold text-[#29231F] leading-tight tracking-tight">
               {restaurantName}
             </h1>
-            <p className="text-[8px] uppercase tracking-[0.24em] text-[#766B61] font-semibold">
-              CAFÉ & KITCHEN
-            </p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="text-[8px] uppercase tracking-[0.24em] text-[#766B61] font-semibold">
+                CAFÉ & KITCHEN
+              </span>
+              {hasTable && tableNumber ? (
+                <span className="text-[9px] font-bold text-[#7B4E35] bg-[#FAF3E6] border border-[#ECD7A9] px-1.5 py-0.5 rounded-full inline-flex items-center gap-1">
+                  <Users size={9} />
+                  <span>T{tableNumber}</span>
+                  {sessionData && (
+                    <span>• {sessionMembersCount}/{sessionData.partySize} Guests</span>
+                  )}
+                </span>
+              ) : (
+                <span className="text-[9px] font-bold text-[#766B61] bg-[#FAF3E6] border border-[#ECD7A9] px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                  <span>Digital Menu</span>
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -988,7 +1088,7 @@ export default function MenuPage() {
         )}
       </AnimatePresence>
 
-      <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto px-4 sm:px-6 pt-3 space-y-4 sm:space-y-5">
+      <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto px-3 sm:px-6 pt-2.5 sm:pt-3 space-y-3.5 sm:space-y-5">
         {/* ==================================================== */}
         {/* 2. HERO BANNER SECTION (Exact Match to Reference)    */}
         {/* ==================================================== */}
@@ -1076,63 +1176,111 @@ export default function MenuPage() {
         {/* ==================================================== */}
         {/* 3. CATEGORY SCROLLER (Exact Match to Reference)      */}
         {/* ==================================================== */}
-        <section id="category-scroller" className="space-y-2">
-          <div
-            ref={categoryBarRef}
-            className="flex items-center gap-2.5 overflow-x-auto pb-1 scrollbar-none"
-          >
-            {displayCategories.map((cat, idx) => {
-              const isSelected = selectedCategory === cat.id;
-              return (
-                <button
-                  key={cat.name + idx}
-                  onClick={() => setSelectedCategory(cat.id)}
-                  className={`flex flex-col items-center justify-center min-w-[72px] sm:min-w-[80px] h-[74px] sm:h-[80px] rounded-2xl p-2 flex-shrink-0 btn-smooth-press ${isSelected
-                      ? "bg-[#7B4E35] text-white shadow-xs"
-                      : "bg-[#FFFDF9] text-[#29231F] border border-[#E5DDD1] hover:bg-[#EFE7DA]"
-                    }`}
-                >
-                  <div className="mb-1.5 opacity-90">
-                    {getCategoryIcon(cat.name, 19)}
-                  </div>
-                  <span className="text-[11px] sm:text-[12px] font-semibold tracking-tight">
-                    {cat.name}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+        {sortedCategories.length > 0 && (
+          <section id="category-scroller" className="space-y-2">
+            <div
+              ref={categoryBarRef}
+              className="flex items-center gap-2.5 overflow-x-auto pb-1 scrollbar-none"
+            >
+              {displayCategories.map((cat, idx) => {
+                const isSelected = selectedCategory === cat.id;
+                return (
+                  <button
+                    key={cat.name + idx}
+                    onClick={() => setSelectedCategory(cat.id)}
+                    className={`flex flex-col items-center justify-center min-w-[72px] sm:min-w-[80px] h-[74px] sm:h-[80px] rounded-2xl p-2 flex-shrink-0 btn-smooth-press ${isSelected
+                        ? "bg-[#7B4E35] text-white shadow-xs"
+                        : "bg-[#FFFDF9] text-[#29231F] border border-[#E5DDD1] hover:bg-[#EFE7DA]"
+                      }`}
+                  >
+                    <div className="mb-1.5 opacity-90">
+                      {getCategoryIcon(cat.name, 19)}
+                    </div>
+                    <span className="text-[11px] sm:text-[12px] font-semibold tracking-tight">
+                      {cat.name}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
 
-          {/* Dietary Filter Buttons (Veg / Non-Veg) */}
-          <div className="flex items-center gap-2 pt-1">
-            {[
-              { id: "all", label: "All" },
-              { id: "veg", label: "Veg", icon: Leaf },
-              { id: "nonveg", label: "Non-Veg", icon: Flame },
-            ].map((f) => {
-              const isSelected = vegFilter === f.id;
-              const Icon = f.icon;
-              return (
-                <button
-                  key={f.id}
-                  onClick={() => setVegFilter(f.id as any)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 btn-smooth-press ${isSelected
-                      ? "bg-[#7B4E35] text-white shadow-2xs"
-                      : "bg-[#FFFDF9] text-[#766B61] border border-[#E5DDD1] hover:bg-[#EFE7DA]"
-                    }`}
-                >
-                  {Icon && <Icon size={12} className={f.id === "veg" ? "text-emerald-600" : f.id === "nonveg" ? "text-rose-500" : ""} />}
-                  <span>{f.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </section>
+            {/* Dietary Filter Buttons (Veg / Non-Veg) */}
+            <div className="flex items-center gap-2 pt-1">
+              {[
+                { id: "all", label: "All" },
+                { id: "veg", label: "Veg", icon: Leaf },
+                { id: "nonveg", label: "Non-Veg", icon: Flame },
+              ].map((f) => {
+                const isSelected = vegFilter === f.id;
+                const Icon = f.icon;
+                return (
+                  <button
+                    key={f.id}
+                    onClick={() => setVegFilter(f.id as any)}
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 btn-smooth-press ${isSelected
+                        ? "bg-[#7B4E35] text-white shadow-2xs"
+                        : "bg-[#FFFDF9] text-[#766B61] border border-[#E5DDD1] hover:bg-[#EFE7DA]"
+                      }`}
+                  >
+                    {Icon && <Icon size={12} className={f.id === "veg" ? "text-emerald-600" : f.id === "nonveg" ? "text-rose-500" : ""} />}
+                    <span>{f.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* ==================================================== */}
         {/* 4. CHEF'S PICKS & FULL MENU CATEGORY SECTIONS        */}
         {/* ==================================================== */}
 
+        {/* API ERROR STATE */}
+        {(isMenuError || isCategoriesError) && (
+          <div className="py-12 px-6 text-center bg-[#FFFDF9] rounded-2xl border border-rose-200 shadow-sm max-w-md mx-auto my-6 space-y-3">
+            <div className="w-12 h-12 rounded-full bg-rose-50 border border-rose-200 flex items-center justify-center mx-auto text-rose-500">
+              <AlertCircle size={22} />
+            </div>
+            <h3 className="font-serif text-lg font-bold text-[#29231F]">Unable to Load Menu</h3>
+            <p className="text-xs text-[#766B61] leading-relaxed">
+              We couldn't connect to the café server. Please verify your connection and tap retry.
+            </p>
+            <button
+              onClick={() => {
+                refetchMenu();
+                refetchCategories();
+              }}
+              className="px-5 py-2.5 rounded-full bg-[#7B4E35] text-white text-xs font-semibold hover:bg-[#633E2B] transition-colors shadow-sm inline-flex items-center gap-1.5 btn-smooth-press"
+            >
+              <RefreshCw size={14} />
+              <span>Retry</span>
+            </button>
+          </div>
+        )}
+
+        {/* LOADING STATE */}
+        {(isMenuLoading || isCategoriesLoading) && !(isMenuError || isCategoriesError) && (
+          <div className="py-16 text-center text-[#766B61] space-y-3">
+            <div className="w-10 h-10 rounded-full border-2 border-[#7B4E35] border-t-transparent animate-spin mx-auto" />
+            <p className="text-xs font-medium uppercase tracking-wider text-[#766B61]">Loading Menu...</p>
+          </div>
+        )}
+
+        {/* EMPTY MENU STATE */}
+        {!isMenuLoading && !isCategoriesLoading && !isMenuError && !isCategoriesError && rawItems.length === 0 && (
+          <div className="py-16 px-6 text-center bg-[#FFFDF9] rounded-2xl border border-[#E5DDD1] shadow-2xs max-w-md mx-auto my-6 space-y-3">
+            <div className="w-12 h-12 rounded-full bg-[#FAF4E8] border border-[#E8E2D8] flex items-center justify-center mx-auto text-[#B58428]">
+              <Coffee size={24} />
+            </div>
+            <h3 className="font-serif text-lg font-bold text-[#29231F]">No Menu Items Available Yet</h3>
+            <p className="text-xs text-[#766B61] leading-relaxed">
+              Our kitchen has not published any menu items yet. Please check back shortly or speak with our staff!
+            </p>
+          </div>
+        )}
+
+        {!isMenuLoading && !isCategoriesLoading && !isMenuError && !isCategoriesError && rawItems.length > 0 && (
+          <>
         {/* SEARCH RESULTS VIEW (When search is active) */}
         {searchQuery.trim() !== "" && (
           <section className="space-y-3 pt-2">
@@ -1342,64 +1490,96 @@ export default function MenuPage() {
             )}
           </>
         )}
+        </>
+        )}
       </div>
 
       {/* ==================================================== */}
-      {/* 6. FIXED BOTTOM NAVIGATION BAR (Exact Match)         */}
+      {/* 6. FIXED BOTTOM NAVIGATION BAR                       */}
       {/* ==================================================== */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#FFFDF9]/95 backdrop-blur-md border-t border-[#E5DDD1] flex items-center justify-around py-2.5 px-3 pb-safe">
-        {[
-          { id: "home", label: "Home", icon: HomeIcon, action: () => window.scrollTo({ top: 0, behavior: "smooth" }) },
-          { id: "menu", label: "Menu", icon: Utensils, action: () => document.getElementById("category-scroller")?.scrollIntoView({ behavior: "smooth" }) },
-          { id: "offers", label: "Offers", icon: Percent, action: () => setShowOffers(true) },
-          { id: "locations", label: "Locations", icon: MapPin, action: () => setShowLocations(true) },
-          { id: "profile", label: "Profile", icon: User, action: () => (window.location.href = "/rewards") },
-        ].map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeNav === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => {
-                setActiveNav(tab.id as any);
-                tab.action();
-              }}
-              className="flex flex-col items-center justify-center py-0.5 px-2 relative btn-smooth-press"
-            >
-              <Icon
-                size={19}
-                className={isActive ? "text-[#7B4E35]" : "text-[#766B61]"}
-                strokeWidth={isActive ? 2.2 : 1.8}
-              />
-              <span
-                className={`text-[10px] mt-0.5 ${isActive ? "font-bold text-[#7B4E35]" : "text-[#766B61]"
-                  }`}
+      <nav
+        aria-label="Customer Navigation"
+        className="fixed bottom-0 left-0 right-0 z-40 bg-[#FFFDF9]/95 backdrop-blur-md border-t border-[#E5DDD1] pb-[max(0.625rem,env(safe-area-inset-bottom))]"
+      >
+        <div className="max-w-md mx-auto grid grid-cols-3 items-center px-2 py-1 sm:py-1.5">
+          {[
+            {
+              id: "home",
+              label: "Home",
+              icon: HomeIcon,
+              action: () => window.scrollTo({ top: 0, behavior: "smooth" }),
+            },
+            {
+              id: "menu",
+              label: "Menu",
+              icon: Utensils,
+              action: () =>
+                document
+                  .getElementById("category-scroller")
+                  ?.scrollIntoView({ behavior: "smooth" }),
+            },
+            {
+              id: "offers",
+              label: "Offers",
+              icon: Percent,
+              action: () => setShowOffers(true),
+            },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeNav === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => {
+                  setActiveNav(tab.id as any);
+                  tab.action();
+                }}
+                className="flex flex-col items-center justify-center min-h-[44px] py-1 px-2 relative transition-colors cursor-pointer select-none group"
               >
-                {tab.label}
-              </span>
-              {isActive && (
-                <span className="w-1 h-1 rounded-full bg-[#7B4E35] mt-0.5" />
-              )}
-            </button>
-          );
-        })}
+                <Icon
+                  size={20}
+                  className={`transition-colors ${
+                    isActive ? "text-[#7B4E35]" : "text-[#766B61] group-hover:text-[#29231F]"
+                  }`}
+                  strokeWidth={isActive ? 2.2 : 1.8}
+                />
+                <span
+                  className={`text-[11px] leading-tight mt-0.5 transition-colors ${
+                    isActive
+                      ? "font-bold text-[#7B4E35]"
+                      : "font-medium text-[#766B61] group-hover:text-[#29231F]"
+                  }`}
+                >
+                  {tab.label}
+                </span>
+                {isActive ? (
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#7B4E35] mt-0.5" />
+                ) : (
+                  <span className="w-1.5 h-1.5 mt-0.5" />
+                )}
+              </button>
+            );
+          })}
+        </div>
       </nav>
 
       {/* Floating Active Order Quick Bar */}
       {cart.count > 0 && !cartOpen && (
         <div
-          className="fixed bottom-16 left-4 right-4 z-40 max-w-md mx-auto"
+          className="fixed bottom-[max(4.5rem,calc(3.75rem+env(safe-area-inset-bottom)))] left-3 right-3 sm:left-4 sm:right-4 z-[45] max-w-md mx-auto"
         >
-          <div
+          <button
+            type="button"
             onClick={() => setCartOpen(true)}
-            className="flex items-center justify-between p-3.5 rounded-2xl bg-[#29231F] text-white shadow-xl cursor-pointer hover:bg-[#1E150F] btn-smooth-press"
+            className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-[#29231F] text-white shadow-xl cursor-pointer hover:bg-[#1E150F] btn-smooth-press text-left"
           >
             <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-full bg-[#7B4E35] flex items-center justify-center text-white text-xs font-bold">
+              <div className="w-7 h-7 rounded-full bg-[#7B4E35] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                 {cart.count}
               </div>
               <div>
-                <p className="text-xs font-bold">View Current Order</p>
+                <p className="text-xs font-bold leading-tight">View Current Order</p>
                 <p className="text-[10px] text-stone-300">Tap to review & checkout</p>
               </div>
             </div>
@@ -1407,64 +1587,207 @@ export default function MenuPage() {
               <span className="font-serif font-bold text-sm">{formatINR(cart.total)}</span>
               <ArrowRight size={14} className="text-[#D4A84D]" />
             </div>
-          </div>
+          </button>
         </div>
       )}
 
       {/* Cart Drawer */}
       {cartOpen && (
         <div
-          className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-xs"
+          className="fixed inset-0 z-[120] flex justify-end bg-black/50 backdrop-blur-xs overscroll-contain"
           onClick={() => setCartOpen(false)}
         >
           <div
-            className="w-full max-w-md bg-[#FFFDF9] h-full flex flex-col p-6 shadow-2xl"
+            className="w-full max-w-md bg-[#FFFDF9] h-[100dvh] max-h-[100dvh] flex flex-col shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between pb-4 border-b border-[#E5DDD1]">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-[#E5DDD1] bg-[#FFFDF9] flex-shrink-0">
               <div>
                 <h2 className="font-serif text-2xl font-bold text-[#29231F]">Your Order</h2>
-                {tableNumber && <p className="text-xs text-[#766B61]">Table {tableNumber}</p>}
+                {hasTable && tableNumber ? (
+                  <p className="text-xs text-[#766B61] flex items-center gap-1.5 mt-0.5">
+                    <span>Table {tableNumber}</span>
+                    {sessionData && (
+                      <span>• Party of {sessionData.partySize} ({sessionMembersCount} Joined)</span>
+                    )}
+                  </p>
+                ) : (
+                  <p className="text-xs text-[#766B61] flex items-center gap-1.5 mt-0.5">
+                    <span>Digital Menu • Scan QR to order at table</span>
+                  </p>
+                )}
               </div>
-              <button onClick={() => setCartOpen(false)}>
+              <button
+                type="button"
+                onClick={() => setCartOpen(false)}
+                className="w-9 h-9 rounded-full bg-[#F8F5EF] border border-[#E5DDD1] flex items-center justify-center text-[#29231F] hover:bg-[#EFE7DA] transition-colors btn-smooth-press"
+                aria-label="Close Cart"
+              >
                 <X size={18} />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto py-4 space-y-3">
+            {/* Scrollable Item List & Notes */}
+            <div className="flex-1 overflow-y-auto overscroll-contain px-5 sm:px-6 py-4 space-y-4">
               {cart.items.length === 0 ? (
                 <div className="text-center py-20 text-[#766B61]">
-                  <ShoppingBag size={32} className="mx-auto mb-2 opacity-30" />
-                  <p className="text-sm">Your order is empty</p>
+                  <ShoppingBag size={36} className="mx-auto mb-2 opacity-30" />
+                  <p className="text-sm font-medium">Your order is empty</p>
+                  <p className="text-xs text-[#766B61]/80 mt-1">Add items from the menu to get started</p>
                 </div>
               ) : (
-                cart.items.map((i) => (
-                  <div key={i.id} className="flex justify-between items-center p-3 rounded-xl bg-[#F8F5EF] border border-[#E5DDD1]">
-                    <div>
-                      <p className="font-serif font-bold text-sm text-[#29231F]">{i.name}</p>
-                      <p className="text-xs text-[#7B4E35]">{formatINR(i.price)}</p>
-                    </div>
-                    <div className="flex items-center gap-2 bg-white rounded-full px-2 py-1 border border-[#E5DDD1]">
-                      <button onClick={() => cart.remove(i.id)} className="text-[#7B4E35]"><Minus size={11} /></button>
-                      <span className="text-xs font-bold">{i.quantity}</span>
-                      <button onClick={() => cart.add({ id: i.id, name: i.name, price: i.price } as any)} className="text-[#7B4E35]"><Plus size={11} /></button>
-                    </div>
+                <>
+                  <div className="space-y-2.5">
+                    {cart.items.map((i) => (
+                      <div key={i.id} className="flex justify-between items-center p-3 rounded-2xl bg-[#F8F5EF] border border-[#E5DDD1]">
+                        <div className="flex-1 pr-3">
+                          <p className="font-serif font-bold text-sm text-[#29231F] leading-snug">{i.name}</p>
+                          <p className="text-xs font-semibold text-[#7B4E35] mt-0.5">{formatINR(i.price)}</p>
+                        </div>
+                        <div className="flex items-center gap-2 bg-white rounded-full px-2.5 py-1 border border-[#E5DDD1] shadow-2xs">
+                          <button
+                            type="button"
+                            onClick={() => cart.remove(i.id)}
+                            className="text-[#7B4E35] w-5 h-5 flex items-center justify-center cursor-pointer"
+                            aria-label="Decrease quantity"
+                          >
+                            <Minus size={12} />
+                          </button>
+                          <span className="text-xs font-bold w-4 text-center">{i.quantity}</span>
+                          <button
+                            type="button"
+                            onClick={() => cart.add({ id: i.id, name: i.name, price: i.price } as any)}
+                            className="text-[#7B4E35] w-5 h-5 flex items-center justify-center cursor-pointer"
+                            aria-label="Increase quantity"
+                          >
+                            <Plus size={12} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))
+
+                  {/* Kitchen Special Instructions / Notes */}
+                  <div className="pt-2 space-y-1.5">
+                    <label className="text-[11px] font-bold text-[#766B61] uppercase tracking-wider block">
+                      Kitchen Notes / Special Requests
+                    </label>
+                    <input
+                      type="text"
+                      value={orderNotes}
+                      onChange={(e) => setOrderNotes(e.target.value)}
+                      placeholder="e.g. Less spicy, extra hot coffee, oat milk..."
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#F8F5EF] border border-[#E5DDD1] text-xs text-[#29231F] outline-none focus:border-[#7B4E35] transition-colors"
+                    />
+                  </div>
+
+                  {/* Offers & Discounts */}
+                  <div className="pt-2 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-bold text-[#766B61] uppercase tracking-wider block">
+                        Offers & Discounts
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowOffers(true);
+                          setCartOpen(false);
+                        }}
+                        className="text-[11px] text-[#7B4E35] font-semibold hover:underline flex items-center gap-1"
+                      >
+                        <Percent size={12} />
+                        View Available Offers
+                      </button>
+                    </div>
+
+                    {appliedOffer ? (
+                      <div className="flex items-center justify-between p-3 rounded-xl bg-[#FAF3E6] border border-[#ECD7A9]">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-lg bg-[#ECD7A9] text-[#8E6314] flex items-center justify-center">
+                            <Percent size={13} />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-bold text-xs text-[#8E6314]">
+                                {appliedOffer.title}
+                              </span>
+                              <span className="text-[9px] font-bold uppercase tracking-wider bg-[#8E6314] text-white px-1.5 py-0.5 rounded">
+                                Auto-Applied
+                              </span>
+                            </div>
+                            <div className="text-[11px] text-[#766B61] mt-0.5">
+                              Discount: -{formatINR(appliedOffer.discountAmount)}
+                            </div>
+                          </div>
+                        </div>
+                        <span className="font-serif font-bold text-xs text-[#8E6314]">
+                          -{formatINR(appliedOffer.discountAmount)}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="p-3 rounded-xl bg-[#F8F5EF] border border-[#E5DDD1] flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-lg bg-[#EFE7DA] text-[#766B61] flex items-center justify-center">
+                            <Percent size={13} />
+                          </div>
+                          <span className="text-xs text-[#766B61]">
+                            Best eligible offer applies automatically
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setShowOffers(true)}
+                          className="text-xs font-semibold text-[#7B4E35] hover:underline"
+                        >
+                          Browse
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </>
               )}
             </div>
 
+            {/* Sticky Drawer Footer with Place Order Button */}
             {cart.items.length > 0 && (
-              <div className="pt-4 border-t border-[#E5DDD1] space-y-3">
-                <div className="flex justify-between font-bold text-lg">
-                  <span>Total</span>
-                  <span>{formatINR(cart.total)}</span>
+              <div className="flex-shrink-0 bg-[#FFFDF9] border-t border-[#E5DDD1] px-5 sm:px-6 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] space-y-3 shadow-[0_-4px_16px_rgba(0,0,0,0.04)]">
+                <div className="space-y-1 text-xs">
+                  <div className="flex justify-between items-center text-[#766B61]">
+                    <span>Subtotal</span>
+                    <span className="font-semibold text-[#29231F]">{formatINR(cart.total)}</span>
+                  </div>
+                  {appliedOffer && (
+                    <div className="flex justify-between items-center text-emerald-700 font-semibold">
+                      <span>Discount ({appliedOffer.title})</span>
+                      <span>-{formatINR(appliedOffer.discountAmount)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center font-bold text-lg text-[#29231F] pt-1.5 border-t border-[#E5DDD1]">
+                    <span>Total</span>
+                    <span className="font-serif text-xl text-[#7B4E35]">
+                      {formatINR(Math.max(0, Math.round((cart.total - (appliedOffer?.discountAmount || 0)) * 100) / 100))}
+                    </span>
+                  </div>
                 </div>
+
                 <button
+                  type="button"
+                  disabled={isPlacingOrder || cart.items.length === 0}
                   onClick={handlePlaceOrder}
-                  className="w-full py-3.5 rounded-full bg-[#7B4E35] text-white font-medium text-sm hover:bg-[#633D28]"
+                  className="w-full min-h-[48px] py-3.5 rounded-full bg-[#7B4E35] text-white font-bold text-sm hover:bg-[#633D28] active:scale-[0.98] transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  Confirm & Place Order
+                  {isPlacingOrder ? (
+                    <span>Sending to Kitchen...</span>
+                  ) : !hasTable ? (
+                    <span>
+                      Scan Table QR to Order • {formatINR(Math.max(0, Math.round((cart.total - (appliedOffer?.discountAmount || 0)) * 100) / 100))}
+                    </span>
+                  ) : (
+                    <span>
+                      Place Order • {formatINR(Math.max(0, Math.round((cart.total - (appliedOffer?.discountAmount || 0)) * 100) / 100))}
+                    </span>
+                  )}
                 </button>
               </div>
             )}
@@ -1543,66 +1866,160 @@ export default function MenuPage() {
             </div>
 
             {/* Offer Cards List */}
-            <div className="space-y-3 pt-1">
-              {[
-                {
-                  code: "MORNING20",
-                  title: "20% OFF Breakfast Combo",
-                  desc: "Order any handcrafted specialty coffee with a croissant or avocado toast before 11:30 AM.",
-                  badge: "Daily until 11:30 AM",
-                  bgBadge: "bg-[#E8BA60] text-[#29231F]",
-                },
-                {
-                  code: "GOLDENBREW",
-                  title: "Buy 2 Coffees, Get 1 Pastry",
-                  desc: "Order any 2 signature espresso or cold brew drinks and receive a complimentary artisan pastry.",
-                  badge: "All-Day Special",
-                  bgBadge: "bg-[#DFBA79] text-[#29231F]",
-                },
-                {
-                  code: "FLAT75",
-                  title: "Flat ₹75 OFF on QR Orders",
-                  desc: "Enjoy ₹75 instant savings on orders above ₹300 placed directly from your table.",
-                  badge: "Min Order ₹300",
-                  bgBadge: "bg-[#A7B89B] text-[#1E2819]",
-                },
-                {
-                  code: "HAPPYHOUR",
-                  title: "15% OFF Desserts & Coolers",
-                  desc: "Relax during afternoon hours with 15% discount on all cakes, tarts, and botanical coolers.",
-                  badge: "4:00 PM – 7:00 PM",
-                  bgBadge: "bg-[#EAE2D5] text-[#29231F]",
-                },
-              ].map((offer, idx) => (
-                <div
-                  key={idx}
-                  className="p-4 rounded-2xl bg-[#F8F5EF] border border-[#E5DDD1] space-y-2.5 relative overflow-hidden"
-                >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <span className={`inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider mb-1 ${offer.bgBadge}`}>
-                        {offer.badge}
-                      </span>
-                      <h4 className="font-serif font-bold text-[15px] text-[#29231F]">{offer.title}</h4>
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-[#766B61] leading-relaxed font-sans">{offer.desc}</p>
-
-                  <div className="flex items-center justify-between pt-1 border-t border-[#E5DDD1]/70">
-                    <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-[#7B4E35] bg-white px-2.5 py-1 rounded-lg border border-[#E5DDD1]">
-                      <Tag size={12} />
-                      <span>{offer.code}</span>
-                    </div>
-                    <button
-                      onClick={() => copyPromoCode(offer.code)}
-                      className="px-4 py-1.5 rounded-full bg-[#7B4E35] text-white font-semibold text-xs hover:bg-[#633D28] transition-colors btn-smooth-press"
-                    >
-                      {copiedCode === offer.code ? "✓ Copied!" : "Apply Code"}
-                    </button>
-                  </div>
+            <div className="space-y-3.5 pt-1">
+              {offersLoading ? (
+                <div className="py-12 text-center text-[#766B61] space-y-2">
+                  <Sparkles size={24} className="mx-auto text-[#D4A84D] animate-spin" />
+                  <p className="text-xs">Loading active offers & combos...</p>
                 </div>
-              ))}
+              ) : offersList.length === 0 ? (
+                <div className="text-center py-12 px-4 space-y-3 bg-[#F8F5EF] rounded-2xl border border-[#E5DDD1]">
+                  <div className="w-12 h-12 rounded-full bg-[#FAF3E6] border border-[#ECD7A9] flex items-center justify-center mx-auto text-[#8E6314]">
+                    <Percent size={22} />
+                  </div>
+                  <h4 className="font-serif font-bold text-base text-[#29231F]">No Active Offers Right Now</h4>
+                  <p className="text-xs text-[#766B61] max-w-xs mx-auto">
+                    Check back soon! Our team regularly adds breakfast combos, seasonal brew discounts, and festive specials.
+                  </p>
+                </div>
+              ) : (
+                offersList.map((offer) => {
+                  const hasImage = Boolean(offer.imageUrl);
+                  const isCombo = offer.offerType === "combo";
+
+                  return (
+                    <div
+                      key={offer.id}
+                      className="rounded-2xl bg-[#F8F5EF] border border-[#E5DDD1] overflow-hidden space-y-3 shadow-2xs"
+                    >
+                      {/* Optional Image */}
+                      {hasImage && (
+                        <div className="relative h-32 w-full overflow-hidden bg-[#EFE7DA]">
+                          <img
+                            src={offer.imageUrl!}
+                            alt={offer.title}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
+                          {offer.badge && (
+                            <span className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-[#E8BA60] text-[#29231F] shadow-xs">
+                              {offer.badge}
+                            </span>
+                          )}
+                          <div className="absolute bottom-2 left-3 right-3 flex items-center justify-between text-white text-xs">
+                            <span className="font-serif font-bold text-sm">
+                              {isCombo
+                                ? `Combo • ₹${offer.comboPrice}`
+                                : offer.discountType === "percentage"
+                                ? `${offer.discountValue}% OFF`
+                                : `Flat ₹${offer.discountValue} OFF`}
+                            </span>
+                            {offer.minOrderAmount > 0 && (
+                              <span className="text-[10px] bg-black/50 px-2 py-0.5 rounded backdrop-blur-xs">
+                                Min: ₹{offer.minOrderAmount}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="p-4 pt-3 space-y-2.5">
+                        {!hasImage && (
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="w-7 h-7 rounded-lg bg-[#EFE7DA] text-[#7B4E35] flex items-center justify-center">
+                                {isCombo ? <Coffee size={14} /> : <Percent size={14} />}
+                              </span>
+                              {offer.badge && (
+                                <span className="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-[#E8BA60] text-[#29231F]">
+                                  {offer.badge}
+                                </span>
+                              )}
+                            </div>
+                            <span className="font-serif font-bold text-xs text-[#7B4E35]">
+                              {isCombo
+                                ? `₹${offer.comboPrice}`
+                                : offer.discountType === "percentage"
+                                ? `${offer.discountValue}% OFF`
+                                : `₹${offer.discountValue} OFF`}
+                            </span>
+                          </div>
+                        )}
+
+                        <div>
+                          <h4 className="font-serif font-bold text-[15px] text-[#29231F]">
+                            {offer.title}
+                          </h4>
+                          {offer.description && (
+                            <p className="text-xs text-[#766B61] leading-relaxed font-sans mt-0.5">
+                              {offer.description}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Combo Included Items */}
+                        {isCombo && Array.isArray(offer.comboItems) && offer.comboItems.length > 0 && (
+                          <div className="p-2.5 rounded-xl bg-white/80 border border-[#E5DDD1] space-y-1">
+                            <span className="text-[10px] font-bold text-[#29231F] uppercase tracking-wider block">
+                              Included in Combo:
+                            </span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {offer.comboItems.map((ci, idx) => (
+                                <span
+                                  key={idx}
+                                  className="bg-[#FAF3E6] text-[#8E6314] px-2 py-0.5 rounded-md text-[11px] font-medium border border-[#ECD7A9]/60"
+                                >
+                                  {ci.name} ×{ci.quantity}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Rules / Min Order */}
+                        {!hasImage && offer.minOrderAmount > 0 && (
+                          <div className="text-[11px] text-[#766B61] flex items-center gap-1">
+                            <ShoppingBag size={12} />
+                            <span>Valid on orders above ₹{offer.minOrderAmount}</span>
+                          </div>
+                        )}
+
+                        {/* Bottom Action Footer */}
+                        <div className="flex items-center justify-between pt-2 border-t border-[#E5DDD1]/70 gap-2">
+                          <div className="flex items-center gap-1.5">
+                            {appliedOffer?.id === offer.id ? (
+                              <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-full">
+                                <Check size={12} />
+                                Applied (-₹{appliedOffer.discountAmount})
+                              </span>
+                            ) : offer.minOrderAmount > 0 && cart.total < offer.minOrderAmount ? (
+                              <span className="text-[11px] text-[#766B61]">
+                                Min. order ₹{offer.minOrderAmount}
+                              </span>
+                            ) : (
+                              <span className="text-[11px] font-semibold text-[#8E6314] bg-[#FAF3E6] px-2 py-1 rounded-lg">
+                                Auto-applied
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-1.5">
+                            {isCombo && (
+                              <button
+                                type="button"
+                                onClick={() => handleAddComboToCart(offer)}
+                                className="px-3.5 py-1.5 rounded-full bg-[#7B4E35] text-white font-semibold text-xs hover:bg-[#633D28] transition-colors btn-smooth-press"
+                              >
+                                {appliedOffer?.id === offer.id ? "Add Combo Again" : "Add Combo"}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
 
             <div className="pt-2 text-center">
@@ -1742,8 +2159,10 @@ export default function MenuPage() {
                   <Clock size={18} />
                 </div>
                 <div>
-                  <h3 className="font-serif text-xl font-bold text-[#29231F]">Current Order</h3>
-                  <p className="text-[11px] text-[#766B61]">Table {tableNumber || 1} • {restaurantName}</p>
+                  <h3 className="font-serif text-xl font-bold text-[#29231F]">Table Orders</h3>
+                  <p className="text-[11px] text-[#766B61]">
+                    Table {tableNumber || 1} • {sessionData ? `Party of ${sessionData.partySize} (${sessionMembersCount} Joined)` : restaurantName}
+                  </p>
                 </div>
               </div>
               <button
@@ -1754,63 +2173,141 @@ export default function MenuPage() {
               </button>
             </div>
 
-            {/* If there is an active order in kitchen */}
-            {activeOrderId ? (
+            {/* If there are orders in this table session */}
+            {sessionOrders.length > 0 || activeOrderId ? (
               <div className="space-y-4 pt-1">
-                {/* Status Card */}
-                <div className="p-4 rounded-2xl bg-[#F8F5EF] border border-[#E5DDD1] space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-[10px] uppercase font-bold text-[#766B61] tracking-wider">Order #{activeOrderId}</p>
-                      <h4 className="font-serif text-lg font-bold text-[#29231F]">
-                        {activeOrderData?.status === "preparing"
-                          ? "👨‍🍳 Kitchen is Preparing"
-                          : activeOrderData?.status === "ready"
-                            ? "✨ Order is Ready!"
-                            : "⏳ Order Received"}
-                      </h4>
-                    </div>
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase bg-amber-100 text-amber-900 border border-amber-200">
-                      <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
-                      {activeOrderData?.status || "In Kitchen"}
-                    </span>
-                  </div>
+                <div className="space-y-3">
+                  {(sessionOrders.length > 0 ? sessionOrders : [activeOrderData].filter(Boolean)).map((ord: any) => {
+                    const isPending = ord.status === "pending";
+                    const isCancelled = ord.status === "cancelled";
+                    const isCompleted = ord.status === "completed";
 
-                  {/* Progress Bar */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-[11px] text-[#766B61]">
-                      <span>Estimated Time</span>
-                      <span className="font-bold text-[#29231F]">~10-15 mins</span>
-                    </div>
-                    <div className="w-full h-2 bg-[#E5DDD1] rounded-full overflow-hidden">
-                      <div className="h-full bg-[#7B4E35] rounded-full w-2/3 animate-pulse" />
-                    </div>
-                  </div>
-                </div>
+                    return (
+                      <div
+                        key={ord.id}
+                        className={`p-4 rounded-2xl border space-y-3 ${
+                          isCancelled
+                            ? "bg-rose-50/50 border-rose-200 opacity-60"
+                            : isCompleted
+                              ? "bg-stone-50 border-stone-200"
+                              : "bg-[#F8F5EF] border-[#E5DDD1]"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <p className="text-[10px] uppercase font-bold text-[#766B61] tracking-wider">
+                                Order #{ord.id}
+                              </p>
+                              {ord.is_mine ? (
+                                <span className="text-[9px] font-bold text-[#7B4E35] bg-[#FAF3E6] border border-[#ECD7A9] px-1.5 py-0.2 rounded-full">
+                                  Your Order
+                                </span>
+                              ) : (
+                                <span className="text-[9px] font-bold text-stone-600 bg-stone-100 border border-stone-200 px-1.5 py-0.2 rounded-full">
+                                  Guest at Table
+                                </span>
+                              )}
+                            </div>
+                            <h4 className="font-serif text-base font-bold text-[#29231F]">
+                              {ord.status === "accepted"
+                                ? "👍 Accepted by Staff"
+                                : ord.status === "preparing"
+                                ? "👨‍🍳 Kitchen is Preparing"
+                                : ord.status === "ready"
+                                  ? "✨ Ready to Serve!"
+                                  : ord.status === "served"
+                                    ? "🍽️ Order Served"
+                                    : ord.status === "completed"
+                                      ? "✓ Completed"
+                                      : ord.status === "cancelled"
+                                        ? "✕ Cancelled"
+                                        : "⏳ Order Received"}
+                            </h4>
+                          </div>
 
-                {/* Items Ordered List */}
-                <div className="space-y-2">
-                  <p className="text-xs font-bold text-[#29231F] uppercase tracking-wider">Items on Table</p>
-                  <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
-                    {activeOrderData?.order_items && activeOrderData.order_items.length > 0 ? (
-                      activeOrderData.order_items.map((it: any, idx: number) => (
-                        <div key={idx} className="flex justify-between items-center p-2.5 rounded-xl bg-[#F8F5EF] text-xs">
-                          <span className="font-medium text-[#29231F]">{it.quantity}x {it.item_name}</span>
-                          <span className="font-bold text-[#7B4E35]">{formatINR(it.price * it.quantity)}</span>
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase border ${
+                              ord.status === "accepted"
+                                ? "bg-indigo-50 text-indigo-800 border-indigo-200"
+                                : ord.status === "preparing"
+                                ? "bg-blue-50 text-blue-800 border-blue-200"
+                                : ord.status === "ready"
+                                  ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                                  : ord.status === "served"
+                                    ? "bg-teal-50 text-teal-800 border-teal-200"
+                                    : ord.status === "completed"
+                                      ? "bg-stone-100 text-stone-700 border-stone-200"
+                                      : ord.status === "cancelled"
+                                        ? "bg-rose-50 text-rose-700 border-rose-200"
+                                        : "bg-amber-100 text-amber-900 border-amber-200"
+                            }`}
+                          >
+                            {!["served", "completed", "cancelled"].includes(ord.status) && (
+                              <span className="w-1.5 h-1.5 rounded-full bg-current animate-ping" />
+                            )}
+                            {ord.status || "In Kitchen"}
+                          </span>
                         </div>
-                      ))
-                    ) : (
-                      <div className="p-2.5 rounded-xl bg-[#F8F5EF] text-xs text-[#766B61]">
-                        Order items sent to kitchen display
+
+                        {/* Order Items */}
+                        <div className="space-y-1.5 pt-1">
+                          {ord.order_items && ord.order_items.length > 0 ? (
+                            ord.order_items.map((it: any, idx: number) => (
+                              <div
+                                key={idx}
+                                className="flex justify-between items-center p-2 rounded-xl bg-white/80 border border-[#E5DDD1]/60 text-xs"
+                              >
+                                <span className="font-medium text-[#29231F]">
+                                  {it.quantity}x {it.item_name}
+                                </span>
+                                <span className="font-bold text-[#7B4E35]">
+                                  {formatINR(it.price * it.quantity)}
+                                </span>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="p-2 rounded-xl bg-white/60 text-xs text-[#766B61]">
+                              Items in kitchen
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Order Subtotal & Cancel Action */}
+                        <div className="flex justify-between items-center pt-2 border-t border-[#E5DDD1]/60 text-xs">
+                          <span className="text-[#766B61]">Order Subtotal:</span>
+                          <span className="font-bold text-[#29231F]">{formatINR(ord.total || 0)}</span>
+                        </div>
+
+                        {/* Guest cancel button: permitted only for their own order while pending */}
+                        {ord.is_mine && isPending && (
+                          <div className="pt-1 flex justify-end">
+                            <button
+                              onClick={() => handleCancelOrder(ord.id)}
+                              disabled={cancellingOrderId === ord.id}
+                              className="px-3 py-1 rounded-full bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 text-[11px] font-semibold transition-colors flex items-center gap-1 active:scale-95"
+                            >
+                              <X size={12} />
+                              <span>{cancellingOrderId === ord.id ? "Cancelling..." : "Cancel My Order"}</span>
+                            </button>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
+                    );
+                  })}
                 </div>
 
-                {/* Total */}
+                {/* Combined Table Total */}
                 <div className="flex justify-between items-center pt-3 border-t border-[#E5DDD1] font-bold text-base text-[#29231F]">
-                  <span>Total Amount</span>
-                  <span>{formatINR(activeOrderData?.total || cart.total || 0)}</span>
+                  <span>Total Table Amount</span>
+                  <span>
+                    {formatINR(
+                      sessionOrders.reduce(
+                        (sum, o) => sum + (o.status !== "cancelled" ? Number(o.total || 0) : 0),
+                        0
+                      ) || activeOrderData?.total || cart.total || 0
+                    )}
+                  </span>
                 </div>
 
                 {/* Actions */}
@@ -1822,7 +2319,7 @@ export default function MenuPage() {
                     }}
                     className="w-full py-3 rounded-full bg-[#7B4E35] text-white font-medium text-xs hover:bg-[#633D28] transition-colors shadow-xs btn-smooth-press"
                   >
-                    + Add More Items to Table
+                    + Place Another Order for Table
                   </button>
 
                   <div className="grid grid-cols-2 gap-2">
@@ -1849,9 +2346,9 @@ export default function MenuPage() {
                   <ShoppingBag size={24} />
                 </div>
                 <div>
-                  <h4 className="font-serif text-lg font-bold text-[#29231F]">No Active Order</h4>
+                  <h4 className="font-serif text-lg font-bold text-[#29231F]">No Table Orders Yet</h4>
                   <p className="text-xs text-[#766B61] mt-1 max-w-xs mx-auto">
-                    You haven't placed an order for Table {tableNumber || 1} yet.
+                    No orders have been placed for Table {tableNumber || 1} in this session yet.
                   </p>
                 </div>
                 <div className="pt-2">
@@ -1879,6 +2376,223 @@ export default function MenuPage() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================== */}
+      {/* NO TABLE / SCAN QR REQUIRED MODAL                   */}
+      {/* ==================================================== */}
+      {showNoTableModal && (
+        <div className="fixed inset-0 z-[150] overflow-y-auto overscroll-contain bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center min-h-[100dvh]">
+          <div className="w-full max-w-sm my-auto bg-[#FFFDF9] rounded-3xl border border-[#E5DDD1] shadow-2xl p-5 sm:p-7 text-center space-y-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-14 h-14 rounded-2xl bg-[#EFF5EE] border border-[#B7D2B6] flex items-center justify-center mx-auto text-2xl shadow-xs text-[#1E4B2C]">
+              <QrCode size={28} />
+            </div>
+
+            <div className="space-y-1.5">
+              <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-[#1E4B2C] bg-[#EFF5EE] border border-[#B7D2B6] px-2.5 py-0.5 rounded-full inline-block">
+                Table Service
+              </span>
+              <h2 className="font-serif text-xl font-bold text-[#29231F] pt-1">
+                Scan Table QR to Order
+              </h2>
+              <p className="text-xs text-[#766B61] leading-relaxed">
+                Table service requires scanning the QR code at your table to begin a dining session.
+              </p>
+            </div>
+
+            <div className="p-3.5 bg-[#FAF3E6] rounded-2xl border border-[#ECD7A9] text-left space-y-2">
+              <label className="text-[11px] font-bold text-[#7B4E35] uppercase tracking-wider block">
+                Already seated at a table?
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="e.g. 1, 2, 3..."
+                  value={manualTableInput}
+                  onChange={(e) => setManualTableInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      const t = manualTableInput.trim();
+                      if (t) {
+                        window.location.href = `${window.location.pathname}?table=${encodeURIComponent(t)}`;
+                      }
+                    }
+                  }}
+                  className="flex-1 px-3 py-2 bg-white rounded-xl border border-[#E5DDD1] text-xs font-semibold text-[#29231F] outline-none focus:border-[#7B4E35]"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const t = manualTableInput.trim();
+                    if (!t) return;
+                    window.location.href = `${window.location.pathname}?table=${encodeURIComponent(t)}`;
+                  }}
+                  className="px-4 py-2 bg-[#7B4E35] text-white text-xs font-bold rounded-xl hover:bg-[#633E2B] transition-colors cursor-pointer"
+                >
+                  Join
+                </button>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-[#766B61]">
+              For takeaway orders, please place your order directly at the counter.
+            </p>
+
+            <button
+              type="button"
+              onClick={() => setShowNoTableModal(false)}
+              className="w-full py-2.5 rounded-full border border-[#E5DDD1] bg-[#F8F5EF] text-[#29231F] text-xs font-semibold hover:bg-[#EFE7DA] transition-colors cursor-pointer"
+            >
+              Browse Menu
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================== */}
+      {/* 1. PARTY SIZE SELECTION (FIRST GUEST SCAN FLOW)      */}
+      {/* ==================================================== */}
+      {hasTable && sessionStatus === "needs_party_size" && (
+        <div className="fixed inset-0 z-[150] overflow-y-auto overscroll-contain bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center min-h-[100dvh]">
+          <div className="w-full max-w-sm my-auto bg-[#FFFDF9] rounded-3xl border border-[#E5DDD1] shadow-2xl p-5 sm:p-7 text-center space-y-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-14 h-14 rounded-2xl bg-[#FAF3E6] border border-[#ECD7A9] flex items-center justify-center mx-auto text-2xl shadow-xs">
+              ☕
+            </div>
+
+            <div className="space-y-1.5">
+              <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-[#7B4E35] bg-[#FAF3E6] border border-[#ECD7A9] px-2.5 py-0.5 rounded-full inline-block">
+                Table {tableNumber}
+              </span>
+              <h2 className="font-serif text-2xl font-bold text-[#29231F] pt-1">
+                How many people are in your party?
+              </h2>
+              <p className="text-xs text-[#766B61] leading-relaxed">
+                Select your party size and tap Confirm to begin your table session. Guests scanning after you will join this session.
+              </p>
+            </div>
+
+            {/* Exactly 4 Choices: 1, 2, 3, 4 */}
+            <div className="grid grid-cols-4 gap-2.5 pt-1">
+              {[1, 2, 3, 4].map((size) => {
+                const isSelected = selectedPartySize === size;
+                return (
+                  <button
+                    key={size}
+                    type="button"
+                    onClick={() => setSelectedPartySize(size)}
+                    className={`group relative flex flex-col items-center justify-center py-3.5 rounded-2xl border-2 transition-all shadow-xs cursor-pointer active:scale-95 ${
+                      isSelected
+                        ? "border-[#7B4E35] bg-[#FAF3E6] ring-2 ring-[#7B4E35]/25"
+                        : "border-[#E5DDD1] bg-[#F8F5EF] hover:border-[#7B4E35]/60 hover:bg-[#FAF3E6]/60"
+                    }`}
+                  >
+                    <span className={`font-serif text-2xl font-bold ${isSelected ? "text-[#7B4E35]" : "text-[#29231F]"}`}>
+                      {size}
+                    </span>
+                    <span className={`text-[9px] font-bold uppercase tracking-wider mt-0.5 ${isSelected ? "text-[#7B4E35]" : "text-[#766B61]"}`}>
+                      {size === 1 ? "Solo" : size === 2 ? "Duo" : size === 3 ? "Trio" : "Party"}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Prominent Confirm Button */}
+            <div className="pt-2">
+              <button
+                type="button"
+                disabled={!selectedPartySize || isJoiningSession}
+                onClick={() => handleConfirmPartySize(selectedPartySize)}
+                className="w-full min-h-[48px] py-3.5 rounded-full bg-[#7B4E35] text-white font-bold text-sm hover:bg-[#633E2B] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md flex items-center justify-center gap-2 cursor-pointer"
+              >
+                {isJoiningSession ? (
+                  <span>Joining Table...</span>
+                ) : (
+                  <span>Confirm • Party of {selectedPartySize}</span>
+                )}
+              </button>
+            </div>
+
+            <div className="pt-1 text-[11px] text-[#766B61]/80">
+              {restaurantName} • Contactless Dining
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================== */}
+      {/* 2. TABLE SESSION FULL REJECTION OVERLAY              */}
+      {/* ==================================================== */}
+      {hasTable && sessionStatus === "full" && (
+        <div className="fixed inset-0 z-[150] overflow-y-auto overscroll-contain bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center min-h-[100dvh]">
+          <div className="w-full max-w-sm my-auto bg-[#FFFDF9] rounded-3xl border border-rose-200 shadow-2xl p-6 sm:p-7 text-center space-y-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] animate-in fade-in duration-200">
+            <div className="w-14 h-14 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center mx-auto text-rose-500 shadow-xs">
+              <Users size={28} />
+            </div>
+
+            <div className="space-y-2">
+              <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-rose-600 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-200 inline-block">
+                Table {tableNumber}
+              </span>
+              <h2 className="font-serif text-2xl font-bold text-[#29231F]">
+                This table session is full
+              </h2>
+              <p className="text-xs text-[#766B61] leading-relaxed">
+                This table has reached its maximum party size ({sessionData?.partySize || 4} guests). Additional guests cannot join this table session.
+              </p>
+            </div>
+
+            <div className="p-3.5 bg-[#F8F5EF] rounded-xl border border-[#E5DDD1] text-xs text-[#766B61] text-left space-y-1">
+              <p className="font-semibold text-[#29231F]">Need a larger table or assistance?</p>
+              <p className="text-[11px]">Please ask our café staff to seat your party at an available table or adjust your table seating.</p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => initSession()}
+              className="w-full min-h-[48px] py-3 rounded-full bg-[#7B4E35] text-white font-semibold text-xs hover:bg-[#633E2B] transition-colors shadow-xs cursor-pointer"
+            >
+              Check Table Status Again
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================== */}
+      {/* 3. TABLE SESSION FINISHED OVERLAY                    */}
+      {/* ==================================================== */}
+      {hasTable && sessionStatus === "finished" && (
+        <div className="fixed inset-0 z-[150] overflow-y-auto overscroll-contain bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center min-h-[100dvh]">
+          <div className="w-full max-w-sm my-auto bg-[#FFFDF9] rounded-3xl border border-[#E5DDD1] shadow-2xl p-6 sm:p-7 text-center space-y-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] animate-in fade-in duration-200">
+            <div className="w-14 h-14 rounded-2xl bg-[#FAF3E6] border border-[#ECD7A9] flex items-center justify-center mx-auto text-[#8E6314] shadow-xs">
+              <CheckCircle size={28} />
+            </div>
+
+            <div className="space-y-2">
+              <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-[#7B4E35] bg-[#FAF3E6] border border-[#ECD7A9] px-2.5 py-0.5 rounded-full inline-block">
+                Table {tableNumber}
+              </span>
+              <h2 className="font-serif text-2xl font-bold text-[#29231F]">
+                Table Session Finished
+              </h2>
+              <p className="text-xs text-[#766B61] leading-relaxed">
+                This table session has been closed by staff. Thank you for visiting {restaurantName}!
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                localStorage.removeItem(`table_guest_token_${tableNumber}`);
+                localStorage.removeItem(`activeOrderId_${tableNumber}`);
+                initSession();
+              }}
+              className="w-full min-h-[48px] py-3 rounded-full bg-[#7B4E35] text-white font-semibold text-xs hover:bg-[#633E2B] transition-colors shadow-xs cursor-pointer"
+            >
+              Start New Session
+            </button>
           </div>
         </div>
       )}
@@ -1931,63 +2645,80 @@ export default function MenuPage() {
             </div>
 
             {/* Itemized Table */}
-            <div className="space-y-2 py-2">
-              <div className="flex justify-between font-bold text-[11px] text-[#766B61] border-b border-[#E5DDD1] pb-1 uppercase">
-                <span>Item</span>
-                <div className="flex gap-4">
-                  <span className="w-8 text-center">Qty</span>
-                  <span className="w-14 text-right">Amount</span>
-                </div>
-              </div>
+            {(() => {
+              const activeSessionOrders = sessionOrders.filter((o: any) => o.status !== "cancelled");
+              const effectiveOrders = activeSessionOrders.length > 0 ? activeSessionOrders : [activeOrderData].filter(Boolean);
+              const allItems: any[] = [];
+              effectiveOrders.forEach((ord: any) => {
+                if (ord.order_items && Array.isArray(ord.order_items)) {
+                  ord.order_items.forEach((it: any) => allItems.push(it));
+                }
+              });
+              const billTotal = effectiveOrders.reduce((sum: number, ord: any) => sum + Number(ord.total || 0), 0) || cart.total || 0;
+              const isPaid = effectiveOrders.length > 0 && effectiveOrders.every((ord: any) => ord.is_paid);
 
-              {activeOrderData?.order_items && activeOrderData.order_items.length > 0 ? (
-                activeOrderData.order_items.map((it: any, idx: number) => (
-                  <div key={idx} className="flex justify-between items-center text-[12px] text-[#29231F]">
-                    <span className="font-medium truncate max-w-[180px]">{it.item_name}</span>
-                    <div className="flex gap-4 items-center">
-                      <span className="w-8 text-center text-[#766B61]">x{it.quantity}</span>
-                      <span className="w-14 text-right font-bold">{formatINR(it.price * it.quantity)}</span>
+              return (
+                <>
+                  <div className="space-y-2 py-2">
+                    <div className="flex justify-between font-bold text-[11px] text-[#766B61] border-b border-[#E5DDD1] pb-1 uppercase">
+                      <span>Item</span>
+                      <div className="flex gap-4">
+                        <span className="w-8 text-center">Qty</span>
+                        <span className="w-14 text-right">Amount</span>
+                      </div>
+                    </div>
+
+                    {allItems.length > 0 ? (
+                      allItems.map((it: any, idx: number) => (
+                        <div key={idx} className="flex justify-between items-center text-[12px] text-[#29231F]">
+                          <span className="font-medium truncate max-w-[180px]">{it.item_name}</span>
+                          <div className="flex gap-4 items-center">
+                            <span className="w-8 text-center text-[#766B61]">x{it.quantity}</span>
+                            <span className="w-14 text-right font-bold">{formatINR(it.price * it.quantity)}</span>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="flex justify-between items-center text-[12px] text-[#29231F]">
+                        <span className="font-medium">Specialty Food & Drinks</span>
+                        <div className="flex gap-4 items-center">
+                          <span className="w-8 text-center text-[#766B61]">x1</span>
+                          <span className="w-14 text-right font-bold">{formatINR(billTotal)}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Financial Summary */}
+                  <div className="pt-2 border-t-2 border-dashed border-[#DED4C7] space-y-1.5 text-[11px]">
+                    <div className="flex justify-between text-[#766B61]">
+                      <span>Item Subtotal</span>
+                      <span className="font-bold text-[#29231F]">{formatINR(billTotal * 0.952)}</span>
+                    </div>
+                    <div className="flex justify-between text-[#766B61]">
+                      <span>CGST (2.5%)</span>
+                      <span>{formatINR(billTotal * 0.024)}</span>
+                    </div>
+                    <div className="flex justify-between text-[#766B61]">
+                      <span>SGST (2.5%)</span>
+                      <span>{formatINR(billTotal * 0.024)}</span>
+                    </div>
+                    <div className="flex justify-between items-center pt-2 border-t border-[#E5DDD1] font-bold text-sm text-[#29231F]">
+                      <span className="font-serif font-bold text-base">Grand Total</span>
+                      <span className="text-base text-[#7B4E35]">{formatINR(billTotal)}</span>
                     </div>
                   </div>
-                ))
-              ) : (
-                <div className="flex justify-between items-center text-[12px] text-[#29231F]">
-                  <span className="font-medium">Specialty Food & Drinks</span>
-                  <div className="flex gap-4 items-center">
-                    <span className="w-8 text-center text-[#766B61]">x1</span>
-                    <span className="w-14 text-right font-bold">{formatINR(activeOrderData?.total || cart.total || 0)}</span>
+
+                  {/* Payment Tag */}
+                  <div className="p-3 rounded-xl bg-[#F8F5EF] border border-[#E5DDD1] text-center space-y-0.5">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-[#7B4E35]">
+                      {isPaid ? "✓ PAID VIA DIGITAL ORDER" : "PAY AT COUNTER / UPI / CASH"}
+                    </p>
+                    <p className="text-[10px] text-[#766B61]">Thank you for dining at {restaurantName}!</p>
                   </div>
-                </div>
-              )}
-            </div>
-
-            {/* Financial Summary */}
-            <div className="pt-2 border-t-2 border-dashed border-[#DED4C7] space-y-1.5 text-[11px]">
-              <div className="flex justify-between text-[#766B61]">
-                <span>Item Subtotal</span>
-                <span className="font-bold text-[#29231F]">{formatINR(activeOrderData?.total ? activeOrderData.total * 0.952 : (cart.total || 0) * 0.952)}</span>
-              </div>
-              <div className="flex justify-between text-[#766B61]">
-                <span>CGST (2.5%)</span>
-                <span>{formatINR(activeOrderData?.total ? activeOrderData.total * 0.024 : (cart.total || 0) * 0.024)}</span>
-              </div>
-              <div className="flex justify-between text-[#766B61]">
-                <span>SGST (2.5%)</span>
-                <span>{formatINR(activeOrderData?.total ? activeOrderData.total * 0.024 : (cart.total || 0) * 0.024)}</span>
-              </div>
-              <div className="flex justify-between items-center pt-2 border-t border-[#E5DDD1] font-bold text-sm text-[#29231F]">
-                <span className="font-serif font-bold text-base">Grand Total</span>
-                <span className="text-base text-[#7B4E35]">{formatINR(activeOrderData?.total || cart.total || 0)}</span>
-              </div>
-            </div>
-
-            {/* Payment Tag */}
-            <div className="p-3 rounded-xl bg-[#F8F5EF] border border-[#E5DDD1] text-center space-y-0.5">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-[#7B4E35]">
-                {activeOrderData?.is_paid ? "✓ PAID VIA DIGITAL ORDER" : "PAY AT COUNTER / UPI / CASH"}
-              </p>
-              <p className="text-[10px] text-[#766B61]">Thank you for dining at {restaurantName}!</p>
-            </div>
+                </>
+              );
+            })()}
 
             {/* Receipt Modal Actions */}
             <div className="pt-2 space-y-2 font-sans">

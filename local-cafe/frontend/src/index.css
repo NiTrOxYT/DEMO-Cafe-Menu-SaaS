@@ -129,7 +129,7 @@
   }
   body {
     @apply font-sans antialiased bg-background text-foreground;
-    min-height: max(884px, 100dvh);
+    min-height: 100dvh;
     background-color: #FAF8F5;
     color: #1F1B18;
   }
@@ -139,7 +139,15 @@
     cursor: pointer;
     user-select: none;
     touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
   }
+}
+
+.pb-safe {
+  padding-bottom: max(0.625rem, env(safe-area-inset-bottom));
+}
+.pt-safe {
+  padding-top: max(0.625rem, env(safe-area-inset-top));
 }
 
 /* Fast, Hardware-Accelerated Click & Tap Physics */

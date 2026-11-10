@@ -160,7 +160,7 @@ router.get("/menu", async (req: Request, res: Response) => {
         m.is_spicy AS "isSpicy",
         m.created_at AS "createdAt"
       FROM menu_items m
-      LEFT JOIN categories c ON m.category_id = c.id
+      INNER JOIN categories c ON m.category_id = c.id
       ${whereClause}
       ORDER BY m.sort_order ASC, m.id ASC
     `;

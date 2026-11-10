@@ -127,6 +127,157 @@ export async function runMigrations() {
         password_hash TEXT NOT NULL,
         created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
       );
+
+      -- 5. Shared Table Sessions for QR Ordering
+      CREATE TABLE IF NOT EXISTS table_sessions (
+        id SERIAL PRIMARY KEY,
+        cafe_id INTEGER NOT NULL DEFAULT 1 REFERENCES cafes(id) ON DELETE CASCADE,
+        table_number TEXT NOT NULL,
+        party_size INTEGER NOT NULL CHECK (party_size BETWEEN 1 AND 4),
+        status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'finished')),
+        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        finished_at TIMESTAMP WITH TIME ZONE
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_table_sessions_table_status ON table_sessions(table_number, status);
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_active_session_per_table ON table_sessions(table_number) WHERE (status = 'active');
+
+      CREATE TABLE IF NOT EXISTS table_session_members (
+        id SERIAL PRIMARY KEY,
+        session_id INTEGER NOT NULL REFERENCES table_sessions(id) ON DELETE CASCADE,
+        guest_token_hash TEXT NOT NULL UNIQUE,
+        guest_name TEXT,
+        is_first_guest BOOLEAN NOT NULL DEFAULT FALSE,
+        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_session_members_session_id ON table_session_members(session_id);
+
+      -- Add session_id and guest_member_id to orders table (idempotent)
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS session_id INTEGER REFERENCES table_sessions(id) ON DELETE SET NULL;
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS guest_member_id INTEGER REFERENCES table_session_members(id) ON DELETE SET NULL;
+      CREATE INDEX IF NOT EXISTS idx_orders_session_id ON orders(session_id);
+      CREATE INDEX IF NOT EXISTS idx_orders_guest_member_id ON orders(guest_member_id);
+
+      -- Add idempotency_key and idempotency_payload_hash to orders table (idempotent, partial unique index)
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS idempotency_key TEXT;
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS idempotency_payload_hash TEXT;
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_idempotency_key ON orders(idempotency_key) WHERE idempotency_key IS NOT NULL;
+
+      -- Add is_paid to table_sessions (idempotent)
+      ALTER TABLE table_sessions ADD COLUMN IF NOT EXISTS is_paid BOOLEAN NOT NULL DEFAULT FALSE;
+      CREATE INDEX IF NOT EXISTS idx_table_sessions_is_paid ON table_sessions(is_paid);
+
+      -- Update table_sessions status check to permit 'closed' alongside 'active' and 'finished' (idempotent)
+      ALTER TABLE table_sessions DROP CONSTRAINT IF EXISTS table_sessions_status_check;
+      ALTER TABLE table_sessions ADD CONSTRAINT table_sessions_status_check CHECK (status IN ('active', 'finished', 'closed'));
+
+      -- 6. Offers & Combos Management
+      CREATE TABLE IF NOT EXISTS offers (
+        id SERIAL PRIMARY KEY,
+        cafe_id INTEGER NOT NULL DEFAULT 1 REFERENCES cafes(id) ON DELETE CASCADE,
+        title TEXT NOT NULL,
+        description TEXT NOT NULL,
+        code TEXT,
+        badge TEXT,
+        offer_type TEXT NOT NULL DEFAULT 'discount' CHECK (offer_type IN ('discount', 'combo')),
+        discount_type TEXT NOT NULL DEFAULT 'percentage' CHECK (discount_type IN ('percentage', 'flat')),
+        discount_value NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+        min_order_amount NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+        combo_price NUMERIC(10, 2),
+        combo_items JSONB DEFAULT '[]'::jsonb,
+        image_url TEXT,
+        start_date DATE,
+        end_date DATE,
+        start_time TIME,
+        end_time TIME,
+        days_of_week JSONB DEFAULT '[]'::jsonb,
+        is_active BOOLEAN NOT NULL DEFAULT TRUE,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_offers_code ON offers(UPPER(code));
+      CREATE INDEX IF NOT EXISTS idx_offers_is_active ON offers(is_active);
+      CREATE INDEX IF NOT EXISTS idx_offers_cafe_id ON offers(cafe_id);
+
+      -- Add discount, promo_code, and offer_id to orders table (idempotent)
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount NUMERIC(10, 2) NOT NULL DEFAULT 0.00;
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS promo_code TEXT;
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS offer_id INTEGER REFERENCES offers(id) ON DELETE SET NULL;
+      CREATE INDEX IF NOT EXISTS idx_orders_offer_id ON orders(offer_id);
+
+      -- Seed imported / demo promotional content as inactive admin drafts if not already present.
+      -- Note: Unapproved demo or mismatched promotions are never published as active offers.
+      -- They remain inactive drafts (is_active = FALSE) until an administrator explicitly reviews and activates them.
+      -- Existing admin-created or customized offers are preserved and never overwritten.
+      INSERT INTO offers (
+        cafe_id, title, description, code, badge, offer_type,
+        discount_type, discount_value, min_order_amount,
+        start_time, end_time, is_active, sort_order
+      )
+      SELECT 1, '20% OFF Breakfast Combo (Draft)',
+             'Order any handcrafted specialty coffee with a croissant or avocado toast before 11:30 AM.',
+             'BREAKFAST20', 'Daily until 11:30 AM', 'discount',
+             'percentage', 20.00, 0.00,
+             NULL, '11:30:00', FALSE, 1
+      WHERE NOT EXISTS (SELECT 1 FROM offers WHERE UPPER(code) = 'BREAKFAST20');
+
+      INSERT INTO offers (
+        cafe_id, title, description, code, badge, offer_type,
+        discount_type, discount_value, min_order_amount,
+        start_time, end_time, is_active, sort_order
+      )
+      SELECT 1, 'Buy 2 Coffees, Get 1 Pastry (Draft)',
+             'Order any 2 signature espresso or cold brew drinks and receive a complimentary artisan pastry at The Golden Brew.',
+             'GOLDENBREW', 'All-Day Special', 'discount',
+             'flat', 50.00, 150.00,
+             NULL, NULL, FALSE, 2
+      WHERE NOT EXISTS (SELECT 1 FROM offers WHERE UPPER(code) = 'GOLDENBREW');
+
+      INSERT INTO offers (
+        cafe_id, title, description, code, badge, offer_type,
+        discount_type, discount_value, min_order_amount,
+        start_time, end_time, is_active, sort_order
+      )
+      SELECT 1, 'Flat ₹75 OFF on QR Orders (Draft)',
+             'Enjoy ₹75 instant savings on orders above ₹300 placed directly from your table.',
+             'FLAT75', 'Min Order ₹300', 'discount',
+             'flat', 75.00, 300.00,
+             NULL, NULL, FALSE, 3
+      WHERE NOT EXISTS (SELECT 1 FROM offers WHERE UPPER(code) = 'FLAT75');
+
+      INSERT INTO offers (
+        cafe_id, title, description, code, badge, offer_type,
+        discount_type, discount_value, min_order_amount,
+        start_time, end_time, is_active, sort_order
+      )
+      SELECT 1, '15% OFF Desserts & Coolers (Draft)',
+             'Relax during afternoon hours with 15% discount on all cakes, tarts, and botanical coolers.',
+             'HAPPYHOUR', '4:00 PM – 7:00 PM', 'discount',
+             'percentage', 15.00, 0.00,
+             '16:00:00', '19:00:00', FALSE, 4
+      WHERE NOT EXISTS (SELECT 1 FROM offers WHERE UPPER(code) = 'HAPPYHOUR');
+
+      INSERT INTO offers (
+        cafe_id, title, description, code, badge, offer_type,
+        discount_type, discount_value, min_order_amount,
+        combo_price, combo_items, is_active, sort_order
+      )
+      SELECT 1, 'Specialty Coffee & Croissant Combo (Draft)',
+             'Pair any signature handcrafted espresso or cappuccino with a warm, flaky butter croissant at The Golden Brew.',
+             'COFFEECOMBO', 'Breakfast Combo', 'combo',
+             'flat', 0.00, 0.00,
+             189.00, '[{"name": "Cappuccino", "quantity": 1}, {"name": "Butter Croissant", "quantity": 1}]'::jsonb,
+             FALSE, 5
+      WHERE NOT EXISTS (SELECT 1 FROM offers WHERE UPPER(code) = 'COFFEECOMBO');
+
+      -- Ensure previously seeded demo records are marked inactive drafts
+      UPDATE offers
+      SET is_active = FALSE
+      WHERE code IN ('BREAKFAST20', 'GOLDENBREW', 'FLAT75', 'HAPPYHOUR', 'COFFEECOMBO')
+        AND (title LIKE '%(Draft)%' OR description ILIKE '%croissant%' OR description ILIKE '%pastry%' OR description ILIKE '%Kusum%');
     `);
 
     console.log("[Migration] Schema migration completed successfully with zero copied production rows.");

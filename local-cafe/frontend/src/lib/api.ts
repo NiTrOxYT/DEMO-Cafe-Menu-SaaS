@@ -52,9 +52,12 @@ export interface Order {
   customer_name?: string;
   customer_phone?: string;
   subtotal: number;
+  discount?: number;
+  promo_code?: string | null;
+  offer_id?: number | null;
   tax: number;
   total: number;
-  status: "pending" | "preparing" | "ready" | "completed" | "cancelled";
+  status: "pending" | "accepted" | "preparing" | "ready" | "served" | "completed" | "cancelled";
   is_active: boolean;
   is_paid: boolean;
   updated?: boolean;
@@ -65,6 +68,44 @@ export interface Order {
   created_at: string;
   order_items?: OrderItem[];
   orderAccessToken?: string;
+  session_id?: number | null;
+  guest_member_id?: number | null;
+  guest_name?: string;
+  is_mine?: boolean;
+}
+
+export interface TableSession {
+  id: number;
+  tableNumber: string;
+  partySize: number;
+  status: "active" | "finished" | "closed";
+  createdAt: string;
+}
+
+export interface TableSessionStatusResponse {
+  active: boolean;
+  session?: TableSession;
+  membersCount?: number;
+  isFull?: boolean;
+  isMember?: boolean;
+  member?: {
+    id: number;
+    isFirstGuest: boolean;
+    guestName?: string;
+  } | null;
+}
+
+export interface ActiveTableSessionSummary {
+  id: number;
+  tableNumber: string;
+  partySize: number;
+  status: string;
+  createdAt: string;
+  membersCount: number;
+  ordersCount: number;
+  totalAmount: number;
+  unservedOrdersCount?: number;
+  isPaid?: boolean;
 }
 
 export interface RewardsUser {
@@ -78,6 +119,56 @@ export interface RewardsUser {
   rewards_claimed: number;
   last_star_date?: string | null;
   last_visit_date?: string | null;
+}
+
+export interface ComboItemEntry {
+  menuItemId?: number;
+  name: string;
+  quantity: number;
+}
+
+export interface Offer {
+  id: number;
+  cafeId?: number;
+  title: string;
+  description: string | null;
+  code: string | null;
+  badge: string | null;
+  offerType: "discount" | "combo";
+  discountType: "percentage" | "flat";
+  discountValue: number;
+  minOrderAmount: number;
+  comboPrice: number | null;
+  comboItems: ComboItemEntry[];
+  imageUrl: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  startTime: string | null;
+  endTime: string | null;
+  daysOfWeek: number[] | null;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+}
+
+export interface ValidateOfferResponse {
+  valid: boolean;
+  error?: string;
+  offer?: {
+    id: number;
+    title: string;
+    code: string;
+    badge?: string;
+    offerType: "discount" | "combo";
+    discountType: "percentage" | "flat";
+    discountValue: number;
+    minOrderAmount: number;
+    comboPrice?: number | null;
+  };
+  discountAmount?: number;
+  finalTotal?: number;
+  minOrderAmount?: number;
+  currentSubtotal?: number;
 }
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -208,38 +299,116 @@ export async function getAdminOrders(): Promise<Order[]> {
   return request("/api/orders");
 }
 
-export async function getOrder(id: number, token?: string): Promise<Order> {
+export async function getOrder(id: number, token?: string, guestToken?: string): Promise<Order> {
   const headers: Record<string, string> = {};
   if (token) headers["x-order-token"] = token;
+  if (guestToken) headers["x-guest-token"] = guestToken;
   return request(`/api/orders/${id}`, { headers });
 }
 
-export async function createOrder(data: {
-  tableNumber: string | number;
-  tableId?: number;
-  items: Array<{ menuItemId?: number; name: string; quantity: number; price: number }>;
-  notes?: string;
-  subtotal?: number;
-  tax?: number;
-  total?: number;
-}): Promise<Order> {
+export async function createOrder(
+  data: {
+    tableNumber: string | number;
+    tableId?: number;
+    items: Array<{ menuItemId?: number; name: string; quantity: number; price: number }>;
+    notes?: string;
+    subtotal?: number;
+    discount?: number;
+    promoCode?: string;
+    offerId?: number;
+    tax?: number;
+    total?: number;
+  },
+  guestToken?: string,
+  idempotencyKey?: string
+): Promise<Order> {
+  const headers: Record<string, string> = {};
+  if (guestToken) headers["x-guest-token"] = guestToken;
+  if (idempotencyKey) headers["x-idempotency-key"] = idempotencyKey;
   return request("/api/orders", {
     method: "POST",
+    headers,
+    body: JSON.stringify({ ...data, idempotencyKey }),
+  });
+}
+
+// ==========================================
+// OFFERS & COMBOS
+// ==========================================
+
+export async function getOffers(all = false): Promise<Offer[]> {
+  return request(`/api/offers${all ? "?all=true" : ""}`);
+}
+
+export async function validateOffer(code: string, subtotal: number, items?: any[]): Promise<ValidateOfferResponse> {
+  return request("/api/offers/validate", {
+    method: "POST",
+    body: JSON.stringify({ code, subtotal, items }),
+  });
+}
+
+export async function evaluateOffers(
+  subtotal: number,
+  items?: Array<{ menuItemId?: number; name?: string; quantity: number; price: number }>
+): Promise<{
+  bestOffer: Offer | null;
+  discountAmount: number;
+  finalTotal: number;
+}> {
+  return request("/api/offers/evaluate", {
+    method: "POST",
+    body: JSON.stringify({ subtotal, items: items || [] }),
+  });
+}
+
+export async function createOffer(data: Partial<Offer>): Promise<Offer> {
+  return request("/api/offers", {
+    method: "POST",
     body: JSON.stringify(data),
+  });
+}
+
+export async function updateOffer(id: number, data: Partial<Offer>): Promise<Offer> {
+  return request(`/api/offers/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function toggleOffer(id: number): Promise<Offer> {
+  return request(`/api/offers/${id}/toggle`, {
+    method: "PATCH",
+  });
+}
+
+export async function deleteOffer(id: number): Promise<{ success: boolean }> {
+  return request(`/api/offers/${id}`, {
+    method: "DELETE",
   });
 }
 
 export async function appendOrder(
   orderId: number,
   items: Array<{ menuItemId?: number; name: string; quantity: number; price: number }>,
-  token?: string
+  token?: string,
+  guestToken?: string
 ): Promise<Order> {
   const headers: Record<string, string> = {};
   if (token) headers["x-order-token"] = token;
+  if (guestToken) headers["x-guest-token"] = guestToken;
   return request(`/api/orders/${orderId}/append`, {
     method: "POST",
     headers,
     body: JSON.stringify({ items }),
+  });
+}
+
+export async function cancelOrder(orderId: number, guestToken?: string): Promise<any> {
+  const headers: Record<string, string> = {};
+  if (guestToken) headers["x-guest-token"] = guestToken;
+  return request(`/api/orders/${orderId}/cancel`, {
+    method: "POST",
+    headers,
   });
 }
 
@@ -252,6 +421,71 @@ export async function updateOrderStatus(id: number, status: string): Promise<Ord
 
 export async function deleteOrder(id: number): Promise<any> {
   return request(`/api/orders/${id}`, { method: "DELETE" });
+}
+
+// ==========================================
+// TABLE SESSIONS
+// ==========================================
+
+export async function getTableSession(tableNumber: string, guestToken?: string): Promise<TableSessionStatusResponse> {
+  const headers: Record<string, string> = {};
+  if (guestToken) headers["x-guest-token"] = guestToken;
+  return request(`/api/tables/${encodeURIComponent(tableNumber)}/session`, { headers });
+}
+
+export async function createTableSession(
+  tableNumber: string,
+  partySize: number,
+  guestName?: string
+): Promise<{ session: TableSession; guestToken: string; member: any; membersCount: number }> {
+  return request(`/api/tables/${encodeURIComponent(tableNumber)}/session`, {
+    method: "POST",
+    body: JSON.stringify({ partySize, guestName }),
+  });
+}
+
+export async function joinTableSession(
+  tableNumber: string,
+  guestToken?: string,
+  guestName?: string
+): Promise<{ session: TableSession; guestToken: string; member: any; membersCount: number; alreadyMember?: boolean }> {
+  const headers: Record<string, string> = {};
+  if (guestToken) headers["x-guest-token"] = guestToken;
+  return request(`/api/tables/${encodeURIComponent(tableNumber)}/session/join`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ guestName }),
+  });
+}
+
+export async function getSessionOrders(sessionId: number, guestToken?: string): Promise<Order[]> {
+  const headers: Record<string, string> = {};
+  if (guestToken) headers["x-guest-token"] = guestToken;
+  return request(`/api/sessions/${sessionId}/orders`, { headers });
+}
+
+export async function getActiveSessions(): Promise<ActiveTableSessionSummary[]> {
+  return request("/api/sessions/active");
+}
+
+export async function payTableSession(sessionId: number): Promise<any> {
+  return request(`/api/sessions/${sessionId}/pay`, { method: "POST" });
+}
+
+export async function closeTableSession(sessionId: number): Promise<any> {
+  return request(`/api/sessions/${sessionId}/close`, { method: "POST" });
+}
+
+export async function closeTableByNumber(tableNumber: string): Promise<any> {
+  return request(`/api/tables/${encodeURIComponent(tableNumber)}/close-session`, { method: "POST" });
+}
+
+export async function finishTableSession(sessionId: number): Promise<any> {
+  return request(`/api/sessions/${sessionId}/finish`, { method: "POST" });
+}
+
+export async function finishTableByNumber(tableNumber: string): Promise<any> {
+  return request(`/api/tables/${encodeURIComponent(tableNumber)}/finish-session`, { method: "POST" });
 }
 
 // ==========================================

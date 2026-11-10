@@ -1,0 +1,20 @@
+{
+  "name": "The Golden Brew Café",
+  "short_name": "Café Menu",
+  "description": "Artisan coffee, seasonal pastries, and seamless contactless table ordering.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#FAF8F5",
+  "theme_color": "#FAF8F5",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
+

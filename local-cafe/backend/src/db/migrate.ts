@@ -51,7 +51,7 @@ export async function runMigrations() {
 
       CREATE TABLE IF NOT EXISTS restaurant_settings (
         id SERIAL PRIMARY KEY,
-        restaurant_name TEXT NOT NULL DEFAULT 'The Golden Brew',
+        restaurant_name TEXT NOT NULL DEFAULT 'Kusum Kunja Café',
         address TEXT,
         whatsapp_number TEXT,
         opening_hours TEXT,
@@ -60,6 +60,15 @@ export async function runMigrations() {
         primary_color TEXT NOT NULL DEFAULT '#c9a96e',
         tagline TEXT
       );
+
+      -- Update only the previous default brand; preserve custom café names.
+      UPDATE restaurant_settings
+      SET restaurant_name = 'Kusum Kunja Café'
+      WHERE lower(trim(restaurant_name)) IN ('the golden brew', 'the golden brew cafe', 'the golden brew café');
+
+      UPDATE cafes
+      SET name = 'Kusum Kunja Café'
+      WHERE lower(trim(name)) IN ('the golden brew', 'the golden brew cafe', 'the golden brew café');
 
       -- 3. Orders & Normalized Order Items
       CREATE TABLE IF NOT EXISTS orders (
@@ -230,7 +239,7 @@ export async function runMigrations() {
         start_time, end_time, is_active, sort_order
       )
       SELECT 1, 'Buy 2 Coffees, Get 1 Pastry (Draft)',
-             'Order any 2 signature espresso or cold brew drinks and receive a complimentary artisan pastry at The Golden Brew.',
+             'Order any 2 signature espresso or cold brew drinks and receive a complimentary artisan pastry at Kusum Kunja Café.',
              'GOLDENBREW', 'All-Day Special', 'discount',
              'flat', 50.00, 150.00,
              NULL, NULL, FALSE, 2
@@ -266,7 +275,7 @@ export async function runMigrations() {
         combo_price, combo_items, is_active, sort_order
       )
       SELECT 1, 'Specialty Coffee & Croissant Combo (Draft)',
-             'Pair any signature handcrafted espresso or cappuccino with a warm, flaky butter croissant at The Golden Brew.',
+             'Pair any signature handcrafted espresso or cappuccino with a warm, flaky butter croissant at Kusum Kunja Café.',
              'COFFEECOMBO', 'Breakfast Combo', 'combo',
              'flat', 0.00, 0.00,
              189.00, '[{"name": "Cappuccino", "quantity": 1}, {"name": "Butter Croissant", "quantity": 1}]'::jsonb,
@@ -278,6 +287,135 @@ export async function runMigrations() {
       SET is_active = FALSE
       WHERE code IN ('BREAKFAST20', 'GOLDENBREW', 'FLAT75', 'HAPPYHOUR', 'COFFEECOMBO')
         AND (title LIKE '%(Draft)%' OR description ILIKE '%croissant%' OR description ILIKE '%pastry%' OR description ILIKE '%Kusum%');
+
+      -- 7. Menu Item Inventory & Stock Movements
+      ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS track_inventory BOOLEAN NOT NULL DEFAULT FALSE;
+      ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS inventory_quantity NUMERIC(10, 2) NOT NULL DEFAULT 0.00;
+      ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS inventory_unit TEXT NOT NULL DEFAULT 'portions';
+      ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS low_stock_threshold NUMERIC(10, 2) NOT NULL DEFAULT 5.00;
+
+      CREATE INDEX IF NOT EXISTS idx_menu_items_track_inventory ON menu_items(track_inventory);
+
+      CREATE TABLE IF NOT EXISTS inventory_movements (
+        id SERIAL PRIMARY KEY,
+        cafe_id INTEGER NOT NULL DEFAULT 1 REFERENCES cafes(id) ON DELETE CASCADE,
+        menu_item_id INTEGER NOT NULL REFERENCES menu_items(id) ON DELETE CASCADE,
+        movement_type TEXT NOT NULL CHECK (movement_type IN ('stock_in', 'stock_out', 'order_deduction', 'order_reversal', 'opening_stock', 'adjustment')),
+        quantity NUMERIC(10, 2) NOT NULL,
+        balance_after NUMERIC(10, 2) NOT NULL,
+        unit TEXT NOT NULL DEFAULT 'portions',
+        reason TEXT,
+        order_id INTEGER REFERENCES orders(id) ON DELETE SET NULL,
+        performed_by TEXT NOT NULL DEFAULT 'admin',
+        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_inventory_movements_item_id ON inventory_movements(menu_item_id);
+      CREATE INDEX IF NOT EXISTS idx_inventory_movements_type ON inventory_movements(movement_type);
+      CREATE INDEX IF NOT EXISTS idx_inventory_movements_created_at ON inventory_movements(created_at);
+      CREATE INDEX IF NOT EXISTS idx_inventory_movements_order_id ON inventory_movements(order_id);
+
+      -- Add inventory_deducted to orders table (idempotent)
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS inventory_deducted BOOLEAN NOT NULL DEFAULT FALSE;
+      CREATE INDEX IF NOT EXISTS idx_orders_inventory_deducted ON orders(inventory_deducted);
+
+      -- 8. Raw Materials, Supplies, and Recipe Consumption
+      CREATE TABLE IF NOT EXISTS raw_materials (
+        id SERIAL PRIMARY KEY,
+        cafe_id INTEGER NOT NULL DEFAULT 1 REFERENCES cafes(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        category TEXT NOT NULL DEFAULT 'Ingredients',
+        sku TEXT,
+        base_unit TEXT NOT NULL DEFAULT 'kg',
+        current_stock NUMERIC(12, 3) NOT NULL DEFAULT 0.000,
+        low_stock_threshold NUMERIC(12, 3) NOT NULL DEFAULT 2.000,
+        supplier TEXT,
+        unit_cost NUMERIC(10, 2),
+        batch_number TEXT,
+        expiry_date DATE,
+        is_archived BOOLEAN NOT NULL DEFAULT FALSE,
+        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_raw_materials_cafe ON raw_materials(cafe_id);
+      CREATE INDEX IF NOT EXISTS idx_raw_materials_category ON raw_materials(category);
+      CREATE INDEX IF NOT EXISTS idx_raw_materials_is_archived ON raw_materials(is_archived);
+      CREATE INDEX IF NOT EXISTS idx_raw_materials_expiry ON raw_materials(expiry_date);
+
+      CREATE TABLE IF NOT EXISTS raw_material_movements (
+        id SERIAL PRIMARY KEY,
+        cafe_id INTEGER NOT NULL DEFAULT 1 REFERENCES cafes(id) ON DELETE CASCADE,
+        raw_material_id INTEGER NOT NULL REFERENCES raw_materials(id) ON DELETE RESTRICT,
+        movement_type TEXT NOT NULL CHECK (movement_type IN ('stock_in', 'stock_out', 'adjustment', 'recipe_consumption', 'order_reversal', 'opening_stock')),
+        quantity NUMERIC(12, 3) NOT NULL,
+        unit TEXT NOT NULL DEFAULT 'kg',
+        base_quantity NUMERIC(12, 3) NOT NULL,
+        balance_before NUMERIC(12, 3) NOT NULL,
+        balance_after NUMERIC(12, 3) NOT NULL,
+        unit_cost NUMERIC(10, 2),
+        total_cost NUMERIC(10, 2),
+        supplier TEXT,
+        invoice_ref TEXT,
+        batch_number TEXT,
+        expiry_date DATE,
+        reason TEXT,
+        order_id INTEGER REFERENCES orders(id) ON DELETE SET NULL,
+        performed_by TEXT NOT NULL DEFAULT 'admin',
+        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_rm_movements_item ON raw_material_movements(raw_material_id);
+      CREATE INDEX IF NOT EXISTS idx_rm_movements_type ON raw_material_movements(movement_type);
+      CREATE INDEX IF NOT EXISTS idx_rm_movements_created ON raw_material_movements(created_at);
+      CREATE INDEX IF NOT EXISTS idx_rm_movements_order ON raw_material_movements(order_id);
+
+      CREATE TABLE IF NOT EXISTS menu_item_recipes (
+        id SERIAL PRIMARY KEY,
+        cafe_id INTEGER NOT NULL DEFAULT 1 REFERENCES cafes(id) ON DELETE CASCADE,
+        menu_item_id INTEGER NOT NULL REFERENCES menu_items(id) ON DELETE CASCADE,
+        raw_material_id INTEGER NOT NULL REFERENCES raw_materials(id) ON DELETE RESTRICT,
+        quantity NUMERIC(12, 3) NOT NULL,
+        unit TEXT NOT NULL DEFAULT 'kg',
+        notes TEXT,
+        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        UNIQUE (menu_item_id, raw_material_id)
+      );
+
+      -- Migration: Ensure foreign keys on raw_material_movements and menu_item_recipes
+      -- strictly enforce ON DELETE RESTRICT to preserve immutable audit logs and recipe history.
+      DO $$
+      BEGIN
+        -- raw_material_movements -> raw_materials (RESTRICT)
+        IF EXISTS (
+          SELECT 1 FROM information_schema.table_constraints
+          WHERE constraint_name = 'raw_material_movements_raw_material_id_fkey'
+        ) THEN
+          ALTER TABLE raw_material_movements DROP CONSTRAINT raw_material_movements_raw_material_id_fkey;
+        END IF;
+        ALTER TABLE raw_material_movements
+          ADD CONSTRAINT raw_material_movements_raw_material_id_fkey
+          FOREIGN KEY (raw_material_id) REFERENCES raw_materials(id) ON DELETE RESTRICT;
+
+        -- menu_item_recipes -> raw_materials (RESTRICT)
+        IF EXISTS (
+          SELECT 1 FROM information_schema.table_constraints
+          WHERE constraint_name = 'menu_item_recipes_raw_material_id_fkey'
+        ) THEN
+          ALTER TABLE menu_item_recipes DROP CONSTRAINT menu_item_recipes_raw_material_id_fkey;
+        END IF;
+        ALTER TABLE menu_item_recipes
+          ADD CONSTRAINT menu_item_recipes_raw_material_id_fkey
+          FOREIGN KEY (raw_material_id) REFERENCES raw_materials(id) ON DELETE RESTRICT;
+      EXCEPTION
+        WHEN undefined_table THEN NULL;
+      END $$;
+
+      CREATE INDEX IF NOT EXISTS idx_recipes_menu_item ON menu_item_recipes(menu_item_id);
+      CREATE INDEX IF NOT EXISTS idx_recipes_raw_material ON menu_item_recipes(raw_material_id);
+
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS raw_materials_deducted BOOLEAN NOT NULL DEFAULT FALSE;
+      CREATE INDEX IF NOT EXISTS idx_orders_raw_materials_deducted ON orders(raw_materials_deducted);
     `);
 
     console.log("[Migration] Schema migration completed successfully with zero copied production rows.");

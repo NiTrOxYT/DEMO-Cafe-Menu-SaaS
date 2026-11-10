@@ -14,7 +14,7 @@ async function getOrCreateSettings() {
     INSERT INTO restaurant_settings (
       restaurant_name, address, whatsapp_number, opening_hours, logo_url, banner_url, primary_color, tagline
     ) VALUES (
-      'The Golden Brew', '', '', 'Mon–Sun: 8 AM – 10 PM', NULL, NULL, '#c9a96e', 'Crafted with passion, served with love'
+      'Kusum Kunja Café', '', '', 'Mon–Sun: 8 AM – 10 PM', NULL, NULL, '#c9a96e', 'Crafted with passion, served with love'
     ) RETURNING *
   `);
   return created.rows[0];

@@ -10,6 +10,8 @@ import AdminDashboard from "@/pages/admin/dashboard";
 import OrdersPage from "@/pages/admin/orders";
 import SettingsPage from "@/pages/admin/settings";
 import QRPage from "@/pages/admin/qr";
+import InventoryPage from "@/pages/admin/inventory";
+import RawMaterialsDashboard from "@/pages/admin/raw-materials";
 import RewardsPage from "@/pages/rewards";
 import CurrentOrder from "@/pages/current-order";
 import RewardsDashboard from "@/pages/rewards-dashboard";
@@ -36,6 +38,9 @@ function Router() {
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/orders" component={OrdersPage} />
       <Route path="/admin/settings" component={SettingsPage} />
+      <Route path="/admin/inventory" component={InventoryPage} />
+      <Route path="/inventory" component={RawMaterialsDashboard} />
+      <Route path="/admin/raw-materials" component={RawMaterialsDashboard} />
       <Route path="/admin/qr" component={QRPage} />
       <Route path="/admin/analytics" component={AnalyticsPage} />
       <Route path="/current-order" component={CurrentOrder} />

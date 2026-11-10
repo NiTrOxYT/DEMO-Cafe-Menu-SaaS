@@ -735,7 +735,7 @@ export default function QRPage() {
     return table ? `${cleanBase}?table=${encodeURIComponent(table)}` : cleanBase;
   };
 
-  const restaurantName = settings?.restaurantName ?? "The Golden Brew Café";
+  const restaurantName = settings?.restaurantName ?? "Kusum Kunja Café";
   const tagline = settings?.tagline ?? "Artisanal Roastery & Café";
 
   const addTable = () => {

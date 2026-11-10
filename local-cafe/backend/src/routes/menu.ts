@@ -158,6 +158,10 @@ router.get("/menu", async (req: Request, res: Response) => {
         m.is_veg AS "isVeg",
         m.is_bestseller AS "isBestseller",
         m.is_spicy AS "isSpicy",
+        m.track_inventory AS "trackInventory",
+        m.inventory_quantity AS "inventoryQuantity",
+        m.inventory_unit AS "inventoryUnit",
+        m.low_stock_threshold AS "lowStockThreshold",
         m.created_at AS "createdAt"
       FROM menu_items m
       INNER JOIN categories c ON m.category_id = c.id
@@ -186,6 +190,10 @@ router.post("/menu", requireAdmin, async (req: Request, res: Response) => {
       isVeg = true,
       isBestseller = false,
       isSpicy = false,
+      trackInventory = false,
+      inventoryQuantity = 0,
+      inventoryUnit = "portions",
+      lowStockThreshold = 5,
     } = req.body || {};
 
     if (!name || price === undefined || !categoryId) {
@@ -193,17 +201,49 @@ router.post("/menu", requireAdmin, async (req: Request, res: Response) => {
       return;
     }
 
+    const qty = Math.max(0, Number(inventoryQuantity) || 0);
     const result = await query(
       `INSERT INTO menu_items (
-        name, description, price, image_url, category_id, available, sort_order, is_veg, is_bestseller, is_spicy
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        name, description, price, image_url, category_id, available, sort_order, is_veg, is_bestseller, is_spicy,
+        track_inventory, inventory_quantity, inventory_unit, low_stock_threshold
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING 
         id, name, description, price, image_url AS "imageUrl", category_id AS "categoryId",
-        available, sort_order AS "sortOrder", is_veg AS "isVeg", is_bestseller AS "isBestseller", is_spicy AS "isSpicy"`,
-      [name.trim(), description || null, Number(price), imageUrl || null, Number(categoryId), Boolean(available), Number(sortOrder), Boolean(isVeg), Boolean(isBestseller), Boolean(isSpicy)]
+        available, sort_order AS "sortOrder", is_veg AS "isVeg", is_bestseller AS "isBestseller", is_spicy AS "isSpicy",
+        track_inventory AS "trackInventory", inventory_quantity AS "inventoryQuantity",
+        inventory_unit AS "inventoryUnit", low_stock_threshold AS "lowStockThreshold"`,
+      [
+        name.trim(),
+        description || null,
+        Number(price),
+        imageUrl || null,
+        Number(categoryId),
+        Boolean(available),
+        Number(sortOrder),
+        Boolean(isVeg),
+        Boolean(isBestseller),
+        Boolean(isSpicy),
+        Boolean(trackInventory),
+        qty,
+        String(inventoryUnit || "portions").trim(),
+        Math.max(0, Number(lowStockThreshold) || 5),
+      ]
     );
 
-    res.status(201).json(result.rows[0]);
+    const createdItem = result.rows[0];
+
+    // If opening stock provided with tracking enabled, record initial movement
+    if (Boolean(trackInventory) && qty > 0) {
+      const adminEmail = (req as any).admin?.email || "admin";
+      await query(
+        `INSERT INTO inventory_movements (
+          menu_item_id, movement_type, quantity, balance_after, unit, reason, performed_by, created_at
+        ) VALUES ($1, 'opening_stock', $2, $3, $4, 'Opening stock on creation', $5, NOW())`,
+        [createdItem.id, qty, qty, createdItem.inventoryUnit, adminEmail]
+      );
+    }
+
+    res.status(201).json(createdItem);
   } catch (err: any) {
     res.status(500).json({ error: "Failed to create menu item", details: err.message });
   }
@@ -224,6 +264,10 @@ router.patch("/menu/:id", requireAdmin, async (req: Request, res: Response) => {
       isVeg,
       isBestseller,
       isSpicy,
+      trackInventory,
+      inventoryQuantity,
+      inventoryUnit,
+      lowStockThreshold,
     } = req.body || {};
 
     const updates: string[] = [];
@@ -240,6 +284,10 @@ router.patch("/menu/:id", requireAdmin, async (req: Request, res: Response) => {
     if (isVeg !== undefined) { updates.push(`is_veg = $${idx++}`); values.push(Boolean(isVeg)); }
     if (isBestseller !== undefined) { updates.push(`is_bestseller = $${idx++}`); values.push(Boolean(isBestseller)); }
     if (isSpicy !== undefined) { updates.push(`is_spicy = $${idx++}`); values.push(Boolean(isSpicy)); }
+    if (trackInventory !== undefined) { updates.push(`track_inventory = $${idx++}`); values.push(Boolean(trackInventory)); }
+    if (inventoryQuantity !== undefined) { updates.push(`inventory_quantity = $${idx++}`); values.push(Math.max(0, Number(inventoryQuantity))); }
+    if (inventoryUnit !== undefined) { updates.push(`inventory_unit = $${idx++}`); values.push(String(inventoryUnit).trim()); }
+    if (lowStockThreshold !== undefined) { updates.push(`low_stock_threshold = $${idx++}`); values.push(Math.max(0, Number(lowStockThreshold))); }
 
     if (updates.length === 0) {
       res.status(400).json({ error: "No fields provided to update." });
@@ -250,7 +298,9 @@ router.patch("/menu/:id", requireAdmin, async (req: Request, res: Response) => {
     const result = await query(
       `UPDATE menu_items SET ${updates.join(", ")} WHERE id = $${idx}
        RETURNING id, name, description, price, image_url AS "imageUrl", category_id AS "categoryId",
-       available, sort_order AS "sortOrder", is_veg AS "isVeg", is_bestseller AS "isBestseller", is_spicy AS "isSpicy"`,
+       available, sort_order AS "sortOrder", is_veg AS "isVeg", is_bestseller AS "isBestseller", is_spicy AS "isSpicy",
+       track_inventory AS "trackInventory", inventory_quantity AS "inventoryQuantity",
+       inventory_unit AS "inventoryUnit", low_stock_threshold AS "lowStockThreshold"`,
       values
     );
 
@@ -269,6 +319,32 @@ router.patch("/menu/:id", requireAdmin, async (req: Request, res: Response) => {
 router.delete("/menu/:id", requireAdmin, async (req: Request, res: Response) => {
   try {
     const id = parseInt(String(req.params.id), 10);
+    if (!id) {
+      res.status(400).json({ error: "Invalid menu item ID." });
+      return;
+    }
+
+    // Check if menu item has order history or recipes
+    const [orderCheck, recipeCheck] = await Promise.all([
+      query("SELECT COUNT(*) FROM order_items WHERE menu_item_id = $1", [id]),
+      query("SELECT COUNT(*) FROM menu_item_recipes WHERE menu_item_id = $1", [id]),
+    ]);
+
+    const orderCount = parseInt(orderCheck.rows[0]?.count || "0", 10);
+    const recipeCount = parseInt(recipeCheck.rows[0]?.count || "0", 10);
+
+    if (orderCount > 0 || recipeCount > 0) {
+      // Preserve historical orders and recipe configuration: mark unavailable instead of deleting
+      await query("UPDATE menu_items SET available = false WHERE id = $1", [id]);
+      res.json({
+        success: true,
+        message: "Menu item has order history or recipes. Marked as unavailable to preserve audit history.",
+        id,
+        archived: true,
+      });
+      return;
+    }
+
     const result = await query("DELETE FROM menu_items WHERE id = $1 RETURNING id", [id]);
     if (result.rows.length === 0) {
       res.status(404).json({ error: "Menu item not found." });

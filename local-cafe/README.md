@@ -217,7 +217,7 @@ The application starts with a clean database containing **zero copied production
    * Open a web browser and navigate to your public domain: `https://menu.yourcafe.com/admin/login` (or locally at `http://localhost:8080/admin/login`).
    * The system detects that no administrator accounts exist and enters **First-Run Setup Mode**.
 2. **Create Master Administrator**:
-   * Enter your Café Name (e.g., *The Golden Brew*).
+   * Enter your Café Name (e.g., *Kusum Kunja Café*).
    * Enter your master admin email and a strong password (minimum 6 characters).
    * Click **Create Master Admin & Initialize**.
 3. **Configure Café Profile**:

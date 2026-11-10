@@ -15,7 +15,7 @@ export default function AdminLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [restaurantName, setRestaurantName] = useState("The Golden Brew");
+  const [restaurantName, setRestaurantName] = useState("Kusum Kunja Café");
 
   useEffect(() => {
     getAuthStatus()
@@ -117,7 +117,7 @@ export default function AdminLogin() {
             {isFirstRun ? "Initial First-Run Setup" : "Admin Portal"}
           </p>
           <h1 className="font-garamond text-[40px] leading-tight text-foreground">
-            {isFirstRun ? "Setup Café Admin" : "The Golden Brew"}
+            {isFirstRun ? "Setup Café Admin" : "Kusum Kunja Café"}
           </h1>
           {isFirstRun && (
             <p className="text-xs text-muted-foreground mt-2">
@@ -137,7 +137,7 @@ export default function AdminLogin() {
                 type="text"
                 value={restaurantName}
                 onChange={(e) => setRestaurantName(e.target.value)}
-                placeholder="The Golden Brew"
+                placeholder="Kusum Kunja Café"
                 required
                 className="w-full rounded-none border-0 border-b border-border bg-transparent px-0 py-2.5 font-manrope text-[15px] outline-none focus:border-foreground"
               />

@@ -194,7 +194,7 @@ export default function SettingsPage() {
             onChange={(e) =>
               setForm((f) => ({ ...f, restaurantName: e.target.value }))
             }
-            placeholder="The Golden Brew"
+            placeholder="Kusum Kunja Café"
           />
         </div>
 

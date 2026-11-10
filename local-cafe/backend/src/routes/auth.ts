@@ -53,7 +53,7 @@ router.post("/first-run-setup", async (req: Request, res: Response) => {
       if (cafeCheck.rows.length === 0) {
         await client.query(
           "INSERT INTO cafes (id, name, slug) VALUES (1, $1, 'default') ON CONFLICT DO NOTHING",
-          [restaurantName || "The Golden Brew"]
+          [restaurantName || "Kusum Kunja Café"]
         );
       }
 
@@ -62,7 +62,7 @@ router.post("/first-run-setup", async (req: Request, res: Response) => {
       if (settingsCheck.rows.length === 0) {
         await client.query(
           "INSERT INTO restaurant_settings (restaurant_name) VALUES ($1)",
-          [restaurantName || "The Golden Brew"]
+          [restaurantName || "Kusum Kunja Café"]
         );
       }
 

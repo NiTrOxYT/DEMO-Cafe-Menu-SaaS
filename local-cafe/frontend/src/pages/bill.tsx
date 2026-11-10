@@ -41,7 +41,7 @@ const BillPage: React.FC = () => {
         pdf.setFont("times", "bold");
         pdf.setFontSize(28);
 
-        pdf.text("The Golden Brew", 105, 25, {
+        pdf.text("Kusum Kunja Café", 105, 25, {
             align: "center",
         });
 
@@ -175,7 +175,7 @@ const BillPage: React.FC = () => {
             align: "center",
         });
 
-        pdf.text("Thank you for choosing The Golden Brew", 105, footerY + 10, {
+        pdf.text("Thank you for choosing Kusum Kunja Café", 105, footerY + 10, {
             align: "center",
         });
 
@@ -241,7 +241,7 @@ const BillPage: React.FC = () => {
                             </div>
                             <div>
                                 <h2 className="text-2xl font-bold font-serif text-[#1F1B18] tracking-tight">
-                                    The Golden Brew
+                                    Kusum Kunja Café
                                 </h2>
                                 <p className="text-[11px] tracking-[0.2em] uppercase text-[#78716A] mt-0.5">
                                     Crafted with passion, served with love

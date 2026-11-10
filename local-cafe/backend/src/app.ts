@@ -13,6 +13,8 @@ import storageRoutes from "./routes/storage.js";
 import healthRoutes from "./routes/health.js";
 import sessionsRoutes from "./routes/sessions.js";
 import offersRoutes from "./routes/offers.js";
+import inventoryRoutes from "./routes/inventory.js";
+import rawMaterialsRoutes from "./routes/rawMaterials.js";
 import { UPLOAD_DIR } from "./lib/storage.js";
 
 export function createApp() {
@@ -43,6 +45,8 @@ export function createApp() {
   app.use("/api/auth", authRoutes);
   app.use("/api", menuRoutes);
   app.use("/api", offersRoutes);
+  app.use("/api", inventoryRoutes);
+  app.use("/api", rawMaterialsRoutes);
   app.use("/api", ordersRoutes);
   app.use("/api", sessionsRoutes);
   app.use("/api/rewards", rewardsRoutes);

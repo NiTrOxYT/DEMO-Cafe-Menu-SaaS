@@ -425,7 +425,7 @@ export default function MenuPage() {
   const hasTable = Boolean(tableParam);
   const tableNumber = tableParam || "";
 
-  const restaurantName = settings?.restaurantName ?? "The Golden Brew";
+  const restaurantName = settings?.restaurantName ?? "Kusum Kunja Café";
   const tagline = settings?.tagline ?? "Fresh ingredients. Thoughtful recipes. A better you, every day.";
   const whatsappNumber = settings?.whatsappNumber ?? null;
 
@@ -1097,7 +1097,7 @@ export default function MenuPage() {
           <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
             <img
               src="/banner.png"
-              alt="The Golden Brew Cafe Banner"
+              alt="Kusum Kunja Café Banner"
               loading="eager"
               decoding="async"
               className="w-full h-full object-cover object-right sm:object-center"

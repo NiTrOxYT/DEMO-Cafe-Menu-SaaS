@@ -45,6 +45,7 @@ import {
   ShoppingBag,
   Sparkles,
   Percent,
+  Boxes,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -94,6 +95,7 @@ import OffersPage from "./offers";
 import QRPage from "./qr";
 import AnalyticsPage from "./analytics";
 import SettingsPage from "./settings";
+import RawMaterialsDashboard from "./raw-materials";
 
 const menuItemSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -106,6 +108,10 @@ const menuItemSchema = z.object({
   isVeg: z.boolean().default(true),
   isBestseller: z.boolean().default(false),
   isSpicy: z.boolean().default(false),
+  trackInventory: z.boolean().default(false),
+  inventoryQuantity: z.coerce.number().default(0),
+  inventoryUnit: z.string().default("portions"),
+  lowStockThreshold: z.coerce.number().default(5),
 });
 
 const categorySchema = z.object({
@@ -235,7 +241,7 @@ function ImageUploadField({
   );
 }
 
-type NavTab = "overview" | "menu" | "orders" | "offers" | "analytics" | "qr" | "settings";
+type NavTab = "overview" | "menu" | "orders" | "offers" | "raw_materials" | "analytics" | "qr" | "settings";
 
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
@@ -309,6 +315,10 @@ export default function AdminDashboard() {
   React.useEffect(() => {
     fetchOrders();
   }, []);
+
+  React.useEffect(() => {
+    if (!meLoading && !me) setLocation("/admin/login");
+  }, [meLoading, me, setLocation]);
 
   React.useEffect(() => {
     audioRef.current = new Audio("/sounds/order.mp3");
@@ -397,7 +407,13 @@ export default function AdminDashboard() {
       </div>
     );
   }
-  if (!me) return null;
+  if (!me) {
+    return (
+      <div className="min-h-[100dvh] flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   const handleLogout = () => {
     logoutMutation.mutate(undefined, {
@@ -460,6 +476,10 @@ export default function AdminDashboard() {
       isVeg: item.isVeg ?? true,
       isBestseller: item.isBestseller ?? false,
       isSpicy: item.isSpicy ?? false,
+      trackInventory: item.trackInventory ?? false,
+      inventoryQuantity: item.inventoryQuantity ?? 0,
+      inventoryUnit: item.inventoryUnit || "portions",
+      lowStockThreshold: item.lowStockThreshold ?? 5,
     });
     setItemDialogOpen(true);
   };
@@ -477,6 +497,10 @@ export default function AdminDashboard() {
       isVeg: true,
       isBestseller: false,
       isSpicy: false,
+      trackInventory: false,
+      inventoryQuantity: 0,
+      inventoryUnit: "portions",
+      lowStockThreshold: 5,
     });
     setItemDialogOpen(true);
   };
@@ -576,6 +600,7 @@ export default function AdminDashboard() {
     { tab: "menu", label: "Menu", icon: <UtensilsCrossed size={16} /> },
     { tab: "orders", label: "Orders", icon: <ClipboardList size={16} /> },
     { tab: "offers", label: "Offers & Combos", icon: <Percent size={16} /> },
+    { tab: "raw_materials", label: "Raw Materials", icon: <Boxes size={16} /> },
     {
       tab: "analytics",
       label: "Analytics",
@@ -596,7 +621,7 @@ export default function AdminDashboard() {
                 ☕
               </div>
               <h1 className="text-xl font-serif font-bold text-foreground tracking-tight">
-                The Golden Brew
+                Kusum Kunja Café
               </h1>
             </div>
             <nav className="hidden md:flex items-center gap-1.5">
@@ -1073,6 +1098,74 @@ export default function AdminDashboard() {
                             )}
                           />
                         </div>
+
+                        {/* Inventory Tracking Section */}
+                        <div className="rounded-xl border border-border p-3 space-y-3 bg-muted/20">
+                          <FormField
+                            control={itemForm.control}
+                            name="trackInventory"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center justify-between">
+                                <div className="space-y-0.5">
+                                  <FormLabel className="text-sm font-semibold">Track Stock Inventory</FormLabel>
+                                  <p className="text-[11px] text-muted-foreground">
+                                    Track stock quantity and automatically deduct when ordered.
+                                  </p>
+                                </div>
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+
+                          {itemForm.watch("trackInventory") && (
+                            <div className="grid grid-cols-3 gap-3 pt-1">
+                              <FormField
+                                control={itemForm.control}
+                                name="inventoryQuantity"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel className="text-xs">Opening Stock</FormLabel>
+                                    <FormControl>
+                                      <Input type="number" step="any" min="0" {...field} className="h-8 text-xs" />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={itemForm.control}
+                                name="inventoryUnit"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel className="text-xs">Unit</FormLabel>
+                                    <FormControl>
+                                      <Input placeholder="portions, cups" {...field} className="h-8 text-xs" />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={itemForm.control}
+                                name="lowStockThreshold"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel className="text-xs">Low Stock Alert</FormLabel>
+                                    <FormControl>
+                                      <Input type="number" min="0" {...field} className="h-8 text-xs" />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                          )}
+                        </div>
                         <Button
                           type="submit"
                           className="w-full"
@@ -1342,6 +1435,7 @@ export default function AdminDashboard() {
 
         {activeTab === "orders" && <OrdersPage />}
         {activeTab === "offers" && <OffersPage />}
+        {activeTab === "raw_materials" && <RawMaterialsDashboard />}
         {activeTab === "analytics" && <AnalyticsPage />}
         {activeTab === "qr" && <QRPage />}
         {activeTab === "settings" && <SettingsPage />}

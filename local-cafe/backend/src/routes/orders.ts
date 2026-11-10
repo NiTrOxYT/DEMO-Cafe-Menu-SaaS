@@ -14,6 +14,7 @@ import {
   broadcastOrderDeleted,
 } from "../socket.js";
 import { validateOfferCode, calculateBestEligibleOffer } from "./offers.js";
+import { deductOrderRawMaterials, reverseOrderRawMaterials } from "./rawMaterials.js";
 
 const router = Router();
 
@@ -23,6 +24,245 @@ function isAdminRequest(req: Request): boolean {
   if (!token) return false;
   const payload = verifyAdminToken(token);
   return payload?.role === "admin";
+}
+
+/**
+ * Resolves all menu items and quantities required for an order,
+ * ensuring each item/component is consumed exactly once without double-counting.
+ */
+export async function resolveOrderInventoryRequirements(
+  client: any,
+  items: any[],
+  offerId?: number | null
+): Promise<Map<number, { menuItemId: number; name: string; quantity: number }>> {
+  const reqMap = new Map<number, { menuItemId: number; name: string; quantity: number }>();
+  let hasUnresolvedLineItems = false;
+
+  // 1. Process regular line items in order
+  for (const item of items) {
+    let mId = item.menuItemId || item.menu_item_id;
+    const qty = Math.max(1, Number(item.quantity) || 1);
+    const itemName = (item.name || item.item_name || "").trim();
+
+    if (!mId && itemName) {
+      const nameRes = await client.query(
+        "SELECT id, name FROM menu_items WHERE LOWER(name) = LOWER($1) LIMIT 1",
+        [itemName]
+      );
+      if (nameRes.rows.length > 0) {
+        mId = nameRes.rows[0].id;
+      } else {
+        hasUnresolvedLineItems = true;
+      }
+    } else if (!mId) {
+      hasUnresolvedLineItems = true;
+    }
+
+    if (mId) {
+      const existing = reqMap.get(mId);
+      if (existing) {
+        existing.quantity += qty;
+      } else {
+        reqMap.set(mId, { menuItemId: mId, name: itemName || "Item", quantity: qty });
+      }
+    }
+  }
+
+  // 2. Combo items check:
+  // In the customer flow, Add Combo places each component menu item directly into cart.items.
+  // Each of those items is already resolved and added to reqMap in step 1.
+  // We MUST NOT deduct them twice!
+  // ONLY if the order line items included an abstract/unresolved bundle line item that did
+  // not correspond to an existing menu item (e.g. { name: "Breakfast Combo Bundle" }),
+  // expand the combo items for that unresolved bundle.
+  if (offerId && hasUnresolvedLineItems) {
+    const offerRes = await client.query(
+      "SELECT id, offer_type, combo_items FROM offers WHERE id = $1",
+      [Number(offerId)]
+    );
+    if (offerRes.rows.length > 0 && offerRes.rows[0].offer_type === "combo") {
+      const rawComboItems = offerRes.rows[0].combo_items;
+      const comboItems: Array<{ menuItemId?: number; name: string; quantity: number }> =
+        Array.isArray(rawComboItems)
+          ? rawComboItems
+          : typeof rawComboItems === "string"
+            ? JSON.parse(rawComboItems || "[]")
+            : [];
+
+      for (const ci of comboItems) {
+        let ciId = ci.menuItemId;
+        const ciQty = Math.max(1, Number(ci.quantity) || 1);
+        if (!ciId && ci.name) {
+          const nameRes = await client.query(
+            "SELECT id, name FROM menu_items WHERE LOWER(name) = LOWER($1) LIMIT 1",
+            [ci.name.trim()]
+          );
+          if (nameRes.rows.length > 0) {
+            ciId = nameRes.rows[0].id;
+          }
+        }
+
+        if (ciId) {
+          // If already in reqMap from a resolved cart item, do NOT double-add!
+          if (!reqMap.has(ciId)) {
+            reqMap.set(ciId, { menuItemId: ciId, name: ci.name, quantity: ciQty });
+          }
+        }
+      }
+    }
+  }
+
+  return reqMap;
+}
+
+/**
+ * Deducts stock transactionally for tracked menu items in an order.
+ * Rejects with 400 INSUFFICIENT_STOCK if any tracked item has insufficient stock.
+ */
+export async function deductOrderInventory(
+  client: any,
+  orderId: number,
+  items: any[],
+  offerId?: number | null,
+  isAppend: boolean = false
+): Promise<void> {
+  const reqMap = await resolveOrderInventoryRequirements(client, items, offerId);
+  if (reqMap.size === 0) {
+    // Even if no tracked finished goods, still deduct raw materials for items with configured recipes
+    await deductOrderRawMaterials(client, orderId, items, isAppend);
+    return;
+  }
+
+  const itemIds = Array.from(reqMap.keys());
+  const itemRes = await client.query(
+    `SELECT id, name, track_inventory, inventory_quantity, inventory_unit, low_stock_threshold
+     FROM menu_items
+     WHERE id = ANY($1)
+     FOR UPDATE`,
+    [itemIds]
+  );
+
+  // 1. Verify all tracked items have sufficient stock
+  for (const item of itemRes.rows) {
+    if (item.track_inventory) {
+      const needed = reqMap.get(item.id)?.quantity || 0;
+      const current = parseFloat(item.inventory_quantity || "0");
+      if (current < needed) {
+        const err: any = new Error(
+          `Insufficient stock for "${item.name}". Only ${current} ${item.inventory_unit} available, but ${needed} requested.`
+        );
+        err.status = 400;
+        err.code = "INSUFFICIENT_STOCK";
+        err.itemId = item.id;
+        throw err;
+      }
+    }
+  }
+
+  // 2. Deduct and record movements
+  for (const item of itemRes.rows) {
+    if (item.track_inventory) {
+      const needed = reqMap.get(item.id)?.quantity || 0;
+      const current = parseFloat(item.inventory_quantity || "0");
+      const newBalance = Math.round((current - needed) * 100) / 100;
+
+      await client.query(
+        "UPDATE menu_items SET inventory_quantity = $1 WHERE id = $2",
+        [newBalance, item.id]
+      );
+
+      await client.query(
+        `INSERT INTO inventory_movements (
+          menu_item_id, movement_type, quantity, balance_after, unit, reason, order_id, performed_by, created_at
+        ) VALUES ($1, 'order_deduction', $2, $3, $4, $5, $6, 'order', NOW())`,
+        [item.id, needed, newBalance, item.inventory_unit, `Order #${orderId}`, orderId]
+      );
+    }
+  }
+
+  // Mark inventory_deducted = true on the order
+  await client.query(
+    "UPDATE orders SET inventory_deducted = true WHERE id = $1",
+    [orderId]
+  );
+
+  // 3. Deduct raw materials and supplies according to configured recipes (if any)
+  await deductOrderRawMaterials(client, orderId, items, isAppend);
+}
+
+/**
+ * Reverses order stock deductions when an order is cancelled.
+ */
+export async function reverseOrderInventory(
+  client: any,
+  orderId: number,
+  performedBy: string = "cancellation"
+): Promise<void> {
+  const orderRes = await client.query(
+    "SELECT id, inventory_deducted, offer_id FROM orders WHERE id = $1 FOR UPDATE",
+    [orderId]
+  );
+  if (orderRes.rows.length === 0 || !orderRes.rows[0].inventory_deducted) {
+    return;
+  }
+
+  const itemsRes = await client.query(
+    "SELECT menu_item_id, item_name, quantity FROM order_items WHERE order_id = $1",
+    [orderId]
+  );
+
+  const reqMap = await resolveOrderInventoryRequirements(
+    client,
+    itemsRes.rows,
+    orderRes.rows[0].offer_id
+  );
+
+  if (reqMap.size > 0) {
+    const itemIds = Array.from(reqMap.keys());
+    const itemRes = await client.query(
+      `SELECT id, name, track_inventory, inventory_quantity, inventory_unit
+       FROM menu_items
+       WHERE id = ANY($1)
+       FOR UPDATE`,
+      [itemIds]
+    );
+
+    for (const item of itemRes.rows) {
+      if (item.track_inventory) {
+        const qtyToReturn = reqMap.get(item.id)?.quantity || 0;
+        const current = parseFloat(item.inventory_quantity || "0");
+        const newBalance = Math.round((current + qtyToReturn) * 100) / 100;
+
+        await client.query(
+          "UPDATE menu_items SET inventory_quantity = $1 WHERE id = $2",
+          [newBalance, item.id]
+        );
+
+        await client.query(
+          `INSERT INTO inventory_movements (
+            menu_item_id, movement_type, quantity, balance_after, unit, reason, order_id, performed_by, created_at
+          ) VALUES ($1, 'order_reversal', $2, $3, $4, $5, $6, $7, NOW())`,
+          [
+            item.id,
+            qtyToReturn,
+            newBalance,
+            item.inventory_unit,
+            `Reversal for cancelled Order #${orderId}`,
+            orderId,
+            performedBy,
+          ]
+        );
+      }
+    }
+  }
+
+  await client.query(
+    "UPDATE orders SET inventory_deducted = false WHERE id = $1",
+    [orderId]
+  );
+
+  // Reverse any deducted raw materials
+  await reverseOrderRawMaterials(client, orderId, performedBy);
 }
 
 // GET /api/orders (Admin only - returns all orders with child order_items)
@@ -560,6 +800,9 @@ router.post("/orders", async (req: Request, res: Response) => {
       insertedItems.push(itemRes.rows[0]);
     }
 
+    // 3. Deduct stock for tracked menu items (validates sufficient stock, applies transactionally)
+    await deductOrderInventory(client, order.id, items, appliedOfferId);
+
     await client.query("COMMIT");
 
     order.order_items = insertedItems;
@@ -664,6 +907,15 @@ router.post("/orders", async (req: Request, res: Response) => {
       }
     }
 
+    if (err.code === "INSUFFICIENT_STOCK" || err.status === 400) {
+      res.status(400).json({
+        error: err.message,
+        code: err.code || "INSUFFICIENT_STOCK",
+        itemId: err.itemId,
+      });
+      return;
+    }
+
     res.status(500).json({ error: "Failed to create order", details: err.message });
   } finally {
     client.release();
@@ -765,6 +1017,9 @@ router.post("/orders/:id/append", async (req: Request, res: Response) => {
     // Fetch all order_items
     const allItemsRes = await client.query("SELECT * FROM order_items WHERE order_id = $1 ORDER BY id ASC", [orderId]);
 
+    // Deduct stock for appended items (passes isAppend = true)
+    await deductOrderInventory(client, orderId, items, null, true);
+
     await client.query("COMMIT");
 
     const fullOrder = updateRes.rows[0];
@@ -777,6 +1032,10 @@ router.post("/orders/:id/append", async (req: Request, res: Response) => {
     res.json(fullOrder);
   } catch (err: any) {
     await client.query("ROLLBACK");
+    if (err.code === "INSUFFICIENT_STOCK" || err.code === "INSUFFICIENT_RAW_MATERIAL_STOCK" || err.status === 400) {
+      res.status(400).json({ error: err.message, code: err.code || "INSUFFICIENT_STOCK" });
+      return;
+    }
     res.status(500).json({ error: "Failed to append to order", details: err.message });
   } finally {
     client.release();
@@ -832,15 +1091,30 @@ router.post("/orders/:id/cancel", async (req: Request, res: Response) => {
       }
     }
 
-    const updateRes = await query(
-      "UPDATE orders SET status = 'cancelled', is_active = false WHERE id = $1 RETURNING *",
-      [id]
-    );
-    const updatedOrder = updateRes.rows[0];
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await reverseOrderInventory(
+        client,
+        id,
+        isAdmin ? ((req as any).admin?.email || "admin") : "customer_cancellation"
+      );
+      const updateRes = await client.query(
+        "UPDATE orders SET status = 'cancelled', is_active = false WHERE id = $1 RETURNING *",
+        [id]
+      );
+      await client.query("COMMIT");
+      const updatedOrder = updateRes.rows[0];
 
-    broadcastOrderStatusChanged(id, "cancelled", false, false, order.session_id);
+      broadcastOrderStatusChanged(id, "cancelled", false, false, order.session_id);
 
-    res.json({ success: true, message: "Order cancelled successfully", order: updatedOrder });
+      res.json({ success: true, message: "Order cancelled successfully", order: updatedOrder });
+    } catch (err: any) {
+      await client.query("ROLLBACK");
+      throw err;
+    } finally {
+      client.release();
+    }
   } catch (err: any) {
     res.status(500).json({ error: "Failed to cancel order", details: err.message });
   }
@@ -868,47 +1142,83 @@ router.patch("/orders/:id/status", async (req: Request, res: Response) => {
       return;
     }
 
-    // Orders remain active for the table session until session closed or order is cancelled/completed
-    const isActive = (status === "cancelled" || status === "completed") ? false : true;
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
 
-    const updateFields = [
-      "status = $1",
-      "is_active = $2",
-    ];
-    const values: any[] = [status, isActive];
-    let idx = 3;
+      // If status is transitioning to cancelled, reverse any deducted inventory
+      if (status === "cancelled") {
+        const adminEmail = (req as any).admin?.email || "admin";
+        await reverseOrderInventory(client, id, adminEmail);
+      } else if (status === "confirmed" || status === "preparing" || status === "completed") {
+        // If order was previously cancelled, re-deduct on reinstatement
+        const orderCheck = await client.query(
+          "SELECT id, inventory_deducted, raw_materials_deducted FROM orders WHERE id = $1 FOR UPDATE",
+          [id]
+        );
+        if (orderCheck.rows.length > 0 && (!orderCheck.rows[0].inventory_deducted || !orderCheck.rows[0].raw_materials_deducted)) {
+          const itemsRes = await client.query(
+            "SELECT menu_item_id, item_name, quantity, price FROM order_items WHERE order_id = $1",
+            [id]
+          );
+          await deductOrderInventory(client, id, itemsRes.rows);
+        }
+      }
 
-    if (req.body?.isPaid !== undefined) {
-      updateFields.push(`is_paid = $${idx}`);
-      values.push(Boolean(req.body.isPaid));
-      idx++;
-    } else if (status === "completed") {
-      updateFields.push(`is_paid = true`);
+      // Orders remain active for the table session until session closed or order is cancelled/completed
+      const isActive = (status === "cancelled" || status === "completed") ? false : true;
+
+      const updateFields = [
+        "status = $1",
+        "is_active = $2",
+      ];
+      const values: any[] = [status, isActive];
+      let idx = 3;
+
+      if (req.body?.isPaid !== undefined) {
+        updateFields.push(`is_paid = $${idx}`);
+        values.push(Boolean(req.body.isPaid));
+        idx++;
+      } else if (status === "completed") {
+        updateFields.push(`is_paid = true`);
+      }
+
+      if (status === "preparing") {
+        updateFields.push(`is_updated = false`);
+        updateFields.push(`latest_added_items = '[]'::jsonb`);
+      }
+
+      values.push(id);
+      const result = await client.query(
+        `UPDATE orders SET ${updateFields.join(", ")} WHERE id = $${idx} RETURNING *`,
+        values
+      );
+
+      if (result.rows.length === 0) {
+        await client.query("ROLLBACK");
+        res.status(404).json({ error: "Order not found" });
+        return;
+      }
+
+      await client.query("COMMIT");
+
+      const order = result.rows[0];
+
+      // Broadcast status change over Socket.IO to admin and session room
+      broadcastOrderStatusChanged(id, status, order.is_active, order.is_paid, order.session_id);
+
+      res.json(order);
+    } catch (err: any) {
+      await client.query("ROLLBACK");
+      throw err;
+    } finally {
+      client.release();
     }
-
-    if (status === "preparing") {
-      updateFields.push(`is_updated = false`);
-      updateFields.push(`latest_added_items = '[]'::jsonb`);
-    }
-
-    values.push(id);
-    const result = await query(
-      `UPDATE orders SET ${updateFields.join(", ")} WHERE id = $${idx} RETURNING *`,
-      values
-    );
-
-    if (result.rows.length === 0) {
-      res.status(404).json({ error: "Order not found" });
+  } catch (err: any) {
+    if (err.code === "INSUFFICIENT_STOCK" || err.code === "INSUFFICIENT_RAW_MATERIAL_STOCK" || err.status === 400) {
+      res.status(400).json({ error: err.message, code: err.code || "INSUFFICIENT_STOCK" });
       return;
     }
-
-    const order = result.rows[0];
-
-    // Broadcast status change over Socket.IO to admin and session room
-    broadcastOrderStatusChanged(id, status, order.is_active, order.is_paid, order.session_id);
-
-    res.json(order);
-  } catch (err: any) {
     res.status(500).json({ error: "Failed to update order status", details: err.message });
   }
 });

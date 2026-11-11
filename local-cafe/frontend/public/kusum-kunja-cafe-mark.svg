@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 144" role="img" aria-labelledby="title desc">
+  <title id="title">Kusum Kunja Café emblem</title>
+  <desc id="desc">A flowering garden arch above a steaming café cup.</desc>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <path d="M18 119V62c0-25 20-45 46-45s46 20 46 45v57" fill="none" stroke="#214734" stroke-width="4.5"/>
+    <path d="M27 94c12-3 20-10 25-21M101 94c-12-3-20-10-25-21" fill="none" stroke="#7D967A" stroke-width="2.5"/>
+    <path d="M40 81c-10-1-15-7-16-16 10 0 16 5 16 16ZM87 81c10-1 15-7 16-16-10 0-16 5-16 16Z" fill="#7D967A"/>
+    <path d="M64 47c-3-8-1-13 5-18 6 5 8 10 5 18M64 47c-8-4-13-3-17 3 6 6 11 7 18 3M74 47c8-4 13-3 17 3-6 6-11 7-18 3" fill="#C77B5B"/>
+    <circle cx="69" cy="48" r="4" fill="#D7AA5A"/>
+    <path d="M69 54c-3 6-5 10-5 17M64 63c-8-7-13-8-18-5 3 8 8 11 16 10M65 67c7-7 12-8 17-5-3 8-8 11-16 10" fill="none" stroke="#214734" stroke-width="2.6"/>
+    <path d="M49 76h33l-3 20c-1 8-7 13-14 13h-1c-7 0-13-5-14-13l-1-20Z" fill="#F3EBDD" stroke="#214734" stroke-width="3"/>
+    <path d="M82 81h6c9 0 10 13 0 13h-8" fill="none" stroke="#214734" stroke-width="3"/>
+    <path d="M45 113c11 5 30 5 42 0" fill="none" stroke="#B58B4B" stroke-width="3"/>
+    <path d="M62 70c-5-5-4-9 1-13M70 70c5-5 4-9-1-13" fill="none" stroke="#B58B4B" stroke-width="2.5"/>
+  </g>
+</svg>

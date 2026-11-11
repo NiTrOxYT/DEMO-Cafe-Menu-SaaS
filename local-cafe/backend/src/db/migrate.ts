@@ -53,6 +53,7 @@ export async function runMigrations() {
         id SERIAL PRIMARY KEY,
         restaurant_name TEXT NOT NULL DEFAULT 'Kusum Kunja Café',
         address TEXT,
+        gstin TEXT,
         whatsapp_number TEXT,
         opening_hours TEXT,
         logo_url TEXT,
@@ -60,6 +61,8 @@ export async function runMigrations() {
         primary_color TEXT NOT NULL DEFAULT '#c9a96e',
         tagline TEXT
       );
+
+      ALTER TABLE restaurant_settings ADD COLUMN IF NOT EXISTS gstin TEXT;
 
       -- Update only the previous default brand; preserve custom café names.
       UPDATE restaurant_settings

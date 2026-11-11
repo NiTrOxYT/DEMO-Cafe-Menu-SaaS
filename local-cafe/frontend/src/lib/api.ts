@@ -32,6 +32,7 @@ export interface RestaurantSettings {
   id: number;
   restaurantName: string;
   address: string | null;
+  gstin?: string | null;
   whatsappNumber: string | null;
   openingHours: string | null;
   logoUrl: string | null;

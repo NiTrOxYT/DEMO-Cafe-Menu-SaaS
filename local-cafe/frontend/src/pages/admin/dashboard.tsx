@@ -617,9 +617,11 @@ export default function AdminDashboard() {
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-8">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-[#FAF3E6] border border-[#ECD7A9] flex items-center justify-center text-sm shadow-2xs">
-                ☕
-              </div>
+              <img
+                src="/kusum-kunja-cafe-logo.png"
+                alt="Kusum Kunja Café logo"
+                className="w-9 h-9 rounded-full object-cover border border-[#ECD7A9] shadow-2xs"
+              />
               <h1 className="text-xl font-serif font-bold text-foreground tracking-tight">
                 Kusum Kunja Café
               </h1>

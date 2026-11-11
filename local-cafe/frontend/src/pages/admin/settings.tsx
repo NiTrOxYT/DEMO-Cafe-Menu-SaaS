@@ -106,6 +106,7 @@ export default function SettingsPage() {
     restaurantName: "",
     tagline: "",
     address: "",
+    gstin: "",
     whatsappNumber: "",
     openingHours: "",
     logoUrl: "",
@@ -120,6 +121,7 @@ export default function SettingsPage() {
           restaurantName: data.restaurantName ?? "",
           tagline: data.tagline ?? "",
           address: data.address ?? "",
+          gstin: data.gstin ?? "",
           whatsappNumber: data.whatsappNumber ?? "",
           openingHours: data.openingHours ?? "",
           logoUrl: data.logoUrl ?? "",
@@ -221,6 +223,18 @@ export default function SettingsPage() {
             }
             placeholder="123 Coffee Lane, Artisan District"
           />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="gstin">GSTIN (optional)</Label>
+          <Input
+            id="gstin"
+            value={form.gstin}
+            onChange={(e) => setForm((f) => ({ ...f, gstin: e.target.value }))}
+            placeholder="Enter your café's GSTIN"
+            maxLength={15}
+          />
+          <p className="text-xs text-muted-foreground">Shown on customer receipts when provided.</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

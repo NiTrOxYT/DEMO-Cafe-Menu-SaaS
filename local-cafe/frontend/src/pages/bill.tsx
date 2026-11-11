@@ -1,15 +1,19 @@
 import React from "react";
 import { useEffect, useState } from "react";
-import { getOrder } from "@/lib/api";
+import { getOrder, getSettings, RestaurantSettings } from "@/lib/api";
 import jsPDF from "jspdf";
 import { Download, ArrowLeft } from "lucide-react";
 import autoTable from "jspdf-autotable";
 
 const BillPage: React.FC = () => {
     const [order, setOrder] = useState<any>(null);
+    const [settings, setSettings] = useState<RestaurantSettings | null>(null);
 
     useEffect(() => {
         loadOrder();
+        getSettings().then(setSettings).catch((err) => {
+            console.error("Failed to load café settings for bill:", err);
+        });
     }, []);
 
     async function loadOrder() {
@@ -41,7 +45,7 @@ const BillPage: React.FC = () => {
         pdf.setFont("times", "bold");
         pdf.setFontSize(28);
 
-        pdf.text("Kusum Kunja Café", 105, 25, {
+        pdf.text(settings?.restaurantName || "Kusum Kunja Café", 105, 25, {
             align: "center",
         });
 
@@ -175,7 +179,7 @@ const BillPage: React.FC = () => {
             align: "center",
         });
 
-        pdf.text("Thank you for choosing Kusum Kunja Café", 105, footerY + 10, {
+        pdf.text(`Thank you for choosing ${settings?.restaurantName || "Kusum Kunja Café"}`, 105, footerY + 10, {
             align: "center",
         });
 
@@ -185,9 +189,14 @@ const BillPage: React.FC = () => {
         
         pdf.setFont("times", "bold");
         pdf.setFontSize(10);
-        pdf.text("GSTIN: 12ABCDE1234567890", 105, footerY + 25, {
-            align: "center",
-        });
+        if (settings?.address) {
+            pdf.text(settings.address, 105, footerY + 24, { align: "center", maxWidth: 170 });
+        }
+        if (settings?.gstin) {
+            pdf.text(`GSTIN: ${settings.gstin}`, 105, footerY + (settings.address ? 32 : 25), {
+                align: "center",
+            });
+        }
 
         pdf.save(`Invoice-Order-${order.id}.pdf`);
     }
@@ -241,12 +250,18 @@ const BillPage: React.FC = () => {
                             </div>
                             <div>
                                 <h2 className="text-2xl font-bold font-serif text-[#1F1B18] tracking-tight">
-                                    Kusum Kunja Café
+                                    {settings?.restaurantName || "Kusum Kunja Café"}
                                 </h2>
                                 <p className="text-[11px] tracking-[0.2em] uppercase text-[#78716A] mt-0.5">
                                     Crafted with passion, served with love
                                 </p>
                             </div>
+                            {settings?.address && (
+                                <p className="text-xs text-[#78716A]">{settings.address}</p>
+                            )}
+                            {settings?.gstin && (
+                                <p className="text-xs text-[#78716A]">GSTIN: {settings.gstin}</p>
+                            )}
                             <div className="w-24 h-px bg-gradient-to-r from-transparent via-[#B58428]/30 to-transparent" />
                             <h3 className="text-base font-serif italic text-[#78716A]">
                                 Bill of Services

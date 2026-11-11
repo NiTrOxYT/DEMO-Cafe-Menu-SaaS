@@ -28,6 +28,7 @@ router.get("/settings", async (_req: Request, res: Response) => {
       id: settings.id,
       restaurantName: settings.restaurant_name,
       address: settings.address,
+      gstin: settings.gstin,
       whatsappNumber: settings.whatsapp_number,
       openingHours: settings.opening_hours,
       logoUrl: settings.logo_url,
@@ -47,6 +48,7 @@ router.patch("/settings", requireAdmin, async (req: Request, res: Response) => {
     const {
       restaurantName,
       address,
+      gstin,
       whatsappNumber,
       openingHours,
       logoUrl,
@@ -61,6 +63,7 @@ router.patch("/settings", requireAdmin, async (req: Request, res: Response) => {
 
     if (restaurantName !== undefined) { updates.push(`restaurant_name = $${idx++}`); values.push(restaurantName); }
     if (address !== undefined) { updates.push(`address = $${idx++}`); values.push(address); }
+    if (gstin !== undefined) { updates.push(`gstin = $${idx++}`); values.push(gstin); }
     if (whatsappNumber !== undefined) { updates.push(`whatsapp_number = $${idx++}`); values.push(whatsappNumber); }
     if (openingHours !== undefined) { updates.push(`opening_hours = $${idx++}`); values.push(openingHours); }
     if (logoUrl !== undefined) { updates.push(`logo_url = $${idx++}`); values.push(logoUrl); }
@@ -84,6 +87,7 @@ router.patch("/settings", requireAdmin, async (req: Request, res: Response) => {
       id: updated.id,
       restaurantName: updated.restaurant_name,
       address: updated.address,
+      gstin: updated.gstin,
       whatsappNumber: updated.whatsapp_number,
       openingHours: updated.opening_hours,
       logoUrl: updated.logo_url,

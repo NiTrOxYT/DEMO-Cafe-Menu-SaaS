@@ -429,6 +429,79 @@ export default function MenuPage() {
   const tagline = settings?.tagline ?? "Fresh ingredients. Thoughtful recipes. A better you, every day.";
   const whatsappNumber = settings?.whatsappNumber ?? null;
 
+  const printReceipt = () => {
+    const receipt = document.getElementById("receipt-print-root");
+    if (!receipt) return;
+
+    const printWindow = window.open("", "_blank", "width=480,height=800");
+    if (!printWindow) {
+      window.alert("Allow pop-ups for this site to print or save the receipt.");
+      return;
+    }
+
+    printWindow.document.open();
+    printWindow.document.write("<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Café Receipt</title></head><body></body></html>");
+    printWindow.document.close();
+
+    const printDocument = printWindow.document;
+    document.head.querySelectorAll('link[rel="stylesheet"], style').forEach((styleNode) => {
+      printDocument.head.appendChild(styleNode.cloneNode(true));
+    });
+
+    const printStyles = printDocument.createElement("style");
+    printStyles.textContent = `
+      @page { margin: 8mm; }
+      html, body { margin: 0; padding: 0; background: #fff; }
+      body { display: flex; justify-content: center; }
+      #receipt-print-root {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        max-width: 78mm !important;
+        max-height: none !important;
+        height: auto !important;
+        margin: 0 auto !important;
+        overflow: visible !important;
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        background: #fff !important;
+        transform: none !important;
+      }
+      .receipt-print-actions { display: none !important; }
+    `;
+    printDocument.head.appendChild(printStyles);
+
+    const printableReceipt = receipt.cloneNode(true) as HTMLElement;
+    printableReceipt.querySelector(".receipt-print-actions")?.remove();
+    printDocument.body.appendChild(printableReceipt);
+
+    printWindow.onafterprint = () => printWindow.close();
+    const printStylesheets = Array.from(
+      printDocument.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]'),
+    );
+    Promise.all(
+      printStylesheets.map(
+        (link) =>
+          new Promise<void>((resolve) => {
+            if (link.sheet) {
+              resolve();
+              return;
+            }
+            link.addEventListener("load", () => resolve(), { once: true });
+            link.addEventListener("error", () => resolve(), { once: true });
+          }),
+      ),
+    ).then(async () => {
+      await printDocument.fonts?.ready;
+      window.setTimeout(() => {
+        printWindow.focus();
+        printWindow.print();
+      }, 100);
+    });
+  };
+
   const cart = useCart();
 
   // State
@@ -983,7 +1056,11 @@ export default function MenuPage() {
       <header className="sticky top-0 z-40 bg-[#F8F5EF]/95 backdrop-blur-md px-3 sm:px-6 pt-[max(0.625rem,env(safe-area-inset-top))] pb-3 flex items-center justify-between border-b border-[#E5DDD1]">
         {/* Left Café Logo */}
         <div className="flex items-center gap-2.5">
-          <BotanicalLeaf className="w-6 h-6 text-[#29231F]" />
+          <img
+            src="/kusum-kunja-cafe-logo.png"
+            alt="Kusum Kunja Café logo"
+            className="w-8 h-8 rounded-full object-cover border border-[#ECD7A9]"
+          />
           <div>
             <h1 className="font-serif text-[17px] sm:text-[19px] font-bold text-[#29231F] leading-tight tracking-tight">
               {restaurantName}
@@ -2322,19 +2399,13 @@ export default function MenuPage() {
                     + Place Another Order for Table
                   </button>
 
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 gap-2">
                     <button
                       onClick={() => setShowBillModal(true)}
-                      className="py-2.5 rounded-full bg-white border border-[#E5DDD1] text-[#29231F] font-bold text-xs hover:bg-[#EFE7DA] transition-colors flex items-center justify-center gap-1.5 shadow-2xs btn-smooth-press"
+                      className="w-full py-2.5 rounded-full bg-white border border-[#E5DDD1] text-[#29231F] font-bold text-xs hover:bg-[#EFE7DA] transition-colors flex items-center justify-center gap-1.5 shadow-2xs btn-smooth-press"
                     >
                       <Receipt size={14} className="text-[#7B4E35]" />
                       <span>View Bill</span>
-                    </button>
-                    <button
-                      onClick={() => alert(`Server called for Table ${tableNumber || 1}. A team member will assist you shortly!`)}
-                      className="py-2.5 rounded-full bg-[#F8F5EF] border border-[#E5DDD1] text-[#29231F] font-semibold text-xs hover:bg-[#EFE7DA] transition-colors btn-smooth-press"
-                    >
-                      Call Waiter
                     </button>
                   </div>
                 </div>
@@ -2602,10 +2673,12 @@ export default function MenuPage() {
       {/* ==================================================== */}
       {showBillModal && (
         <div
+          id="receipt-print-overlay"
           className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs transition-opacity duration-200"
           onClick={() => setShowBillModal(false)}
         >
           <div
+            id="receipt-print-root"
             className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-[#FFFDF9] rounded-3xl border border-[#E5DDD1] shadow-2xl p-6 space-y-4 font-mono text-xs transform transition-all duration-200"
             onClick={(e) => e.stopPropagation()}
           >
@@ -2620,8 +2693,8 @@ export default function MenuPage() {
               <p className="text-[10px] text-[#766B61] uppercase tracking-widest font-sans">
                 CAFÉ & ARTISAN KITCHEN
               </p>
-              <p className="text-[10px] text-[#766B61]">142 Park Avenue, Central District</p>
-              <p className="text-[10px] text-[#766B61]">GSTIN: 07AAAAA0000A1Z5</p>
+              {settings?.address && <p className="text-[10px] text-[#766B61]">{settings.address}</p>}
+              {settings?.gstin && <p className="text-[10px] text-[#766B61]">GSTIN: {settings.gstin}</p>}
             </div>
 
             {/* Bill Info Meta */}
@@ -2721,9 +2794,9 @@ export default function MenuPage() {
             })()}
 
             {/* Receipt Modal Actions */}
-            <div className="pt-2 space-y-2 font-sans">
+            <div className="receipt-print-actions pt-2 space-y-2 font-sans">
               <button
-                onClick={() => window.print()}
+                onClick={printReceipt}
                 className="w-full py-2.5 rounded-full bg-[#7B4E35] text-white font-semibold text-xs hover:bg-[#633D28] transition-colors flex items-center justify-center gap-2 btn-smooth-press"
               >
                 <Printer size={14} />

@@ -1,3 +1,4 @@
+import { Component, type ErrorInfo, type ReactNode } from "react";
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -27,6 +28,40 @@ const queryClient = new QueryClient({
   },
 });
 
+class AppErrorBoundary extends Component<
+  { children: ReactNode },
+  { error: Error | null }
+> {
+  state = { error: null as Error | null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error("Café app failed to render", error, info.componentStack);
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <main className="min-h-[100dvh] bg-[#F8F5EF] text-[#29231F] grid place-items-center p-6">
+          <section
+            className="max-w-md rounded-2xl border border-[#E5DDD1] bg-[#FFFDF9] p-6 text-center shadow-sm"
+            data-startup-error={`${this.state.error.name}: ${this.state.error.message}`}
+          >
+            <h1 className="font-serif text-2xl font-bold">The menu couldn’t load</h1>
+            <p className="mt-2 text-sm text-[#766B61]">
+              Please refresh the page. If the problem continues, ask the café staff for help.
+            </p>
+          </section>
+        </main>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function Router() {
   return (
     <Switch>
@@ -54,14 +89,16 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <WouterRouter>
-          <Router />
-        </WouterRouter>
-        <Toaster />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <AppErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <WouterRouter>
+            <Router />
+          </WouterRouter>
+          <Toaster />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </AppErrorBoundary>
   );
 }
 

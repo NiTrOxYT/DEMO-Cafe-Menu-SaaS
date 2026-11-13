@@ -15,6 +15,7 @@ import sessionsRoutes from "./routes/sessions.js";
 import offersRoutes from "./routes/offers.js";
 import inventoryRoutes from "./routes/inventory.js";
 import rawMaterialsRoutes from "./routes/rawMaterials.js";
+import customerAccessRoutes from "./routes/customerAccess.js";
 import { UPLOAD_DIR } from "./lib/storage.js";
 
 export function createApp() {
@@ -32,6 +33,15 @@ export function createApp() {
   // Request logger
   if (process.env.NODE_ENV !== "test") {
     app.use(pinoHttp({
+      // Keep request logs useful without recording cookies, authorization headers,
+      // client IPs, or one-time scan tokens from query strings.
+      serializers: {
+        req: (req) => ({
+          id: req.id,
+          method: req.method,
+          url: String(req.url || "/").split("?", 1)[0],
+        }),
+      },
       autoLogging: {
         ignore: (req) => req.url?.startsWith("/api/health") || req.url?.startsWith("/uploads/"),
       },
@@ -43,6 +53,7 @@ export function createApp() {
 
   // Mount API routes
   app.use("/api/auth", authRoutes);
+  app.use("/api", customerAccessRoutes);
   app.use("/api", menuRoutes);
   app.use("/api", offersRoutes);
   app.use("/api", inventoryRoutes);

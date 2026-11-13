@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import { query, pool } from "../db/index.js";
 import { generateGuestToken, hashGuestToken, verifyGuestToken } from "../lib/tokens.js";
 import { verifyAdminToken } from "../lib/auth.js";
+import { requireCustomerLocationOrAdmin } from "../lib/location.js";
 import {
   broadcastSessionCreated,
   broadcastSessionUpdated,
@@ -24,7 +25,7 @@ function isAdminRequest(req: Request): boolean {
  * Inspects whether an active session exists for this table.
  * If guest presents x-guest-token, checks their existing membership.
  */
-router.get("/tables/:tableNumber/session", async (req: Request, res: Response) => {
+router.get("/tables/:tableNumber/session", requireCustomerLocationOrAdmin, async (req: Request, res: Response) => {
   try {
     const tableNumber = String(req.params.tableNumber).trim();
     const guestToken = (req.headers["x-guest-token"] as string) || (req.query.guestToken as string);
@@ -102,7 +103,7 @@ router.get("/tables/:tableNumber/session", async (req: Request, res: Response) =
  * First guest chooses party size (1, 2, 3, 4).
  * Backend sets maximum party size and adds first guest immediately.
  */
-router.post("/tables/:tableNumber/session", async (req: Request, res: Response) => {
+router.post("/tables/:tableNumber/session", requireCustomerLocationOrAdmin, async (req: Request, res: Response) => {
   const client = await pool.connect();
   try {
     const tableNumber = String(req.params.tableNumber).trim();
@@ -196,7 +197,7 @@ router.post("/tables/:tableNumber/session", async (req: Request, res: Response) 
  * If party size reached, rejects with "This table session is full".
  * If already a member (via valid x-guest-token), returns existing credentials without double-counting.
  */
-router.post("/tables/:tableNumber/session/join", async (req: Request, res: Response) => {
+router.post("/tables/:tableNumber/session/join", requireCustomerLocationOrAdmin, async (req: Request, res: Response) => {
   const client = await pool.connect();
   try {
     const tableNumber = String(req.params.tableNumber).trim();

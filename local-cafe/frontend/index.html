@@ -20,6 +20,18 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      (() => {
+        const showStartupError = (message) => {
+          const root = document.getElementById("root");
+          if (!root || root.childElementCount) return;
+          root.dataset.startupError = message || "The menu script failed to start.";
+          root.innerHTML = '<main style="min-height:100vh;display:grid;place-items:center;padding:24px;background:#F8F5EF;color:#29231F;font:16px sans-serif"><section style="max-width:420px;padding:24px;border:1px solid #E5DDD1;border-radius:18px;background:#FFFDF9;text-align:center"><h1 style="font: bold 26px Georgia,serif">The menu couldn’t load</h1><p>Please refresh the page. If the problem continues, ask the café staff for help.</p></section></main>';
+        };
+        window.addEventListener("error", (event) => showStartupError(event.message), true);
+        window.addEventListener("unhandledrejection", (event) => showStartupError(event.reason?.message), true);
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

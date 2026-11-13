@@ -1,6 +1,8 @@
 import { Router, Request, Response } from "express";
+import crypto from "crypto";
 import { query } from "../db/index.js";
 import { requireAdmin } from "../lib/auth.js";
+import { requireCustomerLocationOrAdmin } from "../lib/location.js";
 
 const router = Router();
 
@@ -9,7 +11,7 @@ const router = Router();
 // ==========================================
 
 // GET /api/categories
-router.get("/categories", async (_req: Request, res: Response) => {
+router.get("/categories", requireCustomerLocationOrAdmin, async (_req: Request, res: Response) => {
   try {
     const result = await query("SELECT id, name, sort_order FROM categories ORDER BY sort_order ASC, id ASC");
     res.json(result.rows);
@@ -125,7 +127,7 @@ router.get("/menu/summary", async (_req: Request, res: Response) => {
 });
 
 // GET /api/menu
-router.get("/menu", async (req: Request, res: Response) => {
+router.get("/menu", requireCustomerLocationOrAdmin, async (req: Request, res: Response) => {
   try {
     const { categoryId, available } = req.query;
     const conditions: string[] = [];
@@ -162,9 +164,18 @@ router.get("/menu", async (req: Request, res: Response) => {
         m.inventory_quantity AS "inventoryQuantity",
         m.inventory_unit AS "inventoryUnit",
         m.low_stock_threshold AS "lowStockThreshold",
-        m.created_at AS "createdAt"
+        m.created_at AS "createdAt",
+        COALESCE(review_stats.review_count, 0)::INTEGER AS "reviewCount",
+        COALESCE(review_stats.average_rating, 0)::DOUBLE PRECISION AS "averageRating"
       FROM menu_items m
       INNER JOIN categories c ON m.category_id = c.id
+      LEFT JOIN (
+        SELECT menu_item_id,
+               COUNT(*)::INTEGER AS review_count,
+               ROUND(AVG(rating)::numeric, 1) AS average_rating
+        FROM menu_item_reviews
+        GROUP BY menu_item_id
+      ) review_stats ON review_stats.menu_item_id = m.id
       ${whereClause}
       ORDER BY m.sort_order ASC, m.id ASC
     `;
@@ -173,6 +184,102 @@ router.get("/menu", async (req: Request, res: Response) => {
     res.json(result.rows);
   } catch (err: any) {
     res.status(500).json({ error: "Failed to fetch menu items", details: err.message });
+  }
+});
+
+// GET /api/menu/:id/reviews
+router.get("/menu/:id/reviews", requireCustomerLocationOrAdmin, async (req: Request, res: Response) => {
+  try {
+    const menuItemId = Number.parseInt(String(req.params.id), 10);
+    if (!Number.isInteger(menuItemId) || menuItemId < 1) {
+      res.status(400).json({ error: "Invalid menu item id." });
+      return;
+    }
+
+    const reviewerKey = String(req.headers["x-reviewer-key"] || "");
+    const reviewerKeyHash = /^[0-9a-f-]{36}$/i.test(reviewerKey)
+      ? crypto.createHash("sha256").update(reviewerKey).digest("hex")
+      : null;
+    const [reviewsResult, ownReviewResult] = await Promise.all([
+      query(
+        `SELECT rating, review_text AS "reviewText", created_at AS "createdAt"
+         FROM menu_item_reviews
+         WHERE menu_item_id = $1
+         ORDER BY created_at DESC
+         LIMIT 50`,
+        [menuItemId]
+      ),
+      reviewerKeyHash
+        ? query(
+            `SELECT rating, review_text AS "reviewText", created_at AS "createdAt"
+             FROM menu_item_reviews
+             WHERE menu_item_id = $1 AND reviewer_key_hash = $2`,
+            [menuItemId, reviewerKeyHash]
+          )
+        : Promise.resolve({ rows: [] } as any),
+    ]);
+
+    res.json({ reviews: reviewsResult.rows, myReview: ownReviewResult.rows[0] || null });
+  } catch (err: any) {
+    res.status(500).json({ error: "Failed to fetch item reviews", details: err.message });
+  }
+});
+
+// POST /api/menu/:id/reviews — one editable review per item and browser identity.
+router.post("/menu/:id/reviews", requireCustomerLocationOrAdmin, async (req: Request, res: Response) => {
+  try {
+    const menuItemId = Number.parseInt(String(req.params.id), 10);
+    const { rating, reviewText = "", reviewerKey } = req.body || {};
+    const numericRating = Number(rating);
+    const text = typeof reviewText === "string" ? reviewText.trim() : "";
+
+    if (!Number.isInteger(menuItemId) || menuItemId < 1) {
+      res.status(400).json({ error: "Invalid menu item id." });
+      return;
+    }
+    if (!Number.isInteger(numericRating) || numericRating < 1 || numericRating > 5) {
+      res.status(400).json({ error: "Choose a rating from 1 to 5 stars." });
+      return;
+    }
+    if (text.length > 500) {
+      res.status(400).json({ error: "Review text must be 500 characters or fewer." });
+      return;
+    }
+    if (typeof reviewerKey !== "string" || !/^[0-9a-f-]{36}$/i.test(reviewerKey)) {
+      res.status(400).json({ error: "A valid reviewer identity is required." });
+      return;
+    }
+
+    const reviewerKeyHash = crypto.createHash("sha256").update(reviewerKey).digest("hex");
+    const savedResult = await query(
+      `INSERT INTO menu_item_reviews (menu_item_id, reviewer_key_hash, rating, review_text)
+       SELECT $1, $2, $3, $4
+       WHERE EXISTS (SELECT 1 FROM menu_items WHERE id = $1 AND available = TRUE)
+       ON CONFLICT (menu_item_id, reviewer_key_hash)
+       DO UPDATE SET rating = EXCLUDED.rating,
+                     review_text = EXCLUDED.review_text,
+                     updated_at = NOW()
+       RETURNING rating, review_text AS "reviewText", created_at AS "createdAt", updated_at AS "updatedAt"`,
+      [menuItemId, reviewerKeyHash, numericRating, text]
+    );
+
+    if (savedResult.rows.length === 0) {
+      res.status(404).json({ error: "Available menu item not found." });
+      return;
+    }
+
+    const summaryResult = await query(
+      `SELECT COUNT(*)::INTEGER AS "reviewCount",
+              ROUND(AVG(rating)::numeric, 1)::DOUBLE PRECISION AS "averageRating"
+       FROM menu_item_reviews WHERE menu_item_id = $1`,
+      [menuItemId]
+    );
+    res.status(201).json({
+      review: savedResult.rows[0],
+      ...summaryResult.rows[0],
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: "Failed to save item review", details: err.message });
   }
 });
 

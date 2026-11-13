@@ -24,6 +24,12 @@ async function getOrCreateSettings() {
 router.get("/settings", async (_req: Request, res: Response) => {
   try {
     const settings = await getOrCreateSettings();
+    const hasLocation =
+      settings.latitude !== null &&
+      settings.latitude !== undefined &&
+      settings.longitude !== null &&
+      settings.longitude !== undefined;
+
     res.json({
       id: settings.id,
       restaurantName: settings.restaurant_name,
@@ -35,6 +41,9 @@ router.get("/settings", async (_req: Request, res: Response) => {
       bannerUrl: settings.banner_url,
       primaryColor: settings.primary_color,
       tagline: settings.tagline,
+      latitude: settings.latitude !== null && settings.latitude !== undefined ? Number(settings.latitude) : null,
+      longitude: settings.longitude !== null && settings.longitude !== undefined ? Number(settings.longitude) : null,
+      hasLocationConfigured: hasLocation,
     });
   } catch (err: any) {
     res.status(500).json({ error: "Failed to fetch settings", details: err.message });
@@ -55,6 +64,8 @@ router.patch("/settings", requireAdmin, async (req: Request, res: Response) => {
       bannerUrl,
       primaryColor,
       tagline,
+      latitude,
+      longitude,
     } = req.body || {};
 
     const updates: string[] = [];
@@ -71,6 +82,36 @@ router.patch("/settings", requireAdmin, async (req: Request, res: Response) => {
     if (primaryColor !== undefined) { updates.push(`primary_color = $${idx++}`); values.push(primaryColor); }
     if (tagline !== undefined) { updates.push(`tagline = $${idx++}`); values.push(tagline); }
 
+    if (latitude !== undefined) {
+      if (latitude === null || latitude === "") {
+        updates.push(`latitude = $${idx++}`);
+        values.push(null);
+      } else {
+        const parsedLat = parseFloat(String(latitude));
+        if (isNaN(parsedLat) || parsedLat < -90 || parsedLat > 90) {
+          res.status(400).json({ error: "Invalid latitude. Must be a decimal number between -90 and 90." });
+          return;
+        }
+        updates.push(`latitude = $${idx++}`);
+        values.push(parsedLat);
+      }
+    }
+
+    if (longitude !== undefined) {
+      if (longitude === null || longitude === "") {
+        updates.push(`longitude = $${idx++}`);
+        values.push(null);
+      } else {
+        const parsedLon = parseFloat(String(longitude));
+        if (isNaN(parsedLon) || parsedLon < -180 || parsedLon > 180) {
+          res.status(400).json({ error: "Invalid longitude. Must be a decimal number between -180 and 180." });
+          return;
+        }
+        updates.push(`longitude = $${idx++}`);
+        values.push(parsedLon);
+      }
+    }
+
     if (updates.length === 0) {
       res.status(400).json({ error: "No fields to update." });
       return;
@@ -83,6 +124,12 @@ router.patch("/settings", requireAdmin, async (req: Request, res: Response) => {
     );
 
     const updated = result.rows[0];
+    const hasLocation =
+      updated.latitude !== null &&
+      updated.latitude !== undefined &&
+      updated.longitude !== null &&
+      updated.longitude !== undefined;
+
     res.json({
       id: updated.id,
       restaurantName: updated.restaurant_name,
@@ -94,6 +141,9 @@ router.patch("/settings", requireAdmin, async (req: Request, res: Response) => {
       bannerUrl: updated.banner_url,
       primaryColor: updated.primary_color,
       tagline: updated.tagline,
+      latitude: updated.latitude !== null && updated.latitude !== undefined ? Number(updated.latitude) : null,
+      longitude: updated.longitude !== null && updated.longitude !== undefined ? Number(updated.longitude) : null,
+      hasLocationConfigured: hasLocation,
     });
   } catch (err: any) {
     res.status(500).json({ error: "Failed to update settings", details: err.message });

@@ -33,6 +33,7 @@ import {
   AlertCircle,
   Receipt,
   Utensils,
+  Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -97,10 +98,20 @@ function formatINR(n: number) {
   return `₹${Math.round(n)}`;
 }
 
-function formatTime(dateStr: string) {
+function formatOrderDate(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: "Asia/Kolkata",
+  });
+}
+
+function formatOrderTime(dateStr: string) {
   return new Date(dateStr).toLocaleTimeString("en-IN", {
     hour: "numeric",
     minute: "2-digit",
+    timeZone: "Asia/Kolkata",
   });
 }
 
@@ -119,6 +130,31 @@ interface SessionGroup {
   isCurrentActive: boolean;
   statusLabel?: string;
   orders: Order[];
+  visibleOrders?: Order[];
+}
+
+type OrderDateRange = "all" | "today" | "yesterday" | "7days" | "30days" | "custom";
+
+function getIndiaDateKey(value: string | Date) {
+  const date = value instanceof Date ? value : new Date(value);
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const part = (type: string) => parts.find((item) => item.type === type)?.value ?? "";
+  return `${part("year")}-${part("month")}-${part("day")}`;
+}
+
+function shiftDateKey(dateKey: string, days: number) {
+  const date = new Date(`${dateKey}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function csvCell(value: unknown) {
+  return `"${String(value ?? "").replace(/"/g, '""')}"`;
 }
 
 export default function OrdersPage() {
@@ -135,6 +171,12 @@ export default function OrdersPage() {
   const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<string>("active");
+  const [dateRange, setDateRange] = useState<OrderDateRange>("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [tableFilter, setTableFilter] = useState("all");
+  const [paymentFilter, setPaymentFilter] = useState<"all" | "paid" | "unpaid">("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
 
   async function fetchOrders() {
@@ -401,6 +443,118 @@ export default function OrdersPage() {
     });
   }, [orders, activeSessions, filter]);
 
+  const tableOptions = useMemo(() => {
+    const tableNumbers = new Set(
+      orders.map((order) => String(order.table_number || order.table_id || "1")),
+    );
+    return [...tableNumbers].sort((a, b) => {
+      const numericDifference = Number(a) - Number(b);
+      return Number.isNaN(numericDifference) || numericDifference === 0
+        ? a.localeCompare(b)
+        : numericDifference;
+    });
+  }, [orders]);
+
+  const filteredOrders = useMemo(() => {
+    const today = getIndiaDateKey(new Date());
+    const activeSessionIds = new Set(activeSessions.map((session) => session.id));
+    const normalizedSearch = searchQuery.trim().toLowerCase();
+
+    let startDate = "";
+    let endDate = "";
+    if (dateRange === "today") {
+      startDate = endDate = today;
+    } else if (dateRange === "yesterday") {
+      startDate = endDate = shiftDateKey(today, -1);
+    } else if (dateRange === "7days") {
+      startDate = shiftDateKey(today, -6);
+      endDate = today;
+    } else if (dateRange === "30days") {
+      startDate = shiftDateKey(today, -29);
+      endDate = today;
+    } else if (dateRange === "custom") {
+      startDate = dateFrom;
+      endDate = dateTo;
+    }
+
+    return orders.filter((order) => {
+      if (filter === "active" && (!order.session_id || !activeSessionIds.has(order.session_id))) return false;
+      if (filter !== "active" && filter !== "all" && order.status !== filter) return false;
+
+      const orderDate = getIndiaDateKey(order.created_at);
+      if (startDate && orderDate < startDate) return false;
+      if (endDate && orderDate > endDate) return false;
+
+      const tableNumber = String(order.table_number || order.table_id || "1");
+      if (tableFilter !== "all" && tableNumber !== tableFilter) return false;
+      if (paymentFilter === "paid" && !order.is_paid) return false;
+      if (paymentFilter === "unpaid" && order.is_paid) return false;
+
+      if (normalizedSearch) {
+        const searchable = [
+          order.id,
+          tableNumber,
+          order.guest_name,
+          order.customer_name,
+          order.customer_phone,
+          ...(order.order_items ?? []).map((item) => item.item_name),
+        ].join(" ").toLowerCase();
+        if (!searchable.includes(normalizedSearch)) return false;
+      }
+      return true;
+    });
+  }, [orders, activeSessions, filter, dateRange, dateFrom, dateTo, tableFilter, paymentFilter, searchQuery]);
+
+  const visibleTableGroups = useMemo(() => {
+    const visibleOrderIds = new Set(filteredOrders.map((order) => order.id));
+    const hasAdvancedFilters = dateRange !== "all"
+      || tableFilter !== "all"
+      || paymentFilter !== "all"
+      || Boolean(searchQuery.trim());
+
+    return tableGroups
+      .map((group) => ({
+        ...group,
+        visibleOrders: group.orders.filter((order) => visibleOrderIds.has(order.id)),
+      }))
+      .filter((group) => {
+        if (filter === "active" && !hasAdvancedFilters) return group.isCurrentActive;
+        return group.visibleOrders!.length > 0;
+      });
+  }, [tableGroups, filteredOrders, filter, dateRange, tableFilter, paymentFilter, searchQuery]);
+
+  function exportFilteredOrders() {
+    const headers = [
+      "Order ID", "Date (India)", "Time (India)", "Table", "Session ID", "Guest",
+      "Status", "Payment", "Items", "Subtotal", "Discount", "Tax", "Total", "Notes",
+    ];
+    const rows = filteredOrders.map((order) => [
+      order.id,
+      formatOrderDate(order.created_at),
+      formatOrderTime(order.created_at),
+      order.table_number || order.table_id || "1",
+      order.session_id ?? "",
+      order.guest_name || order.customer_name || "Guest",
+      order.status,
+      order.is_paid ? "Paid" : "Unpaid",
+      (order.order_items ?? []).map((item) => `${item.quantity} x ${item.item_name} @ ${formatINR(item.price)}`).join("; "),
+      order.subtotal,
+      order.discount ?? 0,
+      order.tax,
+      order.total,
+      order.notes ?? "",
+    ]);
+    const csv = "\uFEFF" + [headers, ...rows].map((row) => row.map(csvCell).join(",")).join("\r\n");
+    const blobUrl = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = `kusum-kunja-orders-${getIndiaDateKey(new Date())}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -430,18 +584,30 @@ export default function OrdersPage() {
             Accept individual guest orders, track kitchen progression, and settle table bills.
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            fetchOrders();
-            fetchSessions();
-          }}
-          className="active:scale-95 transition-all duration-150 hover:shadow-md hover:border-primary/50 hover:bg-primary/5"
-        >
-          <RefreshCw size={14} className="mr-2" />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportFilteredOrders}
+            disabled={filteredOrders.length === 0}
+            className="active:scale-95 transition-all duration-150 hover:shadow-md hover:border-primary/50 hover:bg-primary/5"
+          >
+            <Download size={14} className="mr-2" />
+            Export CSV ({filteredOrders.length})
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              fetchOrders();
+              fetchSessions();
+            }}
+            className="active:scale-95 transition-all duration-150 hover:shadow-md hover:border-primary/50 hover:bg-primary/5"
+          >
+            <RefreshCw size={14} className="mr-2" />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Dashboard Stats */}
@@ -495,14 +661,95 @@ export default function OrdersPage() {
         )}
       </div>
 
+      {/* Historical order filters */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3 rounded-xl border border-border bg-card p-4">
+        <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
+          Date range
+          <select
+            value={dateRange}
+            onChange={(event) => setDateRange(event.target.value as OrderDateRange)}
+            className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground"
+          >
+            <option value="all">All dates</option>
+            <option value="today">Today</option>
+            <option value="yesterday">Yesterday</option>
+            <option value="7days">Last 7 days</option>
+            <option value="30days">Last 30 days</option>
+            <option value="custom">Custom range</option>
+          </select>
+        </label>
+
+        {dateRange === "custom" && (
+          <>
+            <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
+              From
+              <input
+                type="date"
+                value={dateFrom}
+                max={dateTo || undefined}
+                onChange={(event) => setDateFrom(event.target.value)}
+                className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
+              To
+              <input
+                type="date"
+                value={dateTo}
+                min={dateFrom || undefined}
+                onChange={(event) => setDateTo(event.target.value)}
+                className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground"
+              />
+            </label>
+          </>
+        )}
+
+        <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
+          Table
+          <select
+            value={tableFilter}
+            onChange={(event) => setTableFilter(event.target.value)}
+            className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground"
+          >
+            <option value="all">All tables</option>
+            {tableOptions.map((tableNumber) => (
+              <option key={tableNumber} value={tableNumber}>Table {tableNumber}</option>
+            ))}
+          </select>
+        </label>
+
+        <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
+          Payment
+          <select
+            value={paymentFilter}
+            onChange={(event) => setPaymentFilter(event.target.value as "all" | "paid" | "unpaid")}
+            className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground"
+          >
+            <option value="all">Paid & unpaid</option>
+            <option value="paid">Paid</option>
+            <option value="unpaid">Unpaid</option>
+          </select>
+        </label>
+
+        <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground sm:col-span-2 xl:col-span-1">
+          Search orders
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder="Order, guest, phone, or item"
+            className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground"
+          />
+        </label>
+      </div>
+      <p className="-mt-4 text-[11px] text-muted-foreground" aria-live="polite">
+        Showing {filteredOrders.length} matching {filteredOrders.length === 1 ? "order" : "orders"}. Export uses these filters.
+      </p>
+
       {/* Grouped Table List */}
       <div className="space-y-6">
         {(() => {
-          const filteredGroups = tableGroups.filter((group) => {
-            if (filter === "all") return true;
-            if (filter === "active") return group.isCurrentActive;
-            return group.orders.some((o) => o.status === filter);
-          });
+          const filteredGroups = visibleTableGroups;
 
           if (filteredGroups.length === 0) {
             return (
@@ -526,9 +773,7 @@ export default function OrdersPage() {
             const activeSession = group.session;
             // Orders for this group filtered by current tab if applicable
             const displayedOrders =
-              filter === "all" || filter === "active"
-                ? group.orders
-                : group.orders.filter((o) => o.status === filter);
+              group.visibleOrders ?? group.orders;
 
             // Calculate true table bill without duplicate joins
             const validSessionOrders = group.orders.filter((o) => o.status !== "cancelled");
@@ -679,7 +924,10 @@ export default function OrdersPage() {
                               <span className="font-semibold text-stone-700 bg-stone-100 px-2 py-0.5 rounded border border-stone-200">
                                 👤 {order.guest_name || (order.guest_member_id ? `Guest #${order.guest_member_id}` : order.customer_name || "Guest")}
                               </span>
-                              <span>{formatTime(order.created_at)}</span>
+                              <span className="flex flex-col items-end leading-tight">
+                                <span>{formatOrderDate(order.created_at)}</span>
+                                <span>{formatOrderTime(order.created_at)}</span>
+                              </span>
                             </div>
                           </div>
 

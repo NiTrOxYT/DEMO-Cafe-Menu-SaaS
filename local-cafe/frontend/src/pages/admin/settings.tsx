@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getSettings, updateSettings, uploadImage, RestaurantSettings } from "@/lib/api";
-import { Loader2, Save, Upload } from "lucide-react";
+import { Loader2, Save, Upload, MapPin, Navigation, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -101,6 +101,7 @@ export default function SettingsPage() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [detectingLocation, setDetectingLocation] = useState(false);
 
   const [form, setForm] = useState({
     restaurantName: "",
@@ -112,6 +113,8 @@ export default function SettingsPage() {
     logoUrl: "",
     bannerUrl: "",
     primaryColor: "#c9a96e",
+    latitude: "" as string | number,
+    longitude: "" as string | number,
   });
 
   useEffect(() => {
@@ -127,6 +130,8 @@ export default function SettingsPage() {
           logoUrl: data.logoUrl ?? "",
           bannerUrl: data.bannerUrl ?? "",
           primaryColor: data.primaryColor ?? "#c9a96e",
+          latitude: data.latitude !== null && data.latitude !== undefined ? data.latitude : "",
+          longitude: data.longitude !== null && data.longitude !== undefined ? data.longitude : "",
         });
       })
       .catch((err) => {
@@ -139,10 +144,60 @@ export default function SettingsPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  const handleUseCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast({
+        variant: "destructive",
+        title: "Geolocation Unsupported",
+        description: "Your browser does not support Geolocation.",
+      });
+      return;
+    }
+
+    setDetectingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = Number(pos.coords.latitude.toFixed(6));
+        const lon = Number(pos.coords.longitude.toFixed(6));
+        setForm((f) => ({
+          ...f,
+          latitude: lat,
+          longitude: lon,
+        }));
+        setDetectingLocation(false);
+        toast({
+          title: "Location Detected",
+          description: `Captured coordinates: ${lat}, ${lon} (±${Math.round(pos.coords.accuracy)}m accuracy)`,
+        });
+      },
+      (err) => {
+        setDetectingLocation(false);
+        toast({
+          variant: "destructive",
+          title: "Location Detection Failed",
+          description: err.message || "Failed to capture current device location.",
+        });
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
-      await updateSettings(form);
+      const payload: any = { ...form };
+      if (form.latitude === "" || form.latitude === null || isNaN(Number(form.latitude))) {
+        payload.latitude = null;
+      } else {
+        payload.latitude = Number(form.latitude);
+      }
+      if (form.longitude === "" || form.longitude === null || isNaN(Number(form.longitude))) {
+        payload.longitude = null;
+      } else {
+        payload.longitude = Number(form.longitude);
+      }
+
+      await updateSettings(payload);
       toast({
         title: "Settings Saved",
         description: "Local café settings updated successfully.",
@@ -223,6 +278,83 @@ export default function SettingsPage() {
             }
             placeholder="123 Coffee Lane, Artisan District"
           />
+        </div>
+
+        {/* Café Geolocation Gate (50m Radius) */}
+        <div className="rounded-xl border border-border bg-[#FBF9F5] p-4 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <MapPin size={16} className="text-primary" />
+                <h3 className="text-sm font-semibold text-foreground">
+                  Location Gate (50m In-Café Radius)
+                </h3>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Customers may only view the menu and order within 50 metres of these coordinates. If left unset, customer access fails closed until configured.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={detectingLocation}
+              onClick={handleUseCurrentLocation}
+              className="shrink-0 bg-white"
+            >
+              {detectingLocation ? (
+                <Loader2 size={13} className="mr-1.5 animate-spin" />
+              ) : (
+                <Navigation size={13} className="mr-1.5 text-primary" />
+              )}
+              {detectingLocation ? "Detecting…" : "Use Device Location"}
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="latitude" className="text-xs">Latitude (Decimal)</Label>
+              <Input
+                id="latitude"
+                type="number"
+                step="any"
+                value={form.latitude}
+                onChange={(e) => setForm((f) => ({ ...f, latitude: e.target.value }))}
+                placeholder="e.g. 12.971598"
+                className="bg-white font-mono text-xs"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="longitude" className="text-xs">Longitude (Decimal)</Label>
+              <Input
+                id="longitude"
+                type="number"
+                step="any"
+                value={form.longitude}
+                onChange={(e) => setForm((f) => ({ ...f, longitude: e.target.value }))}
+                placeholder="e.g. 77.594566"
+                className="bg-white font-mono text-xs"
+              />
+            </div>
+          </div>
+
+          {form.latitude !== "" && form.longitude !== "" && !isNaN(Number(form.latitude)) && !isNaN(Number(form.longitude)) && (
+            <div className="flex items-center justify-between pt-1 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1.5 text-emerald-700 font-medium">
+                <span className="h-2 w-2 rounded-full bg-emerald-600 inline-block" />
+                Active gate: 50m radius around {Number(form.latitude).toFixed(5)}, {Number(form.longitude).toFixed(5)}
+              </span>
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&destination=${form.latitude},${form.longitude}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-primary hover:underline font-medium"
+              >
+                <span>Preview on Maps</span>
+                <ExternalLink size={12} />
+              </a>
+            </div>
+          )}
         </div>
 
         <div className="space-y-2">

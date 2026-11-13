@@ -15,6 +15,7 @@ import {
 } from "../socket.js";
 import { validateOfferCode, calculateBestEligibleOffer } from "./offers.js";
 import { deductOrderRawMaterials, reverseOrderRawMaterials } from "./rawMaterials.js";
+import { requireCustomerLocationOrAdmin } from "../lib/location.js";
 
 const router = Router();
 
@@ -495,7 +496,7 @@ export function computeCanonicalPayloadHash(payload: {
 }
 
 // POST /api/orders (Create new independent order + line items; links to session if guestToken provided)
-router.post("/orders", async (req: Request, res: Response) => {
+router.post("/orders", requireCustomerLocationOrAdmin, async (req: Request, res: Response) => {
   const client = await pool.connect();
   let incomingPayloadHash: string | null = null;
   try {
@@ -923,7 +924,7 @@ router.post("/orders", async (req: Request, res: Response) => {
 });
 
 // POST /api/orders/:id/append (Append items to active order)
-router.post("/orders/:id/append", async (req: Request, res: Response) => {
+router.post("/orders/:id/append", requireCustomerLocationOrAdmin, async (req: Request, res: Response) => {
   const client = await pool.connect();
   try {
     const orderId = parseInt(String(req.params.id), 10);

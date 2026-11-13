@@ -17,6 +17,7 @@ import {
   useCreateCategory,
   useDeleteCategory,
   useListOrders,
+  useGetSettings,
 } from "@/lib/api";
 import { useUpload } from "@/lib/storage";
 import {
@@ -46,6 +47,8 @@ import {
   Sparkles,
   Percent,
   Boxes,
+  AlertTriangle,
+  MapPin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -247,6 +250,7 @@ export default function AdminDashboard() {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { data: settings } = useGetSettings();
   const [activeTab, setActiveTab] = useState<NavTab>("overview");
   const [itemDialogOpen, setItemDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
@@ -269,10 +273,11 @@ export default function AdminDashboard() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const q = (opts: any) => opts;
   const {
-    data: me,
+    data: meResponse,
     isLoading: meLoading,
     isError: meError,
   } = useGetMe({ query: q({ retry: false }) });
+  const me = meResponse?.user;
   const { data: summary, isLoading: summaryLoading } = useGetMenuSummary({
     query: q({ enabled: !!me }),
   });
@@ -548,7 +553,7 @@ export default function AdminDashboard() {
 
   const onCategorySubmit = (data: CategoryFormValues) => {
     createCategoryMutation.mutate(
-      { data },
+      { data: { name: data.name ?? "", sortOrder: data.sortOrder } },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({
@@ -681,6 +686,35 @@ export default function AdminDashboard() {
       </header>
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-6">
+        {/* Location Gate Setup Alert */}
+        {settings && (!settings.hasLocationConfigured || settings.latitude == null || settings.longitude == null) && (
+          <div className="mb-6 rounded-2xl border border-amber-300 bg-amber-50/90 p-4 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <div className="rounded-xl bg-amber-100 p-2 text-amber-800 shrink-0">
+                  <AlertTriangle className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-amber-900">
+                    Location Gate Not Configured — Customer Ordering Locked
+                  </h3>
+                  <p className="text-xs text-amber-800/90 mt-0.5 max-w-2xl">
+                    Customers must be within 50 metres of the café to view the menu and place orders. Because café coordinates are not set, customer access is currently locked.
+                  </p>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                className="bg-amber-800 hover:bg-amber-900 text-white shrink-0"
+                onClick={() => setActiveTab("settings")}
+              >
+                <MapPin className="mr-1.5 h-3.5 w-3.5" />
+                Configure Coordinates
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* OVERVIEW */}
         {activeTab === "overview" && (
           <div className="space-y-6">
@@ -1395,7 +1429,7 @@ export default function AdminDashboard() {
                 <Table>
                   <TableBody>
                     {categories
-                      ?.sort((a, b) => a.sortOrder - b.sortOrder)
+                      ?.sort((a, b) => a.sort_order - b.sort_order)
                       .map((c) => (
                         <TableRow key={c.id}>
                           <TableCell className="font-medium text-sm">

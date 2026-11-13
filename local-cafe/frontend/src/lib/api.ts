@@ -20,6 +20,8 @@ export interface MenuItem {
   isVeg: boolean;
   isBestseller: boolean;
   isSpicy: boolean;
+  reviewCount?: number;
+  averageRating?: number;
   badge?: string;
   trackInventory?: boolean;
   inventoryQuantity?: number;
@@ -39,6 +41,9 @@ export interface RestaurantSettings {
   bannerUrl: string | null;
   primaryColor: string;
   tagline: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  hasLocationConfigured?: boolean;
 }
 
 export interface OrderItem {
@@ -258,6 +263,32 @@ export async function getMenu(categoryId?: number, available?: boolean): Promise
   if (available !== undefined) params.set("available", String(available));
   const queryStr = params.toString() ? `?${params.toString()}` : "";
   return request(`/api/menu${queryStr}`);
+}
+
+export interface MenuItemReview {
+  rating: number;
+  reviewText: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export async function getMenuItemReviews(
+  menuItemId: number,
+  reviewerKey: string,
+): Promise<{ reviews: MenuItemReview[]; myReview: MenuItemReview | null }> {
+  return request(`/api/menu/${menuItemId}/reviews`, {
+    headers: { "x-reviewer-key": reviewerKey },
+  });
+}
+
+export async function submitMenuItemReview(
+  menuItemId: number,
+  payload: { rating: number; reviewText: string; reviewerKey: string },
+): Promise<{ review: MenuItemReview; reviewCount: number; averageRating: number }> {
+  return request(`/api/menu/${menuItemId}/reviews`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }
 
 export async function getMenuSummary(): Promise<{ totalItems: number; totalCategories: number; availableItems: number }> {
@@ -559,7 +590,7 @@ export async function uploadImage(file: File): Promise<{ url: string; filename: 
 
 export const getGetMeQueryKey = () => ["/api/auth/me"] as const;
 export function useGetMe(options?: { query?: any }) {
-  return useQuery({
+  return useQuery<{ user: any }>({
     queryKey: getGetMeQueryKey(),
     queryFn: () => getAdminMe(),
     ...options?.query,
@@ -568,7 +599,7 @@ export function useGetMe(options?: { query?: any }) {
 
 export const getListCategoriesQueryKey = () => ["/api/categories"] as const;
 export function useListCategories(options?: { query?: any }) {
-  return useQuery({
+  return useQuery<Category[]>({
     queryKey: getListCategoriesQueryKey(),
     queryFn: () => getCategories(),
     ...options?.query,
@@ -582,7 +613,7 @@ export function useListMenuItems(
   params?: { categoryId?: number; available?: boolean },
   options?: { query?: any }
 ) {
-  return useQuery({
+  return useQuery<MenuItem[]>({
     queryKey: getListMenuItemsQueryKey(params),
     queryFn: () => getMenu(params?.categoryId, params?.available),
     ...options?.query,
@@ -591,7 +622,7 @@ export function useListMenuItems(
 
 export const getGetMenuSummaryQueryKey = () => ["/api/menu/summary"] as const;
 export function useGetMenuSummary(options?: { query?: any }) {
-  return useQuery({
+  return useQuery<{ totalItems: number; totalCategories: number; availableItems: number }>({
     queryKey: getGetMenuSummaryQueryKey(),
     queryFn: () => getMenuSummary(),
     ...options?.query,
@@ -600,7 +631,7 @@ export function useGetMenuSummary(options?: { query?: any }) {
 
 export const getGetSettingsQueryKey = () => ["/api/settings"] as const;
 export function useGetSettings(options?: { query?: any }) {
-  return useQuery({
+  return useQuery<RestaurantSettings>({
     queryKey: getGetSettingsQueryKey(),
     queryFn: () => getSettings(),
     ...options?.query,
@@ -609,7 +640,7 @@ export function useGetSettings(options?: { query?: any }) {
 
 export const getListOrdersQueryKey = () => ["/api/orders"] as const;
 export function useListOrders(options?: { query?: any }) {
-  return useQuery({
+  return useQuery<Order[]>({
     queryKey: getListOrdersQueryKey(),
     queryFn: () => getAdminOrders(),
     ...options?.query,
@@ -792,7 +823,7 @@ export function useInventorySummary(params?: {
   categoryId?: number;
   menuItemId?: number;
 }) {
-  return useQuery({
+  return useQuery<InventorySummary>({
     queryKey: ["inventory", "summary", params],
     queryFn: () => getInventorySummary(params),
     refetchInterval: 15000,
@@ -804,7 +835,7 @@ export function useInventoryItems(params?: {
   search?: string;
   status?: string;
 }) {
-  return useQuery({
+  return useQuery<MenuItem[]>({
     queryKey: ["inventory", "items", params],
     queryFn: () => getInventoryItems(params),
     refetchInterval: 15000,
@@ -819,7 +850,7 @@ export function useInventoryMovements(params?: {
   limit?: number;
   offset?: number;
 }) {
-  return useQuery({
+  return useQuery<{ total: number; movements: InventoryMovement[] }>({
     queryKey: ["inventory", "movements", params],
     queryFn: () => getInventoryMovements(params),
   });
@@ -1115,5 +1146,91 @@ export function useRecipes() {
   return useQuery({
     queryKey: ["raw-materials", "recipes"],
     queryFn: () => getRecipes(),
+  });
+}
+
+// ==========================================
+// CUSTOMER LOCATION GATE & SINGLE-USE QR SCAN
+// ==========================================
+
+export interface LocationStatusResponse {
+  configured: boolean;
+  restaurantName: string | null;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  maxDistanceMetres: number;
+  directionsUrl: string | null;
+}
+
+export interface VerifyLocationResponse {
+  success: boolean;
+  message?: string;
+  distance?: number;
+  token?: string;
+  expiresAt?: number;
+  reason?: string;
+  directionsUrl?: string | null;
+}
+
+export interface RequestScanLinkResponse {
+  success: boolean;
+  tableNumber: string;
+  scanToken: string;
+  scanUrl: string;
+  expiresAt: string;
+}
+
+export interface RedeemScanLinkResponse {
+  success: boolean;
+  tableNumber: string;
+  token: string;
+  expiresAt: number;
+}
+
+export async function getLocationStatus(): Promise<LocationStatusResponse> {
+  return request<LocationStatusResponse>("/api/customer/location-status");
+}
+
+export function useLocationStatus() {
+  return useQuery({
+    queryKey: ["customer", "location-status"],
+    queryFn: () => getLocationStatus(),
+    staleTime: 60000,
+  });
+}
+
+export async function verifyCustomerLocation(coords: {
+  latitude: number;
+  longitude: number;
+  accuracy?: number;
+}): Promise<VerifyLocationResponse> {
+  return request<VerifyLocationResponse>("/api/customer/verify-location", {
+    method: "POST",
+    body: JSON.stringify(coords),
+  });
+}
+
+export async function requestScanLink(payload: {
+  tableNumber: string;
+  latitude?: number;
+  longitude?: number;
+  accuracy?: number;
+}): Promise<RequestScanLinkResponse> {
+  return request<RequestScanLinkResponse>("/api/qr/request-scan-link", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function redeemScanLink(payload: {
+  token: string;
+  latitude?: number;
+  longitude?: number;
+  accuracy?: number;
+}): Promise<RedeemScanLinkResponse> {
+  return request<RedeemScanLinkResponse>("/api/qr/redeem-scan-link", {
+    method: "POST",
+    body: JSON.stringify(payload),
   });
 }

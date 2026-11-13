@@ -4,6 +4,53 @@ import { hashPassword, verifyPassword, signAdminToken, setAdminCookie, clearAdmi
 
 const router = Router();
 
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_BLOCK_MS = 15 * 60 * 1000;
+const LOGIN_MAX_FAILURES = 10;
+const loginFailures = new Map<string, { count: number; windowStartedAt: number; blockedUntil: number }>();
+
+function getLoginClientIp(req: Request): string {
+  // Nginx forwards this header from Cloudflare Tunnel; Cloudflare overwrites it at its edge.
+  const cloudflareIp = req.get("CF-Connecting-IP")?.trim();
+  if (cloudflareIp && !cloudflareIp.includes(",")) return cloudflareIp;
+  return req.ip || req.socket.remoteAddress || "unknown";
+}
+
+function getActiveLoginBlock(ip: string, now: number) {
+  const record = loginFailures.get(ip);
+  if (!record) return null;
+  if (record.blockedUntil > now) return record;
+  if (now - record.windowStartedAt >= LOGIN_WINDOW_MS) {
+    loginFailures.delete(ip);
+    return null;
+  }
+  return null;
+}
+
+function recordFailedLogin(ip: string, now: number) {
+  let record = loginFailures.get(ip);
+  if (!record || now - record.windowStartedAt >= LOGIN_WINDOW_MS) {
+    record = { count: 0, windowStartedAt: now, blockedUntil: 0 };
+  }
+  record.count += 1;
+  if (record.count >= LOGIN_MAX_FAILURES) record.blockedUntil = now + LOGIN_BLOCK_MS;
+  loginFailures.set(ip, record);
+
+  // Keep the in-memory limiter bounded on this single-instance deployment.
+  if (loginFailures.size > 5000) {
+    for (const [key, value] of loginFailures) {
+      if (value.blockedUntil <= now && now - value.windowStartedAt >= LOGIN_WINDOW_MS) {
+        loginFailures.delete(key);
+      }
+    }
+    while (loginFailures.size > 5000) {
+      const oldestKey = loginFailures.keys().next().value;
+      if (oldestKey === undefined) break;
+      loginFailures.delete(oldestKey);
+    }
+  }
+}
+
 // Check if any admin user exists in the database
 router.get("/status", async (_req: Request, res: Response) => {
   try {
@@ -98,6 +145,16 @@ router.post("/first-run-setup", async (req: Request, res: Response) => {
 
 // Admin Login
 router.post("/login", async (req: Request, res: Response) => {
+  const clientIp = getLoginClientIp(req);
+  const now = Date.now();
+  const blockedRecord = getActiveLoginBlock(clientIp, now);
+  if (blockedRecord) {
+    const retryAfterSeconds = Math.max(1, Math.ceil((blockedRecord.blockedUntil - now) / 1000));
+    res.setHeader("Retry-After", String(retryAfterSeconds));
+    res.status(429).json({ error: "Too many login attempts. Please try again in 15 minutes." });
+    return;
+  }
+
   try {
     const { email, password } = req.body || {};
     if (!email || !password) {
@@ -111,6 +168,7 @@ router.post("/login", async (req: Request, res: Response) => {
     );
 
     if (result.rows.length === 0) {
+      recordFailedLogin(clientIp, now);
       res.status(401).json({ error: "Invalid email or password." });
       return;
     }
@@ -118,10 +176,12 @@ router.post("/login", async (req: Request, res: Response) => {
     const admin = result.rows[0];
     const valid = await verifyPassword(password, admin.password_hash);
     if (!valid) {
+      recordFailedLogin(clientIp, now);
       res.status(401).json({ error: "Invalid email or password." });
       return;
     }
 
+    loginFailures.delete(clientIp);
     const token = signAdminToken({ id: admin.id, email: admin.email });
     setAdminCookie(res, token);
 

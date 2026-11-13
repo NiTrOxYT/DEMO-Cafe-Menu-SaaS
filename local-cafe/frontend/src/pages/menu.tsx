@@ -12,6 +12,14 @@ import {
   TableSession,
   Order,
   Offer,
+  getLocationStatus,
+  verifyCustomerLocation,
+  requestScanLink,
+  redeemScanLink,
+  getAdminMe,
+  getMenuItemReviews,
+  submitMenuItemReview,
+  type MenuItemReview,
 } from "@/lib/api";
 import {
   useListMenuItems,
@@ -19,6 +27,13 @@ import {
   useGetSettings,
   useCreateOrder,
 } from "@/lib/api";
+import {
+  getDeviceCoordinates,
+  calculateHaversineDistance,
+  MAX_DISTANCE_METRES,
+  MAX_ACCURACY_METRES,
+} from "@/lib/location";
+import { LocationGate } from "@/components/LocationGate";
 import {
   joinOrderRoom,
   joinSessionRoom,
@@ -181,8 +196,37 @@ type MenuItem = {
   isVeg: boolean;
   isBestseller: boolean;
   isSpicy: boolean;
+  reviewCount?: number;
+  averageRating?: number;
   badge?: "BESTSELLER" | "CHEF'S PICK" | "NEW" | null;
 };
+
+type MenuSort = "recommended" | "most-loved" | "top-rated" | "price-low" | "price-high";
+
+let fallbackReviewerKey: string | null = null;
+
+function getCustomerReviewKey(): string {
+  const storageKey = "kusum_kunja_menu_review_identity";
+  try {
+    const savedKey = window.localStorage.getItem(storageKey);
+    if (savedKey && /^[0-9a-f-]{36}$/i.test(savedKey)) return savedKey;
+  } catch {
+    if (fallbackReviewerKey) return fallbackReviewerKey;
+  }
+
+  const bytes = window.crypto.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+  const reviewerKey = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+
+  try {
+    window.localStorage.setItem(storageKey, reviewerKey);
+  } catch {
+    fallbackReviewerKey = reviewerKey;
+  }
+  return reviewerKey;
+}
 
 // --- Custom Cart Hook ---
 function useCart() {
@@ -327,13 +371,42 @@ const FoodCard = memo(function FoodCard({
               {item.description}
             </p>
           )}
+
+          <div className="mt-1.5 flex flex-wrap items-center gap-1" aria-label="Food attributes">
+            {item.isVeg ? (
+              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[9px] font-semibold leading-none text-emerald-800">
+                <Leaf size={10} aria-hidden="true" />
+                Veg
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-1.5 py-0.5 text-[9px] font-semibold leading-none text-rose-800">
+                <span className="h-2 w-2 rounded-full border border-rose-700 p-[1px]" aria-hidden="true">
+                  <span className="block h-full w-full rounded-full bg-rose-700" />
+                </span>
+                Non-veg
+              </span>
+            )}
+            {item.isSpicy && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-orange-200 bg-orange-50 px-1.5 py-0.5 text-[9px] font-semibold leading-none text-orange-800">
+                <Flame size={10} aria-hidden="true" />
+                Spicy
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Price & Circular Add Button */}
         <div className="flex items-center justify-between pt-1 mt-auto">
-          <span className="font-sans font-extrabold text-[15px] sm:text-[16px] text-[#29231F]">
-            {formatINR(item.price)}
-          </span>
+          <div className="min-w-0">
+            <span className="font-sans font-extrabold text-[15px] sm:text-[16px] text-[#29231F]">
+              {formatINR(item.price)}
+            </span>
+            <div className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-semibold leading-none text-[#8A5A3B]">
+              <Star size={10} fill="currentColor" />
+              <span>{(item.reviewCount ?? 0) > 0 ? Number(item.averageRating ?? 0).toFixed(1) : "New"}</span>
+              <span className="font-normal text-[#766B61]">({item.reviewCount ?? 0})</span>
+            </div>
+          </div>
 
           <div onClick={(e) => e.stopPropagation()}>
             {item.available && (
@@ -406,7 +479,7 @@ export default function MenuPage() {
     data: menuItems = [],
     isLoading: isMenuLoading,
     isError: isMenuError,
-    refetch: refetchMenu,
+    refetch: refetchMenuItems,
   } = useListMenuItems(undefined);
   const {
     data: categories = [],
@@ -416,14 +489,194 @@ export default function MenuPage() {
   } = useListCategories();
   const { data: settings } = useGetSettings();
 
-  const tableParam = useMemo(() => {
-    if (typeof window === "undefined") return null;
+  type GateStatus =
+    | "checking"
+    | "granted"
+    | "denied"
+    | "out_of_range"
+    | "accuracy_too_low"
+    | "not_configured"
+    | "error";
+
+  const [gateStatus, setGateStatus] = useState<GateStatus>("checking");
+  const [gateDistance, setGateDistance] = useState<number | null>(null);
+  const [gateAccuracy, setGateAccuracy] = useState<number | null>(null);
+  const [gateDirectionsUrl, setGateDirectionsUrl] = useState<string | null>(null);
+  const [gateErrorMessage, setGateErrorMessage] = useState<string | null>(null);
+  const [isAdminUser, setIsAdminUser] = useState(false);
+
+  const [currentTableNumber, setCurrentTableNumber] = useState<string>(() => {
+    if (typeof window === "undefined") return "";
     const t = new URLSearchParams(window.location.search).get("table");
-    return t && t.trim() ? t.trim() : null;
+    return t && t.trim() ? t.trim() : "";
+  });
+
+  const hasTable = Boolean(currentTableNumber);
+  const tableNumber = currentTableNumber;
+
+  const verifyLocationAndAccess = useCallback(async (isSilent = false) => {
+    if (!isSilent) {
+      setGateStatus("checking");
+      setGateErrorMessage(null);
+    }
+
+    try {
+      // 1. Admin bypass: if user is authenticated admin, grant full access
+      try {
+        const me = await getAdminMe();
+        if (me && me.user) {
+          setIsAdminUser(true);
+          setGateStatus("granted");
+          return true;
+        }
+      } catch {
+        // Not admin, proceed with customer proximity checks
+      }
+
+      // 2. Discover cafe coordinates & location configuration
+      const statusRes = await getLocationStatus();
+      if (!statusRes.configured || statusRes.latitude == null || statusRes.longitude == null) {
+        setGateStatus("not_configured");
+        return false;
+      }
+
+      if (statusRes.directionsUrl) {
+        setGateDirectionsUrl(statusRes.directionsUrl);
+      }
+
+      // 3. Request device coordinates over HTTPS Geolocation
+      let coords;
+      try {
+        coords = await getDeviceCoordinates();
+      } catch (geoErr: any) {
+        if (geoErr.reason === "PERMISSION_DENIED") {
+          setGateStatus("denied");
+        } else {
+          setGateStatus("error");
+          setGateErrorMessage(geoErr.message || "Unable to acquire device location.");
+        }
+        return false;
+      }
+
+      // 4. Verify GPS accuracy threshold (<= 65m)
+      setGateAccuracy(coords.accuracy);
+      if (coords.accuracy > MAX_ACCURACY_METRES) {
+        setGateStatus("accuracy_too_low");
+        return false;
+      }
+
+      // 5. Calculate Haversine distance and enforce 50m radius
+      const distance = calculateHaversineDistance(
+        coords.latitude,
+        coords.longitude,
+        statusRes.latitude,
+        statusRes.longitude
+      );
+      setGateDistance(distance);
+
+      if (distance > MAX_DISTANCE_METRES) {
+        setGateStatus("out_of_range");
+        return false;
+      }
+
+      // 6. Handle printed QR vs single-use scan token vs plain menu
+      const params = new URLSearchParams(window.location.search);
+      const tableInUrl = params.get("table")?.trim();
+      const scanInUrl = params.get("scan")?.trim();
+
+      if (scanInUrl) {
+        // Customer opened single-use scan link
+        try {
+          const redeemRes = await redeemScanLink({
+            token: scanInUrl,
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+            accuracy: coords.accuracy,
+          });
+
+          if (redeemRes.success && redeemRes.tableNumber) {
+            setCurrentTableNumber(redeemRes.tableNumber);
+            const cleanUrl = `${window.location.pathname}?table=${encodeURIComponent(redeemRes.tableNumber)}`;
+            window.history.replaceState({}, document.title, cleanUrl);
+          }
+        } catch (redeemErr: any) {
+          setGateStatus("error");
+          setGateErrorMessage(
+            redeemErr.message || "This scan link is expired or has already been used. Please scan the table QR again."
+          );
+          return false;
+        }
+      } else if (tableInUrl) {
+        // Customer scanned reusable printed table QR code (?table=N)
+        try {
+          const reqRes = await requestScanLink({
+            tableNumber: tableInUrl,
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+            accuracy: coords.accuracy,
+          });
+
+          if (reqRes.success && reqRes.scanToken) {
+            // Immediately redeem single-use token on this verified device and set session
+            const redeemRes = await redeemScanLink({
+              token: reqRes.scanToken,
+              latitude: coords.latitude,
+              longitude: coords.longitude,
+              accuracy: coords.accuracy,
+            });
+
+            if (redeemRes.success && redeemRes.tableNumber) {
+              setCurrentTableNumber(redeemRes.tableNumber);
+              const cleanUrl = `${window.location.pathname}?table=${encodeURIComponent(redeemRes.tableNumber)}`;
+              window.history.replaceState({}, document.title, cleanUrl);
+            }
+          }
+        } catch (scanErr: any) {
+          setGateStatus("error");
+          setGateErrorMessage(scanErr.message || "Failed to establish table session.");
+          return false;
+        }
+      } else {
+        // Plain menu visit (https://menu.theaveniq.site/)
+        await verifyCustomerLocation({
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          accuracy: coords.accuracy,
+        });
+      }
+
+      setGateStatus("granted");
+      return true;
+    } catch (err: any) {
+      setGateStatus("error");
+      setGateErrorMessage(err.message || "Location verification failed.");
+      return false;
+    }
   }, []);
 
-  const hasTable = Boolean(tableParam);
-  const tableNumber = tableParam || "";
+  // Initial location gate check
+  useEffect(() => {
+    verifyLocationAndAccess(false);
+  }, [verifyLocationAndAccess]);
+
+  // Re-verify when tab becomes active again
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        verifyLocationAndAccess(true);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, [verifyLocationAndAccess]);
+
+  // Refetch menu items and categories once location access is granted
+  useEffect(() => {
+    if (gateStatus === "granted") {
+      refetchCategories();
+      refetchMenuItems();
+    }
+  }, [gateStatus, refetchCategories, refetchMenuItems]);
 
   const restaurantName = settings?.restaurantName ?? "Kusum Kunja Café";
   const tagline = settings?.tagline ?? "Fresh ingredients. Thoughtful recipes. A better you, every day.";
@@ -509,7 +762,17 @@ export default function MenuPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [vegFilter, setVegFilter] = useState<"all" | "veg" | "nonveg">("all");
+  const [showAllChefPicks, setShowAllChefPicks] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const [itemReviews, setItemReviews] = useState<MenuItemReview[]>([]);
+  const [myItemReview, setMyItemReview] = useState<MenuItemReview | null>(null);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewText, setReviewText] = useState("");
+  const [isLoadingReviews, setIsLoadingReviews] = useState(false);
+  const [isSavingReview, setIsSavingReview] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
+  const [reviewMessage, setReviewMessage] = useState<string | null>(null);
+  const [menuSort, setMenuSort] = useState<MenuSort>("recommended");
   const [cartOpen, setCartOpen] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [favorites, setFavorites] = useState<number[]>([]);
@@ -524,6 +787,70 @@ export default function MenuPage() {
   const [manualTableInput, setManualTableInput] = useState("");
   const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
   const [activeOrderData, setActiveOrderData] = useState<any>(null);
+
+  useEffect(() => {
+    if (!selectedItem) {
+      setItemReviews([]);
+      setMyItemReview(null);
+      return;
+    }
+
+    let cancelled = false;
+    setIsLoadingReviews(true);
+    setReviewError(null);
+    setReviewMessage(null);
+    getMenuItemReviews(selectedItem.id, getCustomerReviewKey())
+      .then((result) => {
+        if (cancelled) return;
+        setItemReviews(result.reviews);
+        setMyItemReview(result.myReview);
+        setReviewRating(result.myReview?.rating ?? 5);
+        setReviewText(result.myReview?.reviewText ?? "");
+      })
+      .catch((error: Error) => {
+        if (!cancelled) setReviewError(error.message || "Could not load reviews.");
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingReviews(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedItem?.id]);
+
+  const handleSubmitItemReview = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!selectedItem || isSavingReview) return;
+
+    setIsSavingReview(true);
+    setReviewError(null);
+    setReviewMessage(null);
+    try {
+      const result = await submitMenuItemReview(selectedItem.id, {
+        rating: reviewRating,
+        reviewText,
+        reviewerKey: getCustomerReviewKey(),
+      });
+      setMyItemReview(result.review);
+      setSelectedItem((current) => current?.id === selectedItem.id
+        ? { ...current, reviewCount: result.reviewCount, averageRating: result.averageRating }
+        : current);
+      setReviewMessage("Thanks! Your review has been saved.");
+      try {
+        const refreshed = await getMenuItemReviews(selectedItem.id, getCustomerReviewKey());
+        setItemReviews(refreshed.reviews);
+        setMyItemReview(refreshed.myReview);
+      } catch {
+        // The saved review remains successful even if refreshing the list fails.
+      }
+      void refetchMenuItems();
+    } catch (error) {
+      setReviewError(error instanceof Error ? error.message : "Could not save your review.");
+    } finally {
+      setIsSavingReview(false);
+    }
+  };
 
   // Table Session State
   const [sessionStatus, setSessionStatus] = useState<"loading" | "needs_party_size" | "active" | "full" | "finished" | "none">(
@@ -565,7 +892,6 @@ export default function MenuPage() {
         setActiveNav("offers");
       } else if (path.includes("locations")) {
         setShowLocations(true);
-        setActiveNav("locations");
       }
     }
   }, []);
@@ -765,6 +1091,10 @@ export default function MenuPage() {
   const handleConfirmPartySize = async (size?: number) => {
     const chosenSize = size ?? selectedPartySize;
     if (!chosenSize || chosenSize < 1 || chosenSize > 4 || isJoiningSession) return;
+
+    const isProximityOk = await verifyLocationAndAccess(true);
+    if (!isProximityOk) return;
+
     try {
       setIsJoiningSession(true);
       setSessionStatus("loading");
@@ -803,6 +1133,11 @@ export default function MenuPage() {
   const handlePlaceOrder = async () => {
     if (!hasTable || !tableNumber) {
       setShowNoTableModal(true);
+      return;
+    }
+
+    const isProximityOk = await verifyLocationAndAccess(true);
+    if (!isProximityOk) {
       return;
     }
 
@@ -995,7 +1330,7 @@ export default function MenuPage() {
   }, [categories]);
 
   const sortedCategories = useMemo(() => {
-    return [...rawCategories].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+    return [...rawCategories].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
   }, [rawCategories]);
 
   const validCategoryIds = useMemo(() => {
@@ -1027,26 +1362,65 @@ export default function MenuPage() {
     });
   }, [rawItems, selectedCategory, vegFilter, searchQuery]);
 
-  const bestsellers = useMemo(() => {
-    return rawItems.filter((i) => i.available && (i.isBestseller || i.badge === "BESTSELLER" || i.badge === "CHEF'S PICK"));
-  }, [rawItems]);
+  const sortedFiltered = useMemo(() => {
+    const items = [...filtered];
+    const reviewCount = (item: MenuItem) => item.reviewCount ?? 0;
+    const rating = (item: MenuItem) => item.averageRating ?? 0;
+
+    if (menuSort === "most-loved") {
+      return items.sort((a, b) => reviewCount(b) - reviewCount(a) || rating(b) - rating(a));
+    }
+    if (menuSort === "top-rated") {
+      return items.sort((a, b) => rating(b) - rating(a) || reviewCount(b) - reviewCount(a));
+    }
+    if (menuSort === "price-low") return items.sort((a, b) => a.price - b.price);
+    if (menuSort === "price-high") return items.sort((a, b) => b.price - a.price);
+    return items;
+  }, [filtered, menuSort]);
+
+  const chefPicks = useMemo(
+    () =>
+      sortedFiltered.filter(
+        (item) =>
+          item.isBestseller ||
+          item.badge === "BESTSELLER" ||
+          item.badge === "CHEF'S PICK",
+      ),
+    [sortedFiltered],
+  );
 
   // Group items by category for instant O(1) section rendering
   const categoryItemsMap = useMemo(() => {
     const map = new Map<number, MenuItem[]>();
-    for (const item of filtered) {
+    for (const item of sortedFiltered) {
       const list = map.get(item.categoryId) || [];
       list.push(item);
       map.set(item.categoryId, list);
     }
     return map;
-  }, [filtered]);
+  }, [sortedFiltered]);
 
   // Category pill list including static mock fallback matching reference image
   const displayCategories = useMemo(() => [
     { id: null, name: "All", icon: "all" },
     ...sortedCategories.map((c) => ({ id: c.id, name: c.name, icon: c.name.toLowerCase() })),
   ], [sortedCategories]);
+
+  // Customer Proximity Gate: fail-closed if not within 50m of configured coordinates
+  if (gateStatus !== "granted") {
+    return (
+      <LocationGate
+        status={gateStatus}
+        distance={gateDistance}
+        accuracy={gateAccuracy}
+        restaurantName={restaurantName}
+        directionsUrl={gateDirectionsUrl}
+        errorMessage={gateErrorMessage}
+        onRetry={() => verifyLocationAndAccess(false)}
+        isAdmin={isAdminUser}
+      />
+    );
+  }
 
   return (
     <div className="min-h-[100dvh] bg-[#F8F5EF] text-[#29231F] font-sans antialiased selection:bg-[#EFE7DA] selection:text-[#7B4E35] pb-[max(6.5rem,calc(5.5rem+env(safe-area-inset-bottom)))]">
@@ -1282,28 +1656,45 @@ export default function MenuPage() {
             </div>
 
             {/* Dietary Filter Buttons (Veg / Non-Veg) */}
-            <div className="flex items-center gap-2 pt-1">
-              {[
-                { id: "all", label: "All" },
-                { id: "veg", label: "Veg", icon: Leaf },
-                { id: "nonveg", label: "Non-Veg", icon: Flame },
-              ].map((f) => {
-                const isSelected = vegFilter === f.id;
-                const Icon = f.icon;
-                return (
-                  <button
-                    key={f.id}
-                    onClick={() => setVegFilter(f.id as any)}
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 btn-smooth-press ${isSelected
-                        ? "bg-[#7B4E35] text-white shadow-2xs"
-                        : "bg-[#FFFDF9] text-[#766B61] border border-[#E5DDD1] hover:bg-[#EFE7DA]"
-                      }`}
-                  >
-                    {Icon && <Icon size={12} className={f.id === "veg" ? "text-emerald-600" : f.id === "nonveg" ? "text-rose-500" : ""} />}
-                    <span>{f.label}</span>
-                  </button>
-                );
-              })}
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+              <div className="flex items-center gap-2">
+                {[
+                  { id: "all", label: "All" },
+                  { id: "veg", label: "Veg", icon: Leaf },
+                  { id: "nonveg", label: "Non-Veg", icon: Flame },
+                ].map((f) => {
+                  const isSelected = vegFilter === f.id;
+                  const Icon = f.icon;
+                  return (
+                    <button
+                      key={f.id}
+                      onClick={() => setVegFilter(f.id as "all" | "veg" | "nonveg")}
+                      className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 btn-smooth-press ${isSelected
+                          ? "bg-[#7B4E35] text-white shadow-2xs"
+                          : "bg-[#FFFDF9] text-[#766B61] border border-[#E5DDD1] hover:bg-[#EFE7DA]"
+                        }`}
+                    >
+                      {Icon && <Icon size={12} className={f.id === "veg" ? "text-emerald-600" : f.id === "nonveg" ? "text-rose-500" : ""} />}
+                      <span>{f.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <label className="flex items-center gap-2 text-xs font-medium text-[#766B61]">
+                <span>Sort</span>
+                <select
+                  value={menuSort}
+                  onChange={(event) => setMenuSort(event.target.value as MenuSort)}
+                  className="rounded-full border border-[#E5DDD1] bg-[#FFFDF9] px-3 py-1.5 text-xs font-semibold text-[#29231F] focus:outline-none focus:border-[#7B4E35]"
+                  aria-label="Sort menu items"
+                >
+                  <option value="recommended">Recommended</option>
+                  <option value="most-loved">Everyone’s favorite</option>
+                  <option value="top-rated">Top rated</option>
+                  <option value="price-low">Price: low to high</option>
+                  <option value="price-high">Price: high to low</option>
+                </select>
+              </label>
             </div>
           </section>
         )}
@@ -1324,7 +1715,7 @@ export default function MenuPage() {
             </p>
             <button
               onClick={() => {
-                refetchMenu();
+                refetchMenuItems();
                 refetchCategories();
               }}
               className="px-5 py-2.5 rounded-full bg-[#7B4E35] text-white text-xs font-semibold hover:bg-[#633E2B] transition-colors shadow-sm inline-flex items-center gap-1.5 btn-smooth-press"
@@ -1373,7 +1764,7 @@ export default function MenuPage() {
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-                {filtered.map((item) => (
+                {sortedFiltered.map((item) => (
                   <FoodCard
                     key={item.id}
                     item={item}
@@ -1409,7 +1800,7 @@ export default function MenuPage() {
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-                {filtered.map((item) => (
+                {sortedFiltered.map((item) => (
                   <FoodCard
                     key={item.id}
                     item={item}
@@ -1430,22 +1821,25 @@ export default function MenuPage() {
         {selectedCategory === null && !searchQuery.trim() && (
           <>
             {/* 1. Chef's Picks Section */}
+            {chefPicks.length > 0 && (
             <section className="space-y-3 pt-1">
               <div className="flex items-center justify-between">
                 <h2 className="font-serif text-[22px] sm:text-[26px] font-bold text-[#29231F]">
                   Chef's Picks
                 </h2>
-                <button
-                  onClick={() => setSelectedCategory(null)}
-                  className="inline-flex items-center gap-1 text-xs font-semibold text-[#7B4E35] hover:underline"
-                >
-                  <span>View All</span>
-                  <ArrowRight size={13} />
-                </button>
+                {chefPicks.length > 6 && (
+                  <button
+                    onClick={() => setShowAllChefPicks((showAll) => !showAll)}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-[#7B4E35] hover:underline"
+                  >
+                    <span>{showAllChefPicks ? "Show Less" : "View All"}</span>
+                    <ArrowRight size={13} />
+                  </button>
+                )}
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-                {(bestsellers.length > 0 ? bestsellers.slice(0, 6) : filtered.slice(0, 6)).map((item) => (
+                {(showAllChefPicks ? chefPicks : chefPicks.slice(0, 6)).map((item) => (
                   <FoodCard
                     key={item.id}
                     item={item}
@@ -1459,6 +1853,7 @@ export default function MenuPage() {
                 ))}
               </div>
             </section>
+            )}
 
             {/* 2. Seasonal Specials Banner */}
             <section className="relative overflow-hidden rounded-2xl bg-[#2A3828] text-white p-5 sm:p-6 shadow-md my-2">
@@ -1550,7 +1945,7 @@ export default function MenuPage() {
                   </h2>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-                  {filtered.map((item) => (
+                  {sortedFiltered.map((item) => (
                     <FoodCard
                       key={item.id}
                       item={item}
@@ -1879,7 +2274,7 @@ export default function MenuPage() {
           onClick={() => setSelectedItem(null)}
         >
           <div
-            className="w-full max-w-sm bg-[#FFFDF9] rounded-3xl border border-[#E5DDD1] overflow-hidden shadow-2xl p-5 space-y-4"
+            className="w-full max-w-sm max-h-[90dvh] overflow-y-auto bg-[#FFFDF9] rounded-3xl border border-[#E5DDD1] shadow-2xl p-5 space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-[#EFE7DA]">
@@ -1894,7 +2289,110 @@ export default function MenuPage() {
             <div>
               <h3 className="font-serif text-2xl font-bold text-[#29231F]">{selectedItem.name}</h3>
               <p className="text-xs text-[#766B61] mt-1">{selectedItem.description}</p>
+              <div className="mt-2 flex flex-wrap items-center gap-1.5" aria-label="Food attributes">
+                {selectedItem.isVeg ? (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-800">
+                    <Leaf size={12} aria-hidden="true" />
+                    Vegetarian
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2 py-1 text-[10px] font-semibold text-rose-800">
+                    <span className="h-2.5 w-2.5 rounded-full border border-rose-700 p-[1px]" aria-hidden="true">
+                      <span className="block h-full w-full rounded-full bg-rose-700" />
+                    </span>
+                    Non-vegetarian
+                  </span>
+                )}
+                {selectedItem.isSpicy && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-orange-200 bg-orange-50 px-2 py-1 text-[10px] font-semibold text-orange-800">
+                    <Flame size={12} aria-hidden="true" />
+                    Spicy
+                  </span>
+                )}
+              </div>
+              <div className="mt-2 flex items-center gap-1.5 text-sm text-[#8A5A3B]">
+                <Star size={15} fill="currentColor" />
+                <span className="font-bold">{(selectedItem.reviewCount ?? 0) > 0 ? Number(selectedItem.averageRating ?? 0).toFixed(1) : "New"}</span>
+                <span className="text-xs text-[#766B61]">
+                  {(selectedItem.reviewCount ?? 0) > 0
+                    ? `· ${selectedItem.reviewCount} ${selectedItem.reviewCount === 1 ? "review" : "reviews"}`
+                    : "· Be the first to review"}
+                </span>
+              </div>
             </div>
+
+            <form onSubmit={handleSubmitItemReview} className="space-y-2.5 border-t border-[#E5DDD1] pt-3">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-[#29231F]">Your review</p>
+                {myItemReview && <span className="text-[10px] text-[#766B61]">You can update your review</span>}
+              </div>
+              <div className="flex items-center gap-1" role="group" aria-label="Choose a star rating">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setReviewRating(star)}
+                    aria-label={`${star} ${star === 1 ? "star" : "stars"}`}
+                    aria-pressed={reviewRating === star}
+                    className="rounded p-1 text-[#D3C7B5] hover:text-[#D4A84D] focus:outline-none focus:ring-2 focus:ring-[#D4A84D]"
+                  >
+                    <Star size={21} fill={star <= reviewRating ? "currentColor" : "none"} className={star <= reviewRating ? "text-[#D4A84D]" : ""} />
+                  </button>
+                ))}
+                <span className="ml-1 text-xs text-[#766B61]">{reviewRating}/5</span>
+              </div>
+              <textarea
+                value={reviewText}
+                onChange={(event) => setReviewText(event.target.value)}
+                maxLength={500}
+                rows={2}
+                placeholder="Share what you thought (optional)"
+                className="w-full resize-y rounded-xl border border-[#E5DDD1] bg-white px-3 py-2 text-sm text-[#29231F] placeholder:text-[#9A8E81] focus:outline-none focus:border-[#7B4E35]"
+              />
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[10px] text-[#766B61]">{reviewText.length}/500 characters</span>
+                <button
+                  type="submit"
+                  disabled={isSavingReview}
+                  className="rounded-full bg-[#7B4E35] px-4 py-2 text-xs font-semibold text-white hover:bg-[#633D28] disabled:opacity-60"
+                >
+                  {isSavingReview ? "Saving…" : myItemReview ? "Update review" : "Submit review"}
+                </button>
+              </div>
+              {reviewMessage && <p className="text-xs text-emerald-700" role="status">{reviewMessage}</p>}
+              {reviewError && <p className="text-xs text-rose-700" role="alert">{reviewError}</p>}
+            </form>
+
+            <section className="space-y-2 border-t border-[#E5DDD1] pt-3">
+              <h4 className="text-sm font-semibold text-[#29231F]">Customer reviews</h4>
+              {isLoadingReviews ? (
+                <p className="text-xs text-[#766B61]">Loading reviews…</p>
+              ) : itemReviews.length === 0 ? (
+                <p className="text-xs text-[#766B61]">No reviews yet. Be the first to share your experience.</p>
+              ) : (
+                <div className="max-h-36 space-y-2 overflow-y-auto pr-1">
+                  {itemReviews.map((review, index) => (
+                    <article key={`${review.createdAt}-${index}`} className="rounded-xl bg-[#F8F5EF] p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[11px] font-semibold text-[#766B61]">Café guest</span>
+                        <time className="text-[10px] text-[#8C8075]">
+                          {new Date(review.createdAt).toLocaleDateString("en-IN", {
+                            day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Kolkata",
+                          })}
+                        </time>
+                      </div>
+                      <div className="mt-1 flex items-center gap-0.5 text-[#D4A84D]" aria-label={`${review.rating} out of 5 stars`}>
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star key={star} size={12} fill={star <= review.rating ? "currentColor" : "none"} />
+                        ))}
+                      </div>
+                      {review.reviewText && <p className="mt-1 whitespace-pre-wrap break-words text-xs text-[#51483F]">{review.reviewText}</p>}
+                    </article>
+                  ))}
+                </div>
+              )}
+            </section>
+
             <div className="flex justify-between items-center pt-3 border-t border-[#E5DDD1]">
               <span className="font-extrabold text-xl">{formatINR(selectedItem.price)}</span>
               <button

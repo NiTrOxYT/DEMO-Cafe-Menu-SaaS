@@ -49,6 +49,20 @@ export async function runMigrations() {
       CREATE INDEX IF NOT EXISTS idx_menu_items_category_id ON menu_items(category_id);
       CREATE INDEX IF NOT EXISTS idx_menu_items_available ON menu_items(available);
 
+      CREATE TABLE IF NOT EXISTS menu_item_reviews (
+        id BIGSERIAL PRIMARY KEY,
+        menu_item_id INTEGER NOT NULL REFERENCES menu_items(id) ON DELETE CASCADE,
+        reviewer_key_hash TEXT NOT NULL,
+        rating SMALLINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+        review_text TEXT NOT NULL DEFAULT '',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE (menu_item_id, reviewer_key_hash)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_menu_item_reviews_recent
+        ON menu_item_reviews(menu_item_id, created_at DESC);
+
       CREATE TABLE IF NOT EXISTS restaurant_settings (
         id SERIAL PRIMARY KEY,
         restaurant_name TEXT NOT NULL DEFAULT 'Kusum Kunja Café',
@@ -63,6 +77,8 @@ export async function runMigrations() {
       );
 
       ALTER TABLE restaurant_settings ADD COLUMN IF NOT EXISTS gstin TEXT;
+      ALTER TABLE restaurant_settings ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION;
+      ALTER TABLE restaurant_settings ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION;
 
       -- Update only the previous default brand; preserve custom café names.
       UPDATE restaurant_settings
@@ -419,6 +435,21 @@ export async function runMigrations() {
 
       ALTER TABLE orders ADD COLUMN IF NOT EXISTS raw_materials_deducted BOOLEAN NOT NULL DEFAULT FALSE;
       CREATE INDEX IF NOT EXISTS idx_orders_raw_materials_deducted ON orders(raw_materials_deducted);
+
+      -- 9. Table Scan Links (Reusable Printed QR & Single-Use Access Tokens)
+      CREATE TABLE IF NOT EXISTS table_scan_links (
+        id SERIAL PRIMARY KEY,
+        cafe_id INTEGER NOT NULL DEFAULT 1 REFERENCES cafes(id) ON DELETE CASCADE,
+        table_number TEXT NOT NULL,
+        token_hash TEXT NOT NULL UNIQUE,
+        is_superseded BOOLEAN NOT NULL DEFAULT FALSE,
+        redeemed_at TIMESTAMP WITH TIME ZONE,
+        expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_scan_links_token_hash ON table_scan_links(token_hash);
+      CREATE INDEX IF NOT EXISTS idx_scan_links_table ON table_scan_links(table_number, is_superseded, redeemed_at);
     `);
 
     console.log("[Migration] Schema migration completed successfully with zero copied production rows.");
